@@ -225,6 +225,20 @@
       margin-top: 5px;
       color: #0f172a;
     }
+
+      /* ✅ Navbar right section: button + datetime */
+  .navbar-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .btn-mainmenu{
+    font-weight:600;
+    border-color: rgba(226,232,240,.25);
+  }
+  .btn-mainmenu:hover{
+    border-color: rgba(226,232,240,.45);
+  }
   </style>
 </head>
 
@@ -232,6 +246,11 @@
   <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
     <span class="navbar-brand h4 mb-0">🧪 Powder Inventory data check</span>
     <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
+          <a href="https://rmtchp.github.io/WarehouseCheckStock-/"
+       class="btn btn-sm btn-outline-light btn-mainmenu"
+       title="Go to Main Menu">
+      🏠
+    </a>
   </nav>
 
   <!-- 🧭 Sidebar with Tabs -->
