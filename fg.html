@@ -137,14 +137,36 @@
   font-weight: bold;
   margin-top: 5px;
 }
-
+  /* ✅ Navbar right section: button + datetime */
+  .navbar-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .btn-mainmenu{
+    font-weight:600;
+    border-color: rgba(226,232,240,.25);
+  }
+  .btn-mainmenu:hover{
+    border-color: rgba(226,232,240,.45);
+  }
+    
 </style>
 </head>
 <body>
-  <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
-    <span class="navbar-brand h4 mb-0">📦 FG Inventory data check (Admin)</span>
+<nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
+  <span class="navbar-brand h4 mb-0">📦 FG Inventory data check (Admin)</span>
+
+  <div class="navbar-right">
+    <a href="https://rmtchp.github.io/WarehouseCheckStock-/"
+       class="btn btn-sm btn-outline-light btn-mainmenu"
+       title="Go to Main Menu">
+      🏠 Main Menu
+    </a>
+
     <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
-  </nav>
+  </div>
+</nav>
 
   <!-- 🧭 Sidebar with Tabs -->
   <div class="sidebar">
