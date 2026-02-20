@@ -10,18 +10,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    /* ===================== THEME (Powder) ===================== */
-    body { overflow-x: hidden; background-color: #fff7ed; } /* warm powder bg */
+    /* ===================== THEME (GRAY) ===================== */
+    :root{
+      --bg: #f3f4f6;        /* page background */
+      --nav: #111827;       /* top navbar */
+      --side: #111827;      /* sidebar */
+      --side2:#0b1220;      /* inner panels */
+      --text: #111827;
+      --muted:#9ca3af;
+      --tabHover: rgba(255,255,255,.08);
+      --tabActive: rgba(255,255,255,.14);
+      --border: rgba(255,255,255,.12);
+    }
+
+    body { overflow-x: hidden; background-color: var(--bg); }
 
     /* Top Navbar */
-    .navbar { background: #3b2f2f; color: white; } /* deep brown */
-    .navbar-time { font-size: 16px; color: #fde68a; font-weight: 500; } /* amber */
+    .navbar { background: var(--nav); color: white; }
+    .navbar-time { font-size: 16px; color: #e5e7eb; font-weight: 500; }
 
     /* Sidebar */
     .sidebar {
       width: 260px; height: 100vh;
       position: fixed; left: 0; top: 56px;
-      background: #2b2a33; color: white; padding: 15px; /* graphite */
+      background: var(--side); color: white; padding: 15px;
       overflow-y: auto;
     }
 
@@ -30,32 +42,38 @@
     table { font-size: 14px; }
 
     /* 🎨 Tabs */
-    .nav-tabs { border-bottom: 1px solid rgba(255,255,255,.18); margin-bottom: 15px; }
+    .nav-tabs { border-bottom: 1px solid var(--border); margin-bottom: 15px; }
     .nav-tabs .nav-link {
       color: #e5e7eb; border: none; border-radius: 0; background: transparent;
+      transition: background .15s ease, color .15s ease;
     }
     .nav-tabs .nav-link.active {
-      background-color: rgba(245, 158, 11, .18);
-      color: #ffffff; font-weight: 700;
+      background-color: var(--tabActive); color: #ffffff; font-weight: 700;
     }
     .nav-tabs .nav-link:hover {
-      background-color: rgba(245, 158, 11, .28);
-      color: #fff;
+      background-color: var(--tabHover); color: #fff;
     }
 
     .collapse-content {
-      background-color: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
+      background-color: var(--side2);
+      border: 1px solid var(--border);
       border-radius: 10px; padding: 10px; margin-bottom: 10px;
     }
 
-    /* Buttons (Powder theme) */
+    /* ให้ input ใน sidebar อ่านง่าย */
+    .sidebar label{ color:#e5e7eb; }
+    .sidebar .form-control{
+      background:#0f172a;
+      border:1px solid rgba(255,255,255,.14);
+      color:#e5e7eb;
+    }
+    .sidebar .form-control::placeholder{ color: rgba(229,231,235,.55); }
+
+    /* Buttons (Gray theme) */
     .btn-primary{
-      background-color:#f59e0b; border-color:#f59e0b; color:#111827;
-      font-weight:700;
+      background-color:#334155; border-color:#334155; color:#fff; font-weight:700;
     }
     .btn-primary:hover{ filter:brightness(.95); }
-
     .btn-success{
       background-color:#16a34a; border-color:#16a34a; font-weight:700;
     }
@@ -66,12 +84,10 @@
       background-color:#16a34a; color:#fff;
     }
 
-    /* =========================================================== */
-
     /* กลุ่ม */
     .table-group {
-      background-color: #ffedd5 !important; /* powder tint */
-      color: #7c2d12; font-weight: 700; border-top: 2px solid #fdba74;
+      background-color: #e5e7eb !important;
+      color: #111827; font-weight: 700; border-top: 2px solid #cbd5e1;
     }
 
     .table-detail:hover { background-color: #f1f5f9; }
@@ -126,7 +142,7 @@
       transition: transform .15s ease, box-shadow .15s ease;
     }
 
-    /* 🎨 Color Themes */
+    /* 🎨 Color Themes (คงเดิมตามระบบเดิม) */
     .card-blue {
       background: linear-gradient(145deg, #e3f2fd, #bbdefb);
       border-left-color: #2196f3 !important;
@@ -154,7 +170,7 @@
     }
 
     .summary-card.active {
-      box-shadow: 0 0 0 2px #f59e0b inset; /* powder accent */
+      box-shadow: 0 0 0 2px #334155 inset; /* gray accent */
     }
 
     .summary-title {
@@ -376,7 +392,6 @@
     }
 
     async function showDeletePage() {
-      // 🟢 แสดง popup โหลดข้อมูล (เหมือนกดปุ่ม Search)
       Swal.fire({
         title: "กำลังค้นหาข้อมูล...",
         text: "กรุณารอสักครู่",
@@ -392,13 +407,11 @@
         const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
         const rows = await res.json();
 
-        // ปิด popup loading
         Swal.close();
 
         const body = document.getElementById("deleteTableBody");
         body.innerHTML = "";
 
-        // 🟢 แสดงเฉพาะ ID = 1
         const filtered = rows.filter(r => String(r.ID).trim() === "1");
 
         if (filtered.length === 0) {
@@ -418,7 +431,6 @@
       }
     }
 
-    // 📤 Upload Excel
     async function uploadToSheet() {
       const file = document.getElementById("fileInput").files[0];
       if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
@@ -443,13 +455,9 @@
           defval: ""
         });
 
-        // -----------------------------------------------------
-        // 📌 1)ตรวจสอบทุกแถว: ต้องมี 6 คอลัมน์ และทุกคอลัมน์ต้องไม่ว่าง
-        // -----------------------------------------------------
         for (let i = 0; i < rawRows.length; i++) {
           let row = rawRows[i];
 
-          // จำนวนคอลัมน์ต้อง = 6 เสมอ (จะ normalize ทีหลัง)
           if (row.length !== 6) {
             return Swal.fire({
               icon: "error",
@@ -461,13 +469,9 @@
             });
           }
 
-          // 🔍 เช็คว่าแถวนี้ว่างทั้งแถวหรือไม่
           const isEmptyRow = row.every(col => String(col).trim() === "");
-
-          // ✅ ถ้าแถวว่างทั้งแถว → ข้าม ไม่ต้อง Error
           if (isEmptyRow) continue;
 
-          // ❌ ถ้าแถวไม่ว่างทั้งแถว แต่มีบางช่องว่าง → แจ้ง Error
           for (let c = 0; c < 6; c++) {
             if (String(row[c]).trim() === "") {
               return Swal.fire({
@@ -482,9 +486,6 @@
           }
         }
 
-        // -----------------------------------------------------
-        // 📌 2) ตรวจ Header ให้ตรงตาม Template
-        // -----------------------------------------------------
         const expectedHeader = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"];
         const header = rawRows[0];
 
@@ -505,9 +506,6 @@
           });
         }
 
-        // -----------------------------------------------------
-        // 📌 3) Normalize → ลดคอลัมน์ให้เหลือ 6 และเติมให้ครบ
-        // -----------------------------------------------------
         const fixedRows = rawRows
           .map(r => {
             if (r.length > 6) r = r.slice(0, 6);
@@ -516,9 +514,6 @@
           })
           .filter(r => r.some(col => col !== ""));
 
-        // -----------------------------------------------------
-        // 📌 4) สร้าง Payload เพื่อส่งไปยัง Google Script
-        // -----------------------------------------------------
         const payload = fixedRows.slice(1).map(r => ({
           Customer: String(r[0]).trim(),
           Name: String(r[1]).trim(),
@@ -527,8 +522,6 @@
           Rack: extractRack(r[4]),
           SumOfQty: String(r[5]).trim()
         }));
-
-        console.log("UPLOAD PAYLOAD:", payload);
 
         try {
           const res = await fetch(scriptURL, {
@@ -556,29 +549,23 @@
             return;
           }
 
-          // ก่อนปิด Swal แสดง progress สุดท้าย
           bar.style.width = "100%";
           bar.innerText = "100%";
           bar.classList.remove("bg-info");
           bar.classList.add("bg-success");
 
           Swal.fire("✅", json.message, "success").then(() => {
-            // 🟢 เคลียร์ไฟล์
             document.getElementById("fileInput").value = "";
 
-            // ปิดปุ่ม upload
             uploadBtn.disabled = true;
             uploadBtn.style.opacity = "0.5";
             uploadBtn.style.cursor = "not-allowed";
 
-            // 🟢 ซ่อน progress bar
             progress.style.display = "none";
 
-            // 🟢 Reset progress bar
             bar.style.width = "0%";
             bar.innerText = "0%";
 
-            // 🟢 คืนสี progress bar รอบใหม่
             bar.classList.remove("bg-success");
             bar.classList.add("bg-info");
           });
@@ -672,7 +659,6 @@
       }
     }
 
-    // 🧹 Clear Filter
     function clearFilters() {
       document.getElementById("startDate").value = "";
       document.getElementById("endDate").value = "";
@@ -694,7 +680,6 @@
       return clean;
     }
 
-    // สำหรับแสดงผลใน UI
     function displayRack(rack) {
       if (!rack) return "";
       const match = rack.match(/\[(.*?)\]/);
@@ -748,11 +733,9 @@
       }
     }
 
-    // สำหรับแสดงผลใน UI
     function renderGroupedTable(data) {
       const head = document.getElementById("searchTableHead");
       const body = document.getElementById("searchTableBody");
-
       body.innerHTML = "";
 
       if (!data || data.length === 0) {
@@ -764,7 +747,6 @@
       const headersRaw = Object.keys(data[0]);
       const headers = headersRaw.filter(h => h !== "ID");
 
-      // ➕ เพิ่ม Edit column
       if (!headers.includes("Edit")) headers.push("Edit");
 
       if (!headers.includes("Delta +/-")) {
@@ -772,13 +754,10 @@
         headers.splice(insertIndex, 0, "Delta +/-");
       }
 
-      // Render header
       head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-      // ⚡ HTML Buffer
       let html = "";
 
-      // ⚡ GROUP 1: File + Lot
       const mainGroups = {};
       for (const row of data) {
         const key = row.File5digit + "_" + row.Lot;
@@ -805,7 +784,6 @@
           </tr>
         `;
 
-        // ⚡ GROUP 2: Rack
         const rackGroups = {};
         for (const r of groupRows) {
           const norm = normalizeRack(r.Rack);
@@ -813,9 +791,7 @@
         }
 
         for (const rackNorm in rackGroups) {
-          const rows = rackGroups[rackNorm]
-            .slice()
-            .sort((a, b) => Number(a.ID) - Number(b.ID));
+          const rows = rackGroups[rackNorm].slice().sort((a,b) => Number(a.ID) - Number(b.ID));
 
           html += `
             <tr class="rack-header" style="background:#e2e8f0;">
@@ -825,21 +801,17 @@
             </tr>
           `;
 
-          // 🚀 FAST: Prepare values first
           const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
           let totalActQty = 0;
 
-          for (let i = 0; i < rows.length; i++) {
+          for (let i=0;i<rows.length;i++){
             const row = rows[i];
 
             let deltaText = "";
             let deltaClass = "";
 
-            // ❗ ตรวจว่ากลุ่มนี้ยังไม่ Check
-            const isNotChecked =
-              (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
+            const isNotChecked = (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
 
-            // ถ้ายังไม่ Check → ไม่คิด Delta, ไม่คิดรวม, ไม่คิด totalActQty
             if (!isNotChecked) {
               const actQty = toNum(row.Act_Qty);
               totalActQty += actQty;
@@ -848,40 +820,26 @@
               if (i === 0) delta = actQty - baseSumQty;
               else delta = actQty;
 
-              if (delta > 0) {
-                deltaText = `▲ +${delta}`;
-                deltaClass = "delta-positive";
-              } else if (delta < 0) {
-                deltaText = `▼ ${delta}`;
-                deltaClass = "delta-negative";
-              } else {
-                deltaText = "0";
-                deltaClass = "delta-zero";
-              }
+              if (delta > 0) { deltaText = `▲ +${delta}`; deltaClass = "delta-positive"; }
+              else if (delta < 0) { deltaText = `▼ ${delta}`; deltaClass = "delta-negative"; }
+              else { deltaText = "0"; deltaClass = "delta-zero"; }
             }
 
-            const hideCols = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty", "Sum of Qty"];
+            const hideCols = ["Customer","Name","File5digit","Lot","Rack","SumOfQty","Sum of Qty"];
 
             html += `<tr class="rack-row">`;
 
             for (const h of headers) {
-              if (i !== 0 && hideCols.includes(h)) {
-                html += "<td></td>";
-                continue;
-              }
+              if (i !== 0 && hideCols.includes(h)) { html += "<td></td>"; continue; }
 
               if (h === "Delta +/-") {
                 html += `<td class="${deltaClass}">${deltaText}</td>`;
-
               } else if (h === "Timestamp") {
                 html += `<td>${convertToBangkokTime(row[h])}</td>`;
-
               } else if (h === "Rack") {
                 html += `<td>${displayRack(row[h])}</td>`;
-
               } else if (h === "Act_Rack") {
                 html += `<td>${displayRack(row[h])}</td>`;
-
               } else if (h === "Edit") {
                 if (String(row.ID).trim() === "1") {
                   html += `
@@ -895,7 +853,6 @@
                 } else {
                   html += "<td></td>";
                 }
-
               } else {
                 html += `<td>${row[h] ?? ""}</td>`;
               }
@@ -904,25 +861,16 @@
             html += `</tr>`;
           }
 
-          // ⚡ รวม Rack นี้
-          const allEmpty = rows.every(r =>
-            (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
-          );
-
+          const allEmpty = rows.every(r => (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package));
           if (!allEmpty) {
             const rackTotal = totalActQty - baseSumQty;
-            let className = rackTotal > 0
-              ? "delta-positive"
-              : rackTotal < 0
-              ? "delta-negative"
-              : "delta-zero";
+            let className = rackTotal > 0 ? "delta-positive" : rackTotal < 0 ? "delta-negative" : "delta-zero";
 
             html += `
               <tr class="rack-row" style="background:#f8fafc; font-weight:bold;">
                 <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
                 <td class="${className}">
-                  ${rackTotal > 0 ? "▲ +" + rackTotal :
-                    rackTotal < 0 ? "▼ " + rackTotal : "0"}
+                  ${rackTotal > 0 ? "▲ +" + rackTotal : rackTotal < 0 ? "▼ " + rackTotal : "0"}
                 </td>
               </tr>
             `;
@@ -981,14 +929,13 @@
       renderDeleteTable(filtered);
     }
 
-    // 📤 Export Excel แบบ UI + รองรับสี DeltaValue (Conditional Formatting)
     async function exportExcel() {
       if (!allData || allData.length === 0) {
         Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
         return;
       }
 
-      const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+      const toNumLocal = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
       const sortedData = [...allData].sort((a, b) => {
         const f1 = String(a.File5digit).localeCompare(String(b.File5digit));
@@ -999,8 +946,6 @@
       });
 
       const exportData = [];
-
-      // Group data
       const mainGroups = {};
       sortedData.forEach(r => {
         const key = `${r.File5digit}_${r.Lot}`;
@@ -1020,12 +965,11 @@
 
         for (const rackNorm in rackGroups) {
           const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
-          const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
+          const baseSumQty = toNumLocal(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
 
           rows.forEach(row => {
-            const actQty = toNum(row.Act_Qty);
+            const actQty = toNumLocal(row.Act_Qty);
 
-            // ตรวจว่าแถวนี้ยังไม่เชค
             const notChecked = (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
 
             let delta = "";
@@ -1060,7 +1004,6 @@
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
 
-      // Auto width
       ws["!cols"] = Object.keys(exportData[0]).map(key => ({
         wch: Math.max(
           key.length,
@@ -1068,7 +1011,6 @@
         ) + 2
       }));
 
-      // Conditional formatting
       const deltaColIndex = Object.keys(exportData[0]).indexOf("DeltaValue");
       const deltaColLetter = XLSX.utils.encode_col(deltaColIndex);
       const startRow = 2;
@@ -1102,7 +1044,6 @@
 
       XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-      // File name (UPDATED)
       const now = new Date();
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -1117,7 +1058,7 @@
       Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
     }
 
-    // ปิดหน้า Delete ตอนสลับ tab
+    // Tab switching
     document.getElementById("search-tab").addEventListener("click", () => {
       document.getElementById("contentSearch").style.display = "block";
       document.getElementById("contentUpload").style.display = "none";
@@ -1163,12 +1104,10 @@
         return;
       }
 
-      // reset กลุ่มทุกครั้งที่ search ใหม่
       summaryGroups = {};
       document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
 
       const id1Rows = data.filter(r => String(r.ID).trim() === "1");
-
       let groups = [];
 
       for (const r of id1Rows) {
@@ -1234,7 +1173,7 @@
             <label class="form-label">Rack</label>
             <input class="form-control mb-2" value="${row.Rack}" disabled>
 
-            <label class="form-label fw-bold" style="color:#f59e0b;">
+            <label class="form-label fw-bold text-secondary">
               Sum of Qty (Editable)
             </label>
             <input id="editSumQty"
@@ -1288,7 +1227,7 @@
           }
 
           Swal.fire("✅ สำเร็จ", "อัปเดต Sum of Qty แล้ว", "success");
-          searchData(); // refresh ตาราง
+          searchData();
 
         } catch (err) {
           Swal.fire("❌ Error", "เชื่อมต่อ backend ไม่สำเร็จ", "error");
