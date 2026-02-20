@@ -153,38 +153,17 @@
   .btn-mainmenu:hover{
     border-color: rgba(226,232,240,.45);
   }
-    
-
-  /* Match Powder Inventory green tone */
-  .navbar {
-    background: linear-gradient(136deg, #129266, #0f7250) !important;
-    color: white !important;
-  }
-
-  .sidebar {
-    background: linear-gradient(136deg, #129266, #0f7250) !important;
-    color: white !important;
-  }
-
-  /* ===== UI Polish v2 ===== */
-  :root {
-    --ui-green-1: #129266;
-    --ui-green-2: #0f7250;
-    --ui-green-3: #0c5f43;
-    --ui-bg: #edf2f5;
-    --ui-ink: #102030;
-    --ui-soft: #6b7b8c;
-  }
-
+  /* ===== Final UI Theme (clean) ===== */
   body {
-    background: radial-gradient(circle at 14% 8%, #f7fcf9 0%, #edf2f5 46%, #e8eef2 100%);
-    color: var(--ui-ink);
+    background: radial-gradient(circle at 14% 8%, #f3f7fb 0%, #edf2f7 52%, #e8eef4 100%);
+    color: #102030;
   }
 
   .navbar {
     min-height: 64px;
-    background: linear-gradient(135deg, var(--ui-green-1), var(--ui-green-2)) !important;
-    box-shadow: 0 10px 24px rgba(8, 52, 36, 0.24);
+    background: linear-gradient(135deg, #0c5f43, #084a35) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(8, 52, 36, 0.28);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   }
 
@@ -210,8 +189,10 @@
     top: 64px;
     height: calc(100vh - 64px);
     padding: 16px;
-    background: linear-gradient(165deg, var(--ui-green-1), var(--ui-green-2)) !important;
-    box-shadow: 10px 0 24px rgba(9, 50, 36, 0.2);
+    background: linear-gradient(135deg, #129266, #0f7250) !important;
+    color: #ffffff !important;
+    box-shadow: 10px 0 24px rgba(9, 50, 36, 0.24);
+    font-size: 13px;
   }
 
   .content {
@@ -232,27 +213,35 @@
     margin-bottom: 14px;
   }
 
-  .nav-tabs .nav-link {
+  .sidebar .nav-tabs .nav-link {
     border-radius: 10px;
     color: #e8fff5;
     font-weight: 600;
     border: 1px solid transparent;
+    font-size: 12px;
   }
 
-  .nav-tabs .nav-link.active {
-    background: rgba(10, 84, 59, 0.95) !important;
-    box-shadow: inset 0 0 0 1px rgba(192, 255, 227, 0.35), 0 6px 12px rgba(0, 0, 0, 0.16);
+  .sidebar .nav-tabs .nav-link.active {
+    background: #0c5f43 !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25), 0 6px 12px rgba(0,0,0,0.16);
   }
 
-  .collapse-content {
+  .sidebar .nav-tabs .nav-link:hover {
+    background: #129266 !important;
+    color: #ffffff !important;
+  }
+
+  .sidebar .collapse-content {
     border-radius: 14px;
-    background: rgba(8, 66, 47, 0.9) !important;
-    border: 1px solid rgba(180, 255, 222, 0.22);
+    background: #0c5f43 !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
     padding: 14px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
   }
 
-  .collapse-content label {
+  .sidebar label {
+    font-size: 12px;
     font-weight: 600;
     color: #ebfff6;
     margin-bottom: 6px;
@@ -260,8 +249,9 @@
 
   .sidebar .form-control {
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    border: 1px solid rgba(255,255,255,0.28);
     box-shadow: none;
+    font-size: 12px;
   }
 
   .sidebar .form-control:focus {
@@ -272,6 +262,9 @@
   .sidebar .btn {
     border-radius: 10px;
     font-weight: 600;
+    font-size: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
     transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
   }
 
@@ -281,9 +274,19 @@
     filter: brightness(1.04);
   }
 
+  .sidebar button[onclick="exportExcel()"] {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #ffffff !important;
+    border: none !important;
+  }
+
+  .sidebar button[onclick="exportExcel()"]:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fbbf24, #ea8a00) !important;
+  }
+
   .table-responsive {
     background: #ffffff;
-    border: 1px solid #dbe5ec;
+    border: 1px solid #dbe5ef;
     border-radius: 14px;
     box-shadow: 0 8px 18px rgba(18, 33, 48, 0.08);
     padding: 8px;
@@ -294,13 +297,39 @@
   }
 
   .table-dark {
-    --bs-table-bg: #144733;
-    --bs-table-striped-bg: #174e38;
+    --bs-table-bg: #0f7250;
+    --bs-table-striped-bg: #0c5f43;
     --bs-table-striped-color: #ffffff;
+    --bs-table-color: #ffffff;
+  }
+
+  .table thead th {
+    border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .table thead th:last-child {
+    border-right: none !important;
   }
 
   .table tbody tr:hover {
     background-color: #f1fbf6;
+  }
+
+  #searchTable button.btn-outline-primary[onclick^="openEditSumQty"] {
+    font-size: 11px;
+    padding: 2px 8px;
+    line-height: 1.2;
+    border-radius: 8px;
+    color: #0c5f43 !important;
+    border-color: #0c5f43 !important;
+  }
+
+  #searchTable button.btn-outline-primary[onclick^="openEditSumQty"]:hover {
+    background: #0c5f43 !important;
+    border-color: #0c5f43 !important;
+    color: #ffffff !important;
   }
 
   .summary-grid {
@@ -325,63 +354,6 @@
   .summary-value {
     font-size: 20px;
     font-weight: 700;
-  }
-
-  /* Sidebar font size reduce */
-  .sidebar {
-    font-size: 13px;
-  }
-
-  .sidebar .nav-tabs .nav-link {
-    font-size: 12px;
-  }
-
-  .sidebar label {
-    font-size: 12px;
-  }
-
-  .sidebar .form-control {
-    font-size: 12px;
-  }
-
-  .sidebar .btn {
-    font-size: 12px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
-
-  /* Export Excel button color */
-  .sidebar button[onclick="exportExcel()"] {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    color: #ffffff !important;
-    border: none !important;
-  }
-
-  .sidebar button[onclick="exportExcel()"]:hover:not(:disabled) {
-    background: linear-gradient(135deg, #fbbf24, #ea8a00) !important;
-  }
-
-  /* Smaller Edit button in search table */
-  #searchTable button.btn-outline-primary[onclick^="openEditSumQty"] {
-    font-size: 11px;
-    padding: 2px 8px;
-    line-height: 1.2;
-    border-radius: 8px;
-  }
-
-  /* Header column separators */
-  .table thead th {
-    border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
-  }
-
-  .table thead th:last-child {
-    border-right: none !important;
-  }
-
-  /* Center header text */
-  .table thead th {
-    text-align: center;
-    vertical-align: middle;
   }
 </style>
 </head>
@@ -1640,10 +1612,3 @@ function filterByCard(type, el) {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
