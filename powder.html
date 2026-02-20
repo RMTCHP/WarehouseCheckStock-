@@ -10,24 +10,31 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    /* ===================== THEME (GRAY) ===================== */
+    /* ===================== THEME (Serene Nature Tones) ===================== */
     :root{
-      --bg: #f3f4f6;        /* page background */
-      --nav: #111827;       /* top navbar */
-      --side: #111827;      /* sidebar */
-      --side2:#0b1220;      /* inner panels */
-      --text: #111827;
-      --muted:#9ca3af;
-      --tabHover: rgba(255,255,255,.08);
-      --tabActive: rgba(255,255,255,.14);
-      --border: rgba(255,255,255,.12);
+      --bg: #f3f6f1;           /* misty sage background */
+      --surface: #ffffff;
+      --surface2: #eef3ea;     /* soft leaf */
+      --nav: #1f3b2c;          /* deep forest */
+      --side: #234334;         /* forest */
+      --side2:#1b3528;         /* darker forest panel */
+      --text: #1f2937;
+      --muted:#6b7280;
+
+      --border: rgba(255,255,255,.14);
+      --border2: rgba(15,23,42,.08);
+
+      --accent: #4f8a5b;       /* sage green */
+      --accent2:#7aa77e;       /* lighter sage */
+      --warn: #b0894f;         /* earthy amber */
+      --danger:#b45309;        /* warm earth */
     }
 
     body { overflow-x: hidden; background-color: var(--bg); }
 
     /* Top Navbar */
     .navbar { background: var(--nav); color: white; }
-    .navbar-time { font-size: 16px; color: #e5e7eb; font-weight: 500; }
+    .navbar-time { font-size: 16px; color: rgba(255,255,255,.82); font-weight: 600; }
 
     /* Sidebar */
     .sidebar {
@@ -35,72 +42,113 @@
       position: fixed; left: 0; top: 56px;
       background: var(--side); color: white; padding: 15px;
       overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
     }
 
     .content { margin-left: 260px; padding: 80px 30px; transition: all 0.3s ease; }
     .progress { height: 22px; margin-top: 10px; display: none; }
     table { font-size: 14px; }
 
-    /* 🎨 Tabs */
-    .nav-tabs { border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+    /* Tabs */
+    .nav-tabs { border-bottom: 1px solid rgba(255,255,255,.18); margin-bottom: 15px; }
     .nav-tabs .nav-link {
-      color: #e5e7eb; border: none; border-radius: 0; background: transparent;
-      transition: background .15s ease, color .15s ease;
-    }
-    .nav-tabs .nav-link.active {
-      background-color: var(--tabActive); color: #ffffff; font-weight: 700;
+      color: rgba(255,255,255,.88);
+      border: none; border-radius: 10px;
+      background: transparent;
+      transition: background .15s ease, transform .15s ease, color .15s ease;
+      padding: .55rem .75rem;
     }
     .nav-tabs .nav-link:hover {
-      background-color: var(--tabHover); color: #fff;
+      background: rgba(255,255,255,.08);
+      transform: translateY(-1px);
+      color:#fff;
+    }
+    .nav-tabs .nav-link.active {
+      background: rgba(255,255,255,.14);
+      color: #ffffff;
+      font-weight: 800;
     }
 
     .collapse-content {
-      background-color: var(--side2);
-      border: 1px solid var(--border);
-      border-radius: 10px; padding: 10px; margin-bottom: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px; padding: 12px; margin-bottom: 10px;
+      backdrop-filter: blur(6px);
     }
 
-    /* ให้ input ใน sidebar อ่านง่าย */
-    .sidebar label{ color:#e5e7eb; }
+    /* Sidebar form controls */
+    .sidebar label{ color: rgba(255,255,255,.9); font-weight: 600; }
     .sidebar .form-control{
-      background:#0f172a;
-      border:1px solid rgba(255,255,255,.14);
-      color:#e5e7eb;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.92);
     }
-    .sidebar .form-control::placeholder{ color: rgba(229,231,235,.55); }
+    .sidebar .form-control:focus{
+      box-shadow: 0 0 0 3px rgba(79,138,91,.25);
+      border-color: rgba(122,167,126,.55);
+    }
+    .sidebar .form-control::placeholder{ color: rgba(255,255,255,.55); }
 
-    /* Buttons (Gray theme) */
+    /* Buttons (Nature) */
     .btn-primary{
-      background-color:#334155; border-color:#334155; color:#fff; font-weight:700;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 800;
     }
-    .btn-primary:hover{ filter:brightness(.95); }
+    .btn-primary:hover{ filter: brightness(.95); }
+    .btn-secondary{
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.18);
+      color: #fff;
+      font-weight: 800;
+    }
+    .btn-secondary:hover{ background: rgba(255,255,255,.18); }
     .btn-success{
-      background-color:#16a34a; border-color:#16a34a; font-weight:700;
+      background: #2f7d4a;
+      border-color: #2f7d4a;
+      font-weight: 800;
     }
     .btn-outline-success{
-      border-color:#16a34a; color:#16a34a; font-weight:700;
+      border-color: #2f7d4a;
+      color: #2f7d4a;
+      font-weight: 800;
+      background: #ffffff;
     }
-    .btn-outline-success:hover{
-      background-color:#16a34a; color:#fff;
+    .btn-outline-success:hover{ background:#2f7d4a; color:#fff; }
+    .btn-danger{
+      background:#9a3412;
+      border-color:#9a3412;
+      font-weight: 800;
     }
 
-    /* กลุ่ม */
+    /* Table accents */
     .table-group {
-      background-color: #e5e7eb !important;
-      color: #111827; font-weight: 700; border-top: 2px solid #cbd5e1;
+      background-color: #e7efe2 !important;
+      color: #1f3b2c;
+      font-weight: 800;
+      border-top: 2px solid #cfe0c4;
     }
+    .rack-header td{
+      background: #eaf2e4 !important;
+      color: #1f3b2c;
+    }
+    .table-detail:hover { background-color: #f0f5ee; }
 
-    .table-detail:hover { background-color: #f1f5f9; }
-
-    /* ✅ Delta */
+    /* Delta */
     .delta-positive {
-      color: #15803d !important; background-color: #dcfce7 !important; font-weight: 600;
+      color: #14532d !important;
+      background-color: #dcfce7 !important;
+      font-weight: 800;
     }
     .delta-negative {
-      color: #b91c1c !important; background-color: #fee2e2 !important; font-weight: 600;
+      color: #7f1d1d !important;
+      background-color: #fee2e2 !important;
+      font-weight: 800;
     }
     .delta-zero {
-      color: #334155 !important; background-color: #f1f5f9 !important; font-weight: 500;
+      color: #334155 !important;
+      background-color: #f1f5f9 !important;
+      font-weight: 600;
     }
 
     .arrow {
@@ -111,20 +159,11 @@
       width: 12px;
     }
 
-    /* เพิ่มความกว้าง popup เป็น 700px */
-    .swal-wide {
-      width: 700px !important;
-      max-width: 90% !important;
-    }
+    /* SweetAlert sizing */
+    .swal-wide { width: 700px !important; max-width: 90% !important; }
+    .swal2-html-container { text-align: left !important; max-height: 60vh; overflow-y: auto; }
 
-    /* เพิ่มความสูง popup เป็น auto + scroll เมื่อข้อความเยอะ */
-    .swal2-html-container {
-      text-align: left !important;
-      max-height: 60vh;
-      overflow-y: auto;
-    }
-
-    /* 🌟 Summary Dashboard Cards */
+    /* Summary Cards */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -134,55 +173,57 @@
 
     .summary-card {
       padding: 18px;
-      border-radius: 12px;
-      background: white;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: 0 10px 26px rgba(31,59,44,.10);
       cursor: pointer;
       border-left: 6px solid transparent;
       transition: transform .15s ease, box-shadow .15s ease;
     }
 
-    /* 🎨 Color Themes (คงเดิมตามระบบเดิม) */
+    /* Serene Nature variants (แทนของเดิม) */
     .card-blue {
-      background: linear-gradient(145deg, #e3f2fd, #bbdefb);
-      border-left-color: #2196f3 !important;
+      background: linear-gradient(145deg, #edf6f0, #dbeee2);   /* mint sage */
+      border-left-color: #4f8a5b !important;
     }
     .card-gray {
-      background: linear-gradient(145deg, #f0f0f0, #dcdcdc);
-      border-left-color: #757575 !important;
+      background: linear-gradient(145deg, #f5f3ee, #e9e3d8);   /* sand */
+      border-left-color: #9a8f7a !important;
     }
     .card-green {
-      background: linear-gradient(145deg, #e8f5e9, #c8e6c9);
-      border-left-color: #43a047 !important;
+      background: linear-gradient(145deg, #e9f7ee, #d2f0df);   /* fresh leaf */
+      border-left-color: #2f7d4a !important;
     }
     .card-red {
-      background: linear-gradient(145deg, #ffebee, #ffcdd2);
-      border-left-color: #e53935 !important;
+      background: linear-gradient(145deg, #fff1e8, #ffe2d1);   /* terracotta soft */
+      border-left-color: #9a3412 !important;
     }
     .card-orange {
-      background: linear-gradient(145deg, #fff3e0, #ffe0b2);
-      border-left-color: #fb8c00 !important;
+      background: linear-gradient(145deg, #fff7e6, #ffe9bf);   /* warm sun */
+      border-left-color: #b0894f !important;
     }
 
     .summary-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+      box-shadow: 0 14px 32px rgba(31,59,44,.14);
     }
 
     .summary-card.active {
-      box-shadow: 0 0 0 2px #334155 inset; /* gray accent */
+      box-shadow: 0 0 0 2px rgba(79,138,91,.9) inset;
     }
 
     .summary-title {
       font-size: 15px;
-      font-weight: 600;
-      color: #475569;
+      font-weight: 800;
+      color: #1f3b2c;
+      opacity: .92;
     }
 
     .summary-value {
       font-size: 26px;
-      font-weight: bold;
+      font-weight: 900;
       margin-top: 5px;
+      color: #0f172a;
     }
   </style>
 </head>
@@ -257,33 +298,28 @@
 
     <div id="summaryBox" style="display:none;">
       <div class="summary-grid">
-        <!-- Total -->
         <div class="summary-card card-blue" id="cardTotal" onclick="filterByCard('ALL', this)">
-          <div class="summary-title">🔵 Total Records</div>
+          <div class="summary-title">🌿 Total Records</div>
           <div class="summary-value" id="sumTotal">0</div>
         </div>
 
-        <!-- Check OK = GRAY -->
         <div class="summary-card card-gray" id="cardOK" onclick="filterByCard('OK', this)">
-          <div class="summary-title">⚪ Check OK</div>
+          <div class="summary-title">🪨 Check OK</div>
           <div class="summary-value" id="sumOK">0</div>
         </div>
 
-        <!-- Over = GREEN -->
         <div class="summary-card card-green" id="cardOver" onclick="filterByCard('OVER', this)">
-          <div class="summary-title">🟢 Over (▲)</div>
+          <div class="summary-title">🍃 Over (▲)</div>
           <div class="summary-value" id="sumOver">0</div>
         </div>
 
-        <!-- Under = RED -->
         <div class="summary-card card-red" id="cardUnder" onclick="filterByCard('UNDER', this)">
-          <div class="summary-title">🔴 Under (▼)</div>
+          <div class="summary-title">🍂 Under (▼)</div>
           <div class="summary-value" id="sumUnder">0</div>
         </div>
 
-        <!-- Not Checked = ORANGE -->
         <div class="summary-card card-orange" id="cardNotCheck" onclick="filterByCard('NOTCHECK', this)">
-          <div class="summary-title">🟠 Not Checked</div>
+          <div class="summary-title">🌤 Not Checked</div>
           <div class="summary-value" id="sumNotCheck">0</div>
         </div>
       </div>
@@ -317,7 +353,6 @@
   <div id="contentDelete" class="content" style="display:none;">
     <h4>🗑 Delete Data</h4>
 
-    <!-- 🔍 Search Filter -->
     <div class="row mb-3">
       <div class="col-md-4">
         <input type="text" id="delSearchCustomer" class="form-control"
@@ -359,9 +394,8 @@
     const scriptURL = "https://script.google.com/macros/s/AKfycbyEwqrF0QNHDpk47695B6s36DyHrTxAuFvSdafgf9wKU33o_KfE8c2m8Y1NomEVQ44u/exec";
     let allData = [];
     let deleteData = [];
-    let summaryGroups = {};  // key = File|Lot|RackNorm → { totalDelta, checked }
+    let summaryGroups = {};
 
-    // 🕒 เวลาไทย
     function convertToBangkokTime(utcString) {
       if (!utcString) return "";
       const date = new Date(utcString);
@@ -373,7 +407,6 @@
       }).replace(",", "");
     }
 
-    // 🕓 อัปเดตเวลา Navbar
     function updateDateTime() {
       const now = new Date();
       const formatted = now.toLocaleString('th-TH', {
@@ -406,19 +439,15 @@
       try {
         const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
         const rows = await res.json();
-
         Swal.close();
 
         const body = document.getElementById("deleteTableBody");
         body.innerHTML = "";
 
         const filtered = rows.filter(r => String(r.ID).trim() === "1");
-
         if (filtered.length === 0) {
           body.innerHTML = `
-            <tr>
-              <td colspan="5" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
-            </tr>
+            <tr><td colspan="5" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td></tr>
           `;
           return;
         }
@@ -449,11 +478,7 @@
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-        const rawRows = XLSX.utils.sheet_to_json(sheet, {
-          header: 1,
-          blankrows: true,
-          defval: ""
-        });
+        const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: true, defval: "" });
 
         for (let i = 0; i < rawRows.length; i++) {
           let row = rawRows[i];
@@ -462,10 +487,7 @@
             return Swal.fire({
               icon: "error",
               title: "จำนวนคอลัมน์ไม่ถูกต้อง",
-              html: `
-                ❌ แถวที่ <b>${i + 1}</b> มี <b>${row.length}</b> คอลัมน์<br>
-                ทุกแถวต้องมี <b>6 คอลัมน์</b> เท่านั้น
-              `
+              html: `❌ แถวที่ <b>${i + 1}</b> มี <b>${row.length}</b> คอลัมน์<br>ทุกแถวต้องมี <b>6 คอลัมน์</b> เท่านั้น`
             });
           }
 
@@ -477,10 +499,7 @@
               return Swal.fire({
                 icon: "warning",
                 title: "ข้อมูลไม่ครบถ้วน",
-                html: `
-                  ❌ แถวที่ <b>${i + 1}</b> คอลัมน์ที่ <b>${c + 1}</b> ว่าง<br>
-                  กรุณากรอกข้อมูลให้ครบทั้ง <b>6 คอลัมน์</b>
-                `
+                html: `❌ แถวที่ <b>${i + 1}</b> คอลัมน์ที่ <b>${c + 1}</b> ว่าง<br>กรุณากรอกข้อมูลให้ครบทั้ง <b>6 คอลัมน์</b>`
               });
             }
           }
@@ -488,30 +507,18 @@
 
         const expectedHeader = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"];
         const header = rawRows[0];
-
-        const isHeaderMismatch = header.some((val, i) => {
-          if (!val) return true;
-          return val.trim() !== expectedHeader[i];
-        });
+        const isHeaderMismatch = header.some((val, i) => (!val) || val.trim() !== expectedHeader[i]);
 
         if (isHeaderMismatch) {
           return Swal.fire({
             icon: "warning",
             title: "Header ไม่ตรงกับ Template",
-            html: `
-              ❌ กรุณาตรวจสอบว่า Header ต้องเป็น:<br>
-              <b>${expectedHeader.join(" | ")}</b><br><br>
-              และห้ามมีช่อง merge หรือ format พิเศษ
-            `
+            html: `❌ กรุณาตรวจสอบว่า Header ต้องเป็น:<br><b>${expectedHeader.join(" | ")}</b><br><br>และห้ามมีช่อง merge หรือ format พิเศษ`
           });
         }
 
         const fixedRows = rawRows
-          .map(r => {
-            if (r.length > 6) r = r.slice(0, 6);
-            while (r.length < 6) r.push("");
-            return r;
-          })
+          .map(r => { if (r.length > 6) r = r.slice(0, 6); while (r.length < 6) r.push(""); return r; })
           .filter(r => r.some(col => col !== ""));
 
         const payload = fixedRows.slice(1).map(r => ({
@@ -527,22 +534,13 @@
           const res = await fetch(scriptURL, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              page: "uploadData",
-              data: JSON.stringify(payload)
-            })
+            body: new URLSearchParams({ page: "uploadData", data: JSON.stringify(payload) })
           });
 
           const json = await res.json();
 
           if (!json.success) {
-            Swal.fire({
-              icon: "error",
-              title: "อัปโหลดไม่สำเร็จ",
-              html: json.message.replace(/\n/g, "<br>"),
-              customClass: "swal-wide"
-            });
-
+            Swal.fire({ icon: "error", title: "อัปโหลดไม่สำเร็จ", html: json.message.replace(/\n/g, "<br>"), customClass: "swal-wide" });
             progress.style.display = "none";
             bar.style.width = "0%";
             bar.innerText = "0%";
@@ -556,16 +554,12 @@
 
           Swal.fire("✅", json.message, "success").then(() => {
             document.getElementById("fileInput").value = "";
-
             uploadBtn.disabled = true;
             uploadBtn.style.opacity = "0.5";
             uploadBtn.style.cursor = "not-allowed";
-
             progress.style.display = "none";
-
             bar.style.width = "0%";
             bar.innerText = "0%";
-
             bar.classList.remove("bg-success");
             bar.classList.add("bg-info");
           });
@@ -590,16 +584,11 @@
 
       if (!confirm.isConfirmed) return;
 
-      Swal.fire({
-        title: "กำลังลบข้อมูล...",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
+      Swal.fire({ title: "กำลังลบข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
       try {
         const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
         const json = await res.json();
-
         Swal.close();
 
         if (!json.success) {
@@ -607,10 +596,7 @@
           return;
         }
 
-        Swal.fire("✔️ สำเร็จ", "ลบข้อมูลทั้งหมดเรียบร้อย", "success").then(() => {
-          showDeletePage();
-        });
-
+        Swal.fire("✔️ สำเร็จ", "ลบข้อมูลทั้งหมดเรียบร้อย", "success").then(() => showDeletePage());
       } catch (err) {
         Swal.fire("❌ Error", "เกิดข้อผิดพลาดระหว่างลบ", "error");
       }
@@ -639,20 +625,16 @@
         const filtered = data.filter(row => {
           const ts = row.Timestamp || "";
           const date = parseDate(ts);
-
           const customerMatch = !customer || (row.Customer || "").toLowerCase().includes(customer);
           const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
           const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
           const dateMatch = (!start || date >= start) && (!end || date <= end);
-
           return dateMatch && customerMatch && file5Match && lotMatch;
         });
 
         allData = filtered;
-
         renderGroupedTable(filtered);
         updateSummary(filtered);
-
       } catch (err) {
         console.error(err);
         Swal.fire("❌", "Error fetching data", "error");
@@ -673,10 +655,7 @@
       const match = rack.match(/\[(.*?)\]/);
       let clean = match ? match[1].trim() : rack.trim();
       clean = clean.replace(/\s+/g, "").toUpperCase();
-
-      if (clean === "PCCHPAREA" || clean === "PCCHPAREA".replace(/\s/g, "")) {
-        return "PCCHPAREA";
-      }
+      if (clean === "PCCHPAREA" || clean === "PCCHPAREA".replace(/\s/g, "")) return "PCCHPAREA";
       return clean;
     }
 
@@ -706,11 +685,7 @@
 
       if (!confirm.isConfirmed) return;
 
-      Swal.fire({
-        title: "กำลังลบ...",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
+      Swal.fire({ title: "กำลังลบ...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
       try {
         const res = await fetch(`${scriptURL}?page=adminDeleteGroup`, {
@@ -721,13 +696,10 @@
         const json = await res.json();
 
         if (json.success) {
-          Swal.fire("✔️ สำเร็จ", json.message, "success").then(() => {
-            showDeletePage();
-          });
+          Swal.fire("✔️ สำเร็จ", json.message, "success").then(() => showDeletePage());
         } else {
           Swal.fire("❌", json.message, "error");
         }
-
       } catch (err) {
         Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
       }
@@ -746,7 +718,6 @@
 
       const headersRaw = Object.keys(data[0]);
       const headers = headersRaw.filter(h => h !== "ID");
-
       if (!headers.includes("Edit")) headers.push("Edit");
 
       if (!headers.includes("Delta +/-")) {
@@ -768,19 +739,12 @@
         const groupRows = mainGroups[key];
         const [file, lot] = key.split("_");
 
-        const allEmptyGroup = groupRows.every(r =>
-          (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
-        );
-
-        const groupStatusText = allEmptyGroup
-          ? " - <span style='color:#b45309;'>ยังไม่ Check</span>"
-          : "";
+        const allEmptyGroup = groupRows.every(r => (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package));
+        const groupStatusText = allEmptyGroup ? " - <span style='color:#b45309;'>ยังไม่ Check</span>" : "";
 
         html += `
           <tr class="table-group">
-            <td colspan="${headers.length}">
-              📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
-            </td>
+            <td colspan="${headers.length}">📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}</td>
           </tr>
         `;
 
@@ -794,8 +758,8 @@
           const rows = rackGroups[rackNorm].slice().sort((a,b) => Number(a.ID) - Number(b.ID));
 
           html += `
-            <tr class="rack-header" style="background:#e2e8f0;">
-              <td colspan="${headers.length}" style="font-weight:bold;">
+            <tr class="rack-header">
+              <td colspan="${headers.length}" style="font-weight:800;">
                 <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
               </td>
             </tr>
@@ -867,7 +831,7 @@
             let className = rackTotal > 0 ? "delta-positive" : rackTotal < 0 ? "delta-negative" : "delta-zero";
 
             html += `
-              <tr class="rack-row" style="background:#f8fafc; font-weight:bold;">
+              <tr class="rack-row" style="background:#f6faf3; font-weight:900;">
                 <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
                 <td class="${className}">
                   ${rackTotal > 0 ? "▲ +" + rackTotal : rackTotal < 0 ? "▼ " + rackTotal : "0"}
@@ -886,29 +850,20 @@
       body.innerHTML = "";
 
       if (!list || list.length === 0) {
-        body.innerHTML = `
-          <tr>
-            <td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td>
-          </tr>
-        `;
+        body.innerHTML = `<tr><td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td></tr>`;
         return;
       }
 
       list.forEach(r => {
         const rackNorm = extractRack(r.Rack);
         const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
-
         body.innerHTML += `
           <tr>
             <td>${r.Customer}</td>
             <td>${r.File5digit}</td>
             <td>${r.Lot}</td>
             <td>${rackNorm}</td>
-            <td>
-              <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
-                ลบ
-              </button>
-            </td>
+            <td><button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">ลบ</button></td>
           </tr>
         `;
       });
@@ -955,7 +910,6 @@
 
       for (const key in mainGroups) {
         const groupRows = mainGroups[key];
-
         const rackGroups = {};
         groupRows.forEach(r => {
           const rackNorm = normalizeRack(r.Rack);
@@ -969,7 +923,6 @@
 
           rows.forEach(row => {
             const actQty = toNumLocal(row.Act_Qty);
-
             const notChecked = (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
 
             let delta = "";
@@ -992,9 +945,7 @@
               Act_Qty: row.Act_Qty || "",
               Act_Package: row.Act_Package || "",
               DeltaValue: delta === "" ? "" : delta,
-              "Delta +/-":
-                delta === "" ? "" :
-                (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
+              "Delta +/-": delta === "" ? "" : (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
               Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
             });
           });
@@ -1005,10 +956,7 @@
       const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
 
       ws["!cols"] = Object.keys(exportData[0]).map(key => ({
-        wch: Math.max(
-          key.length,
-          ...exportData.map(r => (r[key] ? r[key].toString().length : 0))
-        ) + 2
+        wch: Math.max(key.length, ...exportData.map(r => (r[key] ? r[key].toString().length : 0))) + 2
       }));
 
       const deltaColIndex = Object.keys(exportData[0]).indexOf("DeltaValue");
@@ -1024,19 +972,13 @@
               type: "cellIs",
               operator: "greaterThan",
               formula: ["0"],
-              style: {
-                fill: { patternType: "solid", fgColor: { rgb: "C6EFCE" } },
-                font: { color: { rgb: "006100" }, bold: true }
-              }
+              style: { fill: { patternType: "solid", fgColor: { rgb: "C6EFCE" } }, font: { color: { rgb: "006100" }, bold: true } }
             },
             {
               type: "cellIs",
               operator: "lessThan",
               formula: ["0"],
-              style: {
-                fill: { patternType: "solid", fgColor: { rgb: "FFC7CE" } },
-                font: { color: { rgb: "9C0006" }, bold: true }
-              }
+              style: { fill: { patternType: "solid", fgColor: { rgb: "FFC7CE" } }, font: { color: { rgb: "9C0006" }, bold: true } }
             }
           ]
         }
@@ -1058,7 +1000,6 @@
       Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
     }
 
-    // Tab switching
     document.getElementById("search-tab").addEventListener("click", () => {
       document.getElementById("contentSearch").style.display = "block";
       document.getElementById("contentUpload").style.display = "none";
@@ -1173,13 +1114,10 @@
             <label class="form-label">Rack</label>
             <input class="form-control mb-2" value="${row.Rack}" disabled>
 
-            <label class="form-label fw-bold text-secondary">
+            <label class="form-label fw-bold" style="color: var(--accent);">
               Sum of Qty (Editable)
             </label>
-            <input id="editSumQty"
-              type="number"
-              class="form-control"
-              value="${currentQty}">
+            <input id="editSumQty" type="number" class="form-control" value="${currentQty}">
           </div>
         `,
         showCancelButton: true,
@@ -1196,11 +1134,7 @@
       }).then(async (res) => {
         if (!res.isConfirmed) return;
 
-        Swal.fire({
-          title: "กำลังบันทึก...",
-          allowOutsideClick: false,
-          didOpen: () => Swal.showLoading()
-        });
+        Swal.fire({ title: "กำลังบันทึก...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
           const params = new URLSearchParams({
@@ -1241,10 +1175,7 @@
       document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
       if (el) el.classList.add("active");
 
-      if (type === "ALL") {
-        renderGroupedTable(allData);
-        return;
-      }
+      if (type === "ALL") { renderGroupedTable(allData); return; }
 
       const filtered = allData.filter(row => {
         const rackNorm = normalizeRack(row.Rack);
