@@ -3,21 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📦 FG Inventory data check (Admin)</title>
+  <title>🧪 Powder Inventory data check (Admin)</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    body { overflow-x: hidden; background-color: #f8fafc; }
-    .navbar { background: #1e293b; color: white; }
-    .navbar-time { font-size: 16px; color: #e2e8f0; font-weight: 500; }
+    /* ===================== THEME (Powder) ===================== */
+    body { overflow-x: hidden; background-color: #fff7ed; } /* warm powder bg */
 
+    /* Top Navbar */
+    .navbar { background: #3b2f2f; color: white; } /* deep brown */
+    .navbar-time { font-size: 16px; color: #fde68a; font-weight: 500; } /* amber */
+
+    /* Sidebar */
     .sidebar {
       width: 260px; height: 100vh;
       position: fixed; left: 0; top: 56px;
-      background: #1e293b; color: white; padding: 15px;
+      background: #2b2a33; color: white; padding: 15px; /* graphite */
       overflow-y: auto;
     }
 
@@ -26,26 +30,48 @@
     table { font-size: 14px; }
 
     /* 🎨 Tabs */
-    .nav-tabs { border-bottom: 1px solid #475569; margin-bottom: 15px; }
+    .nav-tabs { border-bottom: 1px solid rgba(255,255,255,.18); margin-bottom: 15px; }
     .nav-tabs .nav-link {
-      color: #cbd5e1; border: none; border-radius: 0; background: transparent;
+      color: #e5e7eb; border: none; border-radius: 0; background: transparent;
     }
     .nav-tabs .nav-link.active {
-      background-color: #334155; color: #ffffff; font-weight: 600;
+      background-color: rgba(245, 158, 11, .18);
+      color: #ffffff; font-weight: 700;
     }
     .nav-tabs .nav-link:hover {
-      background-color: #475569; color: #fff;
+      background-color: rgba(245, 158, 11, .28);
+      color: #fff;
     }
 
     .collapse-content {
-      background-color: #243043;
-      border-radius: 8px; padding: 10px; margin-bottom: 10px;
+      background-color: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 10px; padding: 10px; margin-bottom: 10px;
     }
+
+    /* Buttons (Powder theme) */
+    .btn-primary{
+      background-color:#f59e0b; border-color:#f59e0b; color:#111827;
+      font-weight:700;
+    }
+    .btn-primary:hover{ filter:brightness(.95); }
+
+    .btn-success{
+      background-color:#16a34a; border-color:#16a34a; font-weight:700;
+    }
+    .btn-outline-success{
+      border-color:#16a34a; color:#16a34a; font-weight:700;
+    }
+    .btn-outline-success:hover{
+      background-color:#16a34a; color:#fff;
+    }
+
+    /* =========================================================== */
 
     /* กลุ่ม */
     .table-group {
-      background-color: #dbeafe !important;
-      color: #1e3a8a; font-weight: 600; border-top: 2px solid #93c5fd;
+      background-color: #ffedd5 !important; /* powder tint */
+      color: #7c2d12; font-weight: 700; border-top: 2px solid #fdba74;
     }
 
     .table-detail:hover { background-color: #f1f5f9; }
@@ -60,89 +86,94 @@
     .delta-zero {
       color: #334155 !important; background-color: #f1f5f9 !important; font-weight: 500;
     }
-.arrow {
-  color: #6b7280; 
-  font-weight: bold;
-  padding-right: 6px;
-  display: inline-block;   /* <-- ตัวนี้คือคำตอบ */
-  width: 12px;             /* ช่วยให้ไอคอนนิ่ง */
-}
-/* เพิ่มความกว้าง popup เป็น 700px */
-.swal-wide {
-  width: 700px !important;
-  max-width: 90% !important;
-}
 
-/* เพิ่มความสูง popup เป็น auto + scroll เมื่อข้อความเยอะ */
-.swal2-html-container {
-  text-align: left !important;
-  max-height: 60vh;
-  overflow-y: auto;
-}
+    .arrow {
+      color: #6b7280;
+      font-weight: bold;
+      padding-right: 6px;
+      display: inline-block;
+      width: 12px;
+    }
+
+    /* เพิ่มความกว้าง popup เป็น 700px */
+    .swal-wide {
+      width: 700px !important;
+      max-width: 90% !important;
+    }
+
+    /* เพิ่มความสูง popup เป็น auto + scroll เมื่อข้อความเยอะ */
+    .swal2-html-container {
+      text-align: left !important;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
     /* 🌟 Summary Dashboard Cards */
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
-}
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
 
-.summary-card {
-  padding: 18px;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  cursor: pointer;
-  border-left: 6px solid transparent;   /* default = transparent */
-}
+    .summary-card {
+      padding: 18px;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      cursor: pointer;
+      border-left: 6px solid transparent;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
 
-/* 🎨 Color Themes */
-.card-blue {
-  background: linear-gradient(145deg, #e3f2fd, #bbdefb);
-  border-left-color: #2196f3 !important;
-}
-.card-gray {
-  background: linear-gradient(145deg, #f0f0f0, #dcdcdc);
-  border-left-color: #757575 !important;
-}
-.card-green {
-  background: linear-gradient(145deg, #e8f5e9, #c8e6c9);
-  border-left-color: #43a047 !important;
-}
-.card-red {
-  background: linear-gradient(145deg, #ffebee, #ffcdd2);
-  border-left-color: #e53935 !important;
-}
-.card-orange {
-  background: linear-gradient(145deg, #fff3e0, #ffe0b2);
-  border-left-color: #fb8c00 !important;
-}
+    /* 🎨 Color Themes */
+    .card-blue {
+      background: linear-gradient(145deg, #e3f2fd, #bbdefb);
+      border-left-color: #2196f3 !important;
+    }
+    .card-gray {
+      background: linear-gradient(145deg, #f0f0f0, #dcdcdc);
+      border-left-color: #757575 !important;
+    }
+    .card-green {
+      background: linear-gradient(145deg, #e8f5e9, #c8e6c9);
+      border-left-color: #43a047 !important;
+    }
+    .card-red {
+      background: linear-gradient(145deg, #ffebee, #ffcdd2);
+      border-left-color: #e53935 !important;
+    }
+    .card-orange {
+      background: linear-gradient(145deg, #fff3e0, #ffe0b2);
+      border-left-color: #fb8c00 !important;
+    }
 
-.summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-}
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    }
 
-.summary-card.active {
-  box-shadow: 0 0 0 2px #3b82f6 inset;
-}
-.summary-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #475569;
-}
+    .summary-card.active {
+      box-shadow: 0 0 0 2px #f59e0b inset; /* powder accent */
+    }
 
-.summary-value {
-  font-size: 26px;
-  font-weight: bold;
-  margin-top: 5px;
-}
+    .summary-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #475569;
+    }
 
-</style>
+    .summary-value {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+  </style>
 </head>
+
 <body>
   <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
-    <span class="navbar-brand h4 mb-0">📦 FG Inventory data check (Admin)</span>
+    <span class="navbar-brand h4 mb-0">🧪 Powder Inventory data check (Admin)</span>
     <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
   </nav>
 
@@ -161,21 +192,20 @@
       <!-- 🔍 Search Tab -->
       <div class="tab-pane fade show active" id="searchTab" role="tabpanel">
         <div class="collapse-content">
-<label>Start Date</label>
-<input type="date" id="startDate" class="form-control mb-2">
+          <label>Start Date</label>
+          <input type="date" id="startDate" class="form-control mb-2">
 
-<label>End Date</label>
-<input type="date" id="endDate" class="form-control mb-3">
+          <label>End Date</label>
+          <input type="date" id="endDate" class="form-control mb-3">
 
-<label>Customer</label>
-<input type="text" id="searchCustomer" class="form-control mb-3" placeholder="เช่น KKFT">
+          <label>Customer</label>
+          <input type="text" id="searchCustomer" class="form-control mb-3" placeholder="เช่น KKFT">
 
-<label>File5digit</label>
-<input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
+          <label>File5digit</label>
+          <input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
 
-<label>Lot</label>
-<input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
-
+          <label>Lot</label>
+          <input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
 
           <button class="btn btn-primary w-100 mb-2" onclick="searchData()">Search</button>
           <button class="btn btn-secondary w-100 mb-2" onclick="clearFilters()">Clear Filter</button>
@@ -187,1203 +217,1111 @@
       <div class="tab-pane fade" id="uploadTab" role="tabpanel">
         <div class="collapse-content">
           <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
-          <button id="uploadBtn" class="btn btn-success w-100 mb-2" 
-        onclick="uploadToSheet()" disabled style="opacity:0.5; cursor:not-allowed;">
-  Upload to Database
-</button>
+          <button id="uploadBtn" class="btn btn-success w-100 mb-2"
+                  onclick="uploadToSheet()" disabled style="opacity:0.5; cursor:not-allowed;">
+            Upload to Database
+          </button>
 
           <div class="progress">
-            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div>
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                 role="progressbar" style="width:0%">0%</div>
           </div>
-<button class="btn btn-danger w-100 mt-3" onclick="showDeletePage()">
-Delete Data</button>
 
-
+          <button class="btn btn-danger w-100 mt-3" onclick="showDeletePage()">
+            Delete Data
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-<!-- ===================== CONTENT: SEARCH ===================== -->
-<div id="contentSearch" class="content">
-  <h4>🔍 Search Result</h4>
-<div id="summaryBox" style="display:none;">
-  <div class="summary-grid">
+  <!-- ===================== CONTENT: SEARCH ===================== -->
+  <div id="contentSearch" class="content">
+    <h4>🔍 Search Result</h4>
 
-<!-- Total -->
-<div class="summary-card card-blue" id="cardTotal"
-     onclick="filterByCard('ALL', this)">
-  <div class="summary-title">🔵 Total Records</div>
-  <div class="summary-value" id="sumTotal">0</div>
-</div>
+    <div id="summaryBox" style="display:none;">
+      <div class="summary-grid">
+        <!-- Total -->
+        <div class="summary-card card-blue" id="cardTotal" onclick="filterByCard('ALL', this)">
+          <div class="summary-title">🔵 Total Records</div>
+          <div class="summary-value" id="sumTotal">0</div>
+        </div>
 
-<!-- Check OK = GRAY -->
-<div class="summary-card card-gray" id="cardOK"
-     onclick="filterByCard('OK', this)">
-  <div class="summary-title">⚪ Check OK</div>
-  <div class="summary-value" id="sumOK">0</div>
-</div>
+        <!-- Check OK = GRAY -->
+        <div class="summary-card card-gray" id="cardOK" onclick="filterByCard('OK', this)">
+          <div class="summary-title">⚪ Check OK</div>
+          <div class="summary-value" id="sumOK">0</div>
+        </div>
 
-<!-- Over = GREEN -->
-<div class="summary-card card-green" id="cardOver"
-     onclick="filterByCard('OVER', this)">
-  <div class="summary-title">🟢 Over (▲)</div>
-  <div class="summary-value" id="sumOver">0</div>
-</div>
+        <!-- Over = GREEN -->
+        <div class="summary-card card-green" id="cardOver" onclick="filterByCard('OVER', this)">
+          <div class="summary-title">🟢 Over (▲)</div>
+          <div class="summary-value" id="sumOver">0</div>
+        </div>
 
-<!-- Under = RED -->
-<div class="summary-card card-red" id="cardUnder"
-     onclick="filterByCard('UNDER', this)">
-  <div class="summary-title">🔴 Under (▼)</div>
-  <div class="summary-value" id="sumUnder">0</div>
-</div>
+        <!-- Under = RED -->
+        <div class="summary-card card-red" id="cardUnder" onclick="filterByCard('UNDER', this)">
+          <div class="summary-title">🔴 Under (▼)</div>
+          <div class="summary-value" id="sumUnder">0</div>
+        </div>
 
-<!-- Not Checked = ORANGE -->
-<div class="summary-card card-orange" id="cardNotCheck"
-     onclick="filterByCard('NOTCHECK', this)">
-  <div class="summary-title">🟠 Not Checked</div>
-  <div class="summary-value" id="sumNotCheck">0</div>
-</div>
+        <!-- Not Checked = ORANGE -->
+        <div class="summary-card card-orange" id="cardNotCheck" onclick="filterByCard('NOTCHECK', this)">
+          <div class="summary-title">🟠 Not Checked</div>
+          <div class="summary-value" id="sumNotCheck">0</div>
+        </div>
+      </div>
+    </div>
 
-
-  </div>
-</div>
-
-  <div class="table-responsive mt-3">
-    <table class="table table-striped" id="searchTable">
-      <thead class="table-dark"><tr id="searchTableHead"></tr></thead>
-      <tbody id="searchTableBody"></tbody>
-    </table>
-  </div>
-</div>   <!-- ✅ ต้องมี -->
-
-<!-- ===================== CONTENT: UPLOAD ===================== -->
-<div id="contentUpload" class="content" style="display:none;">
-  <h4>📤 Upload Result</h4>
-
-  <div id="uploadResultText" class="mt-3 text-secondary">
-    โปรดอัปโหลดไฟล์ Excel…
+    <div class="table-responsive mt-3">
+      <table class="table table-striped" id="searchTable">
+        <thead class="table-dark"><tr id="searchTableHead"></tr></thead>
+        <tbody id="searchTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-responsive mt-3">
-    <table class="table table-striped" id="uploadTable">
-      <thead class="table-dark"><tr id="uploadTableHead"></tr></thead>
-      <tbody id="uploadTableBody"></tbody>
-    </table>
-  </div>
-</div> <!-- ✅ ปิด contentUpload ให้ถูกต้อง -->
+  <!-- ===================== CONTENT: UPLOAD ===================== -->
+  <div id="contentUpload" class="content" style="display:none;">
+    <h4>📤 Upload Result</h4>
 
-<!-- ===================== CONTENT: DELETE ===================== -->
-<div id="contentDelete" class="content" style="display:none;">
-  <h4>🗑 Delete Data</h4>
-  <!-- 🔍 Search Filter -->
-<div class="row mb-3">
-  <div class="col-md-4">
-    <input type="text" id="delSearchCustomer" class="form-control"
-      placeholder="ค้นหา Customer…" oninput="filterDeleteTable()">
-  </div>
-  <div class="col-md-4">
-    <input type="text" id="delSearchFile" class="form-control"
-      placeholder="ค้นหา File…" oninput="filterDeleteTable()">
-  </div>
-  <div class="col-md-4">
-    <input type="text" id="delSearchLot" class="form-control"
-      placeholder="ค้นหา Lot…" oninput="filterDeleteTable()">
-  </div>
-</div>
+    <div id="uploadResultText" class="mt-3 text-secondary">
+      โปรดอัปโหลดไฟล์ Excel…
+    </div>
 
-  <div class="mb-2 text-end">
-    <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">Delete All</button>
+    <div class="table-responsive mt-3">
+      <table class="table table-striped" id="uploadTable">
+        <thead class="table-dark"><tr id="uploadTableHead"></tr></thead>
+        <tbody id="uploadTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-responsive mt-3">
-    <table class="table table-striped" id="deleteTable">
-<thead class="table-dark">
-  <tr>
-    <th>Customer</th>
-    <th>File</th>
-    <th>Lot</th>
-    <th>Rack</th>
-    <th>Delete</th>
-  </tr>
-</thead>
-      <tbody id="deleteTableBody"></tbody>
-    </table>
+  <!-- ===================== CONTENT: DELETE ===================== -->
+  <div id="contentDelete" class="content" style="display:none;">
+    <h4>🗑 Delete Data</h4>
+
+    <!-- 🔍 Search Filter -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <input type="text" id="delSearchCustomer" class="form-control"
+               placeholder="ค้นหา Customer…" oninput="filterDeleteTable()">
+      </div>
+      <div class="col-md-4">
+        <input type="text" id="delSearchFile" class="form-control"
+               placeholder="ค้นหา File…" oninput="filterDeleteTable()">
+      </div>
+      <div class="col-md-4">
+        <input type="text" id="delSearchLot" class="form-control"
+               placeholder="ค้นหา Lot…" oninput="filterDeleteTable()">
+      </div>
+    </div>
+
+    <div class="mb-2 text-end">
+      <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">Delete All</button>
+    </div>
+
+    <div class="table-responsive mt-3">
+      <table class="table table-striped" id="deleteTable">
+        <thead class="table-dark">
+          <tr>
+            <th>Customer</th>
+            <th>File</th>
+            <th>Lot</th>
+            <th>Rack</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody id="deleteTableBody"></tbody>
+      </table>
+    </div>
   </div>
-</div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbyEwqrF0QNHDpk47695B6s36DyHrTxAuFvSdafgf9wKU33o_KfE8c2m8Y1NomEVQ44u/exec";
-  let allData = [];
-  let deleteData = [];
-  let summaryGroups = {};  // key = File|Lot|RackNorm → { totalDelta, checked }
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyEwqrF0QNHDpk47695B6s36DyHrTxAuFvSdafgf9wKU33o_KfE8c2m8Y1NomEVQ44u/exec";
+    let allData = [];
+    let deleteData = [];
+    let summaryGroups = {};  // key = File|Lot|RackNorm → { totalDelta, checked }
 
-  // 🕒 เวลาไทย
-  function convertToBangkokTime(utcString) {
-    if (!utcString) return "";
-    const date = new Date(utcString);
-    return date.toLocaleString("th-TH", {
-      timeZone: "Asia/Bangkok",
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      hour12: false
-    }).replace(",", "");
-  }
-
-  // 🕓 อัปเดตเวลา Navbar
-  function updateDateTime() {
-    const now = new Date();
-    const formatted = now.toLocaleString('th-TH', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-    document.getElementById('currentDateTime').textContent = formatted;
-  }
-  setInterval(updateDateTime, 1000); updateDateTime();
-
-function extractRack(rack) {
-  if (!rack) return "";
-  const match = String(rack).match(/\[(.*?)\]/);
-  let clean = match ? match[1] : rack;
-  return clean.trim().replace(/\s+/g, "").toUpperCase();
-}
-    
-async function showDeletePage() {
-
-    // 🟢 แสดง popup โหลดข้อมูล (เหมือนกดปุ่ม Search)
-  Swal.fire({
-    title: "กำลังค้นหาข้อมูล...",
-    text: "กรุณารอสักครู่",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  
-  document.getElementById("contentSearch").style.display = "none";
-  document.getElementById("contentUpload").style.display = "none";
-  document.getElementById("contentDelete").style.display = "block";
-
-  try {
-    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-    const rows = await res.json();
-// ปิด popup loading
-Swal.close();
-    
-    const body = document.getElementById("deleteTableBody");
-    body.innerHTML = "";
-
-    // 🟢 แสดงเฉพาะ ID = 1
-    const filtered = rows.filter(r => String(r.ID).trim() === "1");
-
-    if (filtered.length === 0) {
-      body.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
-        </tr>
-      `;
-      return;
+    // 🕒 เวลาไทย
+    function convertToBangkokTime(utcString) {
+      if (!utcString) return "";
+      const date = new Date(utcString);
+      return date.toLocaleString("th-TH", {
+        timeZone: "Asia/Bangkok",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hour12: false
+      }).replace(",", "");
     }
 
-deleteData = rows.filter(r => String(r.ID).trim() === "1");
-renderDeleteTable(deleteData);
+    // 🕓 อัปเดตเวลา Navbar
+    function updateDateTime() {
+      const now = new Date();
+      const formatted = now.toLocaleString('th-TH', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      document.getElementById('currentDateTime').textContent = formatted;
+    }
+    setInterval(updateDateTime, 1000); updateDateTime();
 
+    function extractRack(rack) {
+      if (!rack) return "";
+      const match = String(rack).match(/\[(.*?)\]/);
+      let clean = match ? match[1] : rack;
+      return clean.trim().replace(/\s+/g, "").toUpperCase();
+    }
 
+    async function showDeletePage() {
+      // 🟢 แสดง popup โหลดข้อมูล (เหมือนกดปุ่ม Search)
+      Swal.fire({
+        title: "กำลังค้นหาข้อมูล...",
+        text: "กรุณารอสักครู่",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
 
-  } catch (err) {
-    Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
-  }
-}
+      document.getElementById("contentSearch").style.display = "none";
+      document.getElementById("contentUpload").style.display = "none";
+      document.getElementById("contentDelete").style.display = "block";
 
-    
-// 📤 Upload Excel
-async function uploadToSheet() {
-  const file = document.getElementById("fileInput").files[0];
-  if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
+      try {
+        const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+        const rows = await res.json();
 
-  const progress = document.querySelector(".progress");
-  const bar = document.getElementById("progressBar");
-  progress.style.display = "block";
-  bar.style.width = "0%"; 
-  bar.innerText = "0%";
+        // ปิด popup loading
+        Swal.close();
 
-  Swal.fire({ title: "Uploading...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const body = document.getElementById("deleteTableBody");
+        body.innerHTML = "";
 
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        // 🟢 แสดงเฉพาะ ID = 1
+        const filtered = rows.filter(r => String(r.ID).trim() === "1");
 
-    const rawRows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      blankrows: true,
-      defval: ""
-    });
+        if (filtered.length === 0) {
+          body.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
+            </tr>
+          `;
+          return;
+        }
 
+        deleteData = rows.filter(r => String(r.ID).trim() === "1");
+        renderDeleteTable(deleteData);
 
-// -----------------------------------------------------
-// 📌 1)ตรวจสอบทุกแถว: ต้องมี 6 คอลัมน์ และทุกคอลัมน์ต้องไม่ว่าง
-// -----------------------------------------------------
+      } catch (err) {
+        Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
+      }
+    }
 
-for (let i = 0; i < rawRows.length; i++) {
-  let row = rawRows[i];
+    // 📤 Upload Excel
+    async function uploadToSheet() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
 
-  // จำนวนคอลัมน์ต้อง = 6 เสมอ (จะ normalize ทีหลัง)
-  if (row.length !== 6) {
-    return Swal.fire({
-      icon: "error",
-      title: "จำนวนคอลัมน์ไม่ถูกต้อง",
-      html: `
-        ❌ แถวที่ <b>${i + 1}</b> มี <b>${row.length}</b> คอลัมน์<br>
-        ทุกแถวต้องมี <b>6 คอลัมน์</b> เท่านั้น
-      `
-    });
-  }
+      const progress = document.querySelector(".progress");
+      const bar = document.getElementById("progressBar");
+      progress.style.display = "block";
+      bar.style.width = "0%";
+      bar.innerText = "0%";
 
-  // 🔍 เช็คว่าแถวนี้ว่างทั้งแถวหรือไม่
-  const isEmptyRow = row.every(col => String(col).trim() === "");
+      Swal.fire({ title: "Uploading...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  // ✅ ถ้าแถวว่างทั้งแถว → ข้าม ไม่ต้อง Error
-  if (isEmptyRow) {
-    continue;
-  }
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-  // ❌ ถ้าแถวไม่ว่างทั้งแถว แต่มีบางช่องว่าง → แจ้ง Error
-  for (let c = 0; c < 6; c++) {
-    if (String(row[c]).trim() === "") {
-      return Swal.fire({
+        const rawRows = XLSX.utils.sheet_to_json(sheet, {
+          header: 1,
+          blankrows: true,
+          defval: ""
+        });
+
+        // -----------------------------------------------------
+        // 📌 1)ตรวจสอบทุกแถว: ต้องมี 6 คอลัมน์ และทุกคอลัมน์ต้องไม่ว่าง
+        // -----------------------------------------------------
+        for (let i = 0; i < rawRows.length; i++) {
+          let row = rawRows[i];
+
+          // จำนวนคอลัมน์ต้อง = 6 เสมอ (จะ normalize ทีหลัง)
+          if (row.length !== 6) {
+            return Swal.fire({
+              icon: "error",
+              title: "จำนวนคอลัมน์ไม่ถูกต้อง",
+              html: `
+                ❌ แถวที่ <b>${i + 1}</b> มี <b>${row.length}</b> คอลัมน์<br>
+                ทุกแถวต้องมี <b>6 คอลัมน์</b> เท่านั้น
+              `
+            });
+          }
+
+          // 🔍 เช็คว่าแถวนี้ว่างทั้งแถวหรือไม่
+          const isEmptyRow = row.every(col => String(col).trim() === "");
+
+          // ✅ ถ้าแถวว่างทั้งแถว → ข้าม ไม่ต้อง Error
+          if (isEmptyRow) continue;
+
+          // ❌ ถ้าแถวไม่ว่างทั้งแถว แต่มีบางช่องว่าง → แจ้ง Error
+          for (let c = 0; c < 6; c++) {
+            if (String(row[c]).trim() === "") {
+              return Swal.fire({
+                icon: "warning",
+                title: "ข้อมูลไม่ครบถ้วน",
+                html: `
+                  ❌ แถวที่ <b>${i + 1}</b> คอลัมน์ที่ <b>${c + 1}</b> ว่าง<br>
+                  กรุณากรอกข้อมูลให้ครบทั้ง <b>6 คอลัมน์</b>
+                `
+              });
+            }
+          }
+        }
+
+        // -----------------------------------------------------
+        // 📌 2) ตรวจ Header ให้ตรงตาม Template
+        // -----------------------------------------------------
+        const expectedHeader = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"];
+        const header = rawRows[0];
+
+        const isHeaderMismatch = header.some((val, i) => {
+          if (!val) return true;
+          return val.trim() !== expectedHeader[i];
+        });
+
+        if (isHeaderMismatch) {
+          return Swal.fire({
+            icon: "warning",
+            title: "Header ไม่ตรงกับ Template",
+            html: `
+              ❌ กรุณาตรวจสอบว่า Header ต้องเป็น:<br>
+              <b>${expectedHeader.join(" | ")}</b><br><br>
+              และห้ามมีช่อง merge หรือ format พิเศษ
+            `
+          });
+        }
+
+        // -----------------------------------------------------
+        // 📌 3) Normalize → ลดคอลัมน์ให้เหลือ 6 และเติมให้ครบ
+        // -----------------------------------------------------
+        const fixedRows = rawRows
+          .map(r => {
+            if (r.length > 6) r = r.slice(0, 6);
+            while (r.length < 6) r.push("");
+            return r;
+          })
+          .filter(r => r.some(col => col !== ""));
+
+        // -----------------------------------------------------
+        // 📌 4) สร้าง Payload เพื่อส่งไปยัง Google Script
+        // -----------------------------------------------------
+        const payload = fixedRows.slice(1).map(r => ({
+          Customer: String(r[0]).trim(),
+          Name: String(r[1]).trim(),
+          File5digit: String(r[2]).trim(),
+          Lot: String(r[3]).trim(),
+          Rack: extractRack(r[4]),
+          SumOfQty: String(r[5]).trim()
+        }));
+
+        console.log("UPLOAD PAYLOAD:", payload);
+
+        try {
+          const res = await fetch(scriptURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              page: "uploadData",
+              data: JSON.stringify(payload)
+            })
+          });
+
+          const json = await res.json();
+
+          if (!json.success) {
+            Swal.fire({
+              icon: "error",
+              title: "อัปโหลดไม่สำเร็จ",
+              html: json.message.replace(/\n/g, "<br>"),
+              customClass: "swal-wide"
+            });
+
+            progress.style.display = "none";
+            bar.style.width = "0%";
+            bar.innerText = "0%";
+            return;
+          }
+
+          // ก่อนปิด Swal แสดง progress สุดท้าย
+          bar.style.width = "100%";
+          bar.innerText = "100%";
+          bar.classList.remove("bg-info");
+          bar.classList.add("bg-success");
+
+          Swal.fire("✅", json.message, "success").then(() => {
+            // 🟢 เคลียร์ไฟล์
+            document.getElementById("fileInput").value = "";
+
+            // ปิดปุ่ม upload
+            uploadBtn.disabled = true;
+            uploadBtn.style.opacity = "0.5";
+            uploadBtn.style.cursor = "not-allowed";
+
+            // 🟢 ซ่อน progress bar
+            progress.style.display = "none";
+
+            // 🟢 Reset progress bar
+            bar.style.width = "0%";
+            bar.innerText = "0%";
+
+            // 🟢 คืนสี progress bar รอบใหม่
+            bar.classList.remove("bg-success");
+            bar.classList.add("bg-info");
+          });
+
+        } catch (err) {
+          Swal.fire("❌", "Error uploading data", "error");
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    async function confirmDeleteAll() {
+      const confirm = await Swal.fire({
+        title: "⚠️ ลบข้อมูลทั้งหมด?",
+        text: "การลบนี้จะล้างข้อมูลทั้งหมดในฐานข้อมูล",
         icon: "warning",
-        title: "ข้อมูลไม่ครบถ้วน",
-        html: `
-          ❌ แถวที่ <b>${i + 1}</b> คอลัมน์ที่ <b>${c + 1}</b> ว่าง<br>
-          กรุณากรอกข้อมูลให้ครบทั้ง <b>6 คอลัมน์</b>
-        `
+        showCancelButton: true,
+        confirmButtonText: "ใช่, ลบทั้งหมด",
+        cancelButtonText: "ยกเลิก"
       });
-    }
-  }
-}
 
+      if (!confirm.isConfirmed) return;
 
-    // -----------------------------------------------------
-    // 📌 2) ตรวจ Header ให้ตรงตาม Template
-    // -----------------------------------------------------
-    const expectedHeader = [
-      "Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"
-    ];
-
-    const header = rawRows[0];
-
-    const isHeaderMismatch = header.some((val, i) => {
-      if (!val) return true;
-      return val.trim() !== expectedHeader[i];
-    });
-
-    if (isHeaderMismatch) {
-      return Swal.fire({
-        icon: "warning",
-        title: "Header ไม่ตรงกับ Template",
-        html: `
-          ❌ กรุณาตรวจสอบว่า Header ต้องเป็น:<br>
-          <b>${expectedHeader.join(" | ")}</b><br><br>
-          และห้ามมีช่อง merge หรือ format พิเศษ
-        `
+      Swal.fire({
+        title: "กำลังลบข้อมูล...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
       });
+
+      try {
+        const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
+        const json = await res.json();
+
+        Swal.close();
+
+        if (!json.success) {
+          Swal.fire("❌ Error", json.message, "error");
+          return;
+        }
+
+        Swal.fire("✔️ สำเร็จ", "ลบข้อมูลทั้งหมดเรียบร้อย", "success").then(() => {
+          showDeletePage();
+        });
+
+      } catch (err) {
+        Swal.fire("❌ Error", "เกิดข้อผิดพลาดระหว่างลบ", "error");
+      }
     }
 
-    // -----------------------------------------------------
-    // 📌 3) Normalize → ลดคอลัมน์ให้เหลือ 6 และเติมให้ครบ
-    // -----------------------------------------------------
-    const fixedRows = rawRows
-      .map(r => {
-        if (r.length > 6) r = r.slice(0, 6); 
-        while (r.length < 6) r.push("");
-        return r;
-      })
-      .filter(r => r.some(col => col !== ""));
+    async function searchData() {
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+      const customer = document.getElementById("searchCustomer").value.trim().toLowerCase();
+      const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
+      const lot = document.getElementById("searchLot").value.trim().toLowerCase();
 
-    // -----------------------------------------------------
-    // 📌 4) สร้าง Payload เพื่อส่งไปยัง Google Script
-    // -----------------------------------------------------
-const payload = fixedRows.slice(1).map(r => ({
-  Customer: String(r[0]).trim(),
-  Name: String(r[1]).trim(),
-  File5digit: String(r[2]).trim(),
-  Lot: String(r[3]).trim(),
-  Rack: extractRack(r[4]),  // ⬅️ ใช้ฟังก์ชันใหม่
-  SumOfQty: String(r[5]).trim()
-}));
+      Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+      try {
+        const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+        const data = await res.json();
+        Swal.close();
 
-    console.log("UPLOAD PAYLOAD:", payload);
+        const parseDate = ts => {
+          if (!ts) return "";
+          const [d, m, y] = ts.split(" ")[0].split("/");
+          return `${y}-${m}-${d}`;
+        };
 
-    try {
-const res = await fetch(scriptURL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/x-www-form-urlencoded"
-  },
-  body: new URLSearchParams({
-    page: "uploadData",
-    data: JSON.stringify(payload)
-  })
-});
+        const filtered = data.filter(row => {
+          const ts = row.Timestamp || "";
+          const date = parseDate(ts);
 
-      const json = await res.json();
+          const customerMatch = !customer || (row.Customer || "").toLowerCase().includes(customer);
+          const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+          const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
+          const dateMatch = (!start || date >= start) && (!end || date <= end);
 
-if (!json.success) {
-  Swal.fire({
-    icon: "error",
-    title: "อัปโหลดไม่สำเร็จ",
-    html: json.message.replace(/\n/g, "<br>"),
-    customClass: "swal-wide"
-  });
+          return dateMatch && customerMatch && file5Match && lotMatch;
+        });
 
-  progress.style.display = "none";
-  bar.style.width = "0%";
-  bar.innerText = "0%";
-  return;
-}
+        allData = filtered;
 
-// ก่อนปิด Swal แสดง progress สุดท้าย
-bar.style.width = "100%";
-bar.innerText = "100%";
-bar.classList.remove("bg-info");
-bar.classList.add("bg-success");
+        renderGroupedTable(filtered);
+        updateSummary(filtered);
 
-Swal.fire("✅", json.message, "success").then(() => {
-
-  // 🟢 เคลียร์ไฟล์
-  document.getElementById("fileInput").value = "";
-
-// ปิดปุ่ม upload
-uploadBtn.disabled = true;
-uploadBtn.style.opacity = "0.5";
-uploadBtn.style.cursor = "not-allowed";
-
-  // 🟢 ซ่อน progress bar
-  progress.style.display = "none";
-
-  // 🟢 Reset progress bar
-  bar.style.width = "0%";
-  bar.innerText = "0%";
-
-  // 🟢 คืนสี progress bar รอบใหม่
-  bar.classList.remove("bg-success");
-  bar.classList.add("bg-info");
-});
-
-
-    } catch (err) {
-      Swal.fire("❌", "Error uploading data", "error");
-    }
-  };
-
-  reader.readAsArrayBuffer(file);
-}
-
-
-
-async function confirmDeleteAll() {
-
-  const confirm = await Swal.fire({
-    title: "⚠️ ลบข้อมูลทั้งหมด?",
-    text: "การลบนี้จะล้างข้อมูลทั้งหมดในฐานข้อมูล",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "ใช่, ลบทั้งหมด",
-    cancelButtonText: "ยกเลิก"
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  Swal.fire({
-    title: "กำลังลบข้อมูล...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  try {
-    const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
-    const json = await res.json();
-
-    Swal.close();
-
-    if (!json.success) {
-      Swal.fire("❌ Error", json.message, "error");
-      return;
+      } catch (err) {
+        console.error(err);
+        Swal.fire("❌", "Error fetching data", "error");
+      }
     }
 
-    Swal.fire("✔️ สำเร็จ", "ลบข้อมูลทั้งหมดเรียบร้อย", "success").then(() => {
-      showDeletePage();   // ← โหลดตารางแบบใหม่ (ไม่มี popup)
-    });
-
-  } catch (err) {
-    Swal.fire("❌ Error", "เกิดข้อผิดพลาดระหว่างลบ", "error");
-  }
-}
-
-  async function searchData() {
-
-  const start = document.getElementById("startDate").value;
-  const end = document.getElementById("endDate").value;
-  const customer = document.getElementById("searchCustomer").value.trim().toLowerCase();
-  const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
-  const lot = document.getElementById("searchLot").value.trim().toLowerCase();
-
-  Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-  try {
-    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-    const data = await res.json();
-    Swal.close();
-
-    const parseDate = ts => {
-      if (!ts) return "";
-      const [d, m, y] = ts.split(" ")[0].split("/");
-      return `${y}-${m}-${d}`;
-    };
-
-    const filtered = data.filter(row => {
-      const ts = row.Timestamp || "";
-      const date = parseDate(ts);
-
-      const customerMatch =
-        !customer || (row.Customer || "").toLowerCase().includes(customer);
-
-      const file5Match =
-        !file5 || (row.File5digit || "").toLowerCase().includes(file5);
-
-      const lotMatch =
-        !lot || (row.Lot || "").toLowerCase().includes(lot);
-
-      const dateMatch =
-        (!start || date >= start) && (!end || date <= end);
-
-      return dateMatch && customerMatch && file5Match && lotMatch;
-    });
-
-    allData = filtered;
-
-    renderGroupedTable(filtered);
-    updateSummary(filtered);
-
-  } catch (err) {
-    console.error(err);
-    Swal.fire("❌", "Error fetching data", "error");
-  }
-}
-
-
-  // 🧹 Clear Filter
-  function clearFilters() {
-    document.getElementById("startDate").value = "";
-    document.getElementById("endDate").value = "";
-    document.getElementById("searchFile5").value = "";
-    document.getElementById("searchLot").value = "";
-    document.getElementById("searchCustomer").value = "";
-    Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
-  }
-
-function normalizeRack(rack) {
-  if (!rack) return "";
-
-  // ดึงค่าจาก [ ... ]
-  const match = rack.match(/\[(.*?)\]/);
-  let clean = match ? match[1].trim() : rack.trim();
-
-  // 🔥 แปลงชื่อ Rack ที่เขียนต่างกันให้เหมือนกัน
-  clean = clean.replace(/\s+/g, "").toUpperCase();
-
-  // กรณีพิเศษ: PC CHP Area = PCCHPAREA
-  if (clean === "PCCHPAREA" || clean === "PCCHPAREA".replace(/\s/g, "")) {
-    return "PCCHPAREA"; 
-  }
-
-  return clean;
-}
-
-
-// สำหรับแสดงผลใน UI
-function displayRack(rack) {
-  if (!rack) return "";
-
-  const match = rack.match(/\[(.*?)\]/);
-  let clean = match ? match[1].trim() : rack.trim();
-
-  // แสดงชื่อเดียวกัน
-  let normalized = clean.replace(/\s+/g, "").toUpperCase();
-
-  if (normalized === "PCCHPAREA") return "PCCHPAREA";
-
-  return clean;
-}
-
-
-    function toNum(v) {
-  if (v === undefined || v === null) return 0;
-  return Number(String(v).replace(/,/g, "")) || 0;
-}
-
-    
-async function deleteGroup(rowKey) {
-  const confirm = await Swal.fire({
-    title: "ลบข้อมูลนี้?",
-    text: "ระบบจะลบทุกแถวที่มี File + Lot + Rack เดียวกัน",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "ลบ",
-    cancelButtonText: "ยกเลิก"
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  Swal.fire({
-    title: "กำลังลบ...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  try {
-    const res = await fetch(`${scriptURL}?page=adminDeleteGroup`, {
-      method: "POST",
-      body: new URLSearchParams({ rowKey })
-    });
-
-    const json = await res.json();
-
-    if (json.success) {
-      Swal.fire("✔️ สำเร็จ", json.message, "success").then(() => {
-        showDeletePage();    // ← Refresh ตารางหลังลบเสร็จ
-      });
-    } else {
-      Swal.fire("❌", json.message, "error");
+    // 🧹 Clear Filter
+    function clearFilters() {
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+      document.getElementById("searchFile5").value = "";
+      document.getElementById("searchLot").value = "";
+      document.getElementById("searchCustomer").value = "";
+      Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
     }
 
-  } catch (err) {
-    Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
-  }
-}
+    function normalizeRack(rack) {
+      if (!rack) return "";
+      const match = rack.match(/\[(.*?)\]/);
+      let clean = match ? match[1].trim() : rack.trim();
+      clean = clean.replace(/\s+/g, "").toUpperCase();
 
+      if (clean === "PCCHPAREA" || clean === "PCCHPAREA".replace(/\s/g, "")) {
+        return "PCCHPAREA";
+      }
+      return clean;
+    }
 
     // สำหรับแสดงผลใน UI
-function renderGroupedTable(data) {
-const head = document.getElementById("searchTableHead");
-const body = document.getElementById("searchTableBody");
-
-
-  body.innerHTML = "";
-
-  if (!data || data.length === 0) {
-    head.innerHTML = "";
-    body.innerHTML = "<tr><td colspan='20' class='text-center text-muted'>No data found</td></tr>";
-    return;
-  }
-
-  const headersRaw = Object.keys(data[0]);
-  const headers = headersRaw.filter(h => h !== "ID");
-
-  // ➕ เพิ่ม Edit column
-if (!headers.includes("Edit")) {
-  headers.push("Edit");
-}
-
-
-  if (!headers.includes("Delta +/-")) {
-    const insertIndex = headers.indexOf("Act_Package") + 1;
-    headers.splice(insertIndex, 0, "Delta +/-");
-  }
-
-  // Render header
-  head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
-
-  // ⚡ HTML Buffer
-  let html = "";
-
-  // ⚡ GROUP 1: File + Lot
-  const mainGroups = {};
-  for (const row of data) {
-    const key = row.File5digit + "_" + row.Lot;
-    (mainGroups[key] ||= []).push(row);
-  }
-
-  for (const key in mainGroups) {
-    const groupRows = mainGroups[key];
-    const [file, lot] = key.split("_");
-
-    const allEmptyGroup = groupRows.every(r =>
-      (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
-    );
-
-    const groupStatusText = allEmptyGroup
-      ? " - <span style='color:#b45309;'>ยังไม่ Check</span>"
-      : "";
-
-    html += `
-      <tr class="table-group">
-        <td colspan="${headers.length}">
-          📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
-        </td>
-      </tr>
-    `;
-
-    // ⚡ GROUP 2: Rack
-    const rackGroups = {};
-    for (const r of groupRows) {
-      const norm = normalizeRack(r.Rack);
-      (rackGroups[norm] ||= []).push(r);
+    function displayRack(rack) {
+      if (!rack) return "";
+      const match = rack.match(/\[(.*?)\]/);
+      let clean = match ? match[1].trim() : rack.trim();
+      let normalized = clean.replace(/\s+/g, "").toUpperCase();
+      if (normalized === "PCCHPAREA") return "PCCHPAREA";
+      return clean;
     }
 
-    for (const rackNorm in rackGroups) {
-      const rows = rackGroups[rackNorm]
-        .slice()
-        .sort((a, b) => Number(a.ID) - Number(b.ID));
-
-      html += `
-        <tr class="rack-header" style="background:#e2e8f0;">
-          <td colspan="${headers.length}" style="font-weight:bold;">
-            <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
-          </td>
-        </tr>
-      `;
-
-      // 🚀 FAST: Prepare values first
-      const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
-
-      let totalActQty = 0;
-
-for (let i = 0; i < rows.length; i++) {
-  const row = rows[i];
-
-  let deltaText = "";
-  let deltaClass = "";
-
-  // ❗ ตรวจว่ากลุ่มนี้ยังไม่ Check
-  const isNotChecked =
-    (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
-
-  // ถ้ายังไม่ Check → ไม่คิด Delta, ไม่คิดรวม, ไม่คิด totalActQty
-  if (!isNotChecked) {  
-    const actQty = toNum(row.Act_Qty);
-    totalActQty += actQty;
-
-    let delta = 0;
-    if (i === 0) delta = actQty - baseSumQty;
-    else delta = actQty;
-
-    if (delta > 0) {
-      deltaText = `▲ +${delta}`;
-      deltaClass = "delta-positive";
-    } else if (delta < 0) {
-      deltaText = `▼ ${delta}`;
-      deltaClass = "delta-negative";
-    } else {
-      deltaText = "0";
-      deltaClass = "delta-zero";
-    }
-  }
-
-  const hideCols = [
-    "Customer", "Name", "File5digit", "Lot", "Rack",
-    "SumOfQty", "Sum of Qty"
-  ];
-
-  html += `<tr class="rack-row">`;
-
-  for (const h of headers) {
-    if (i !== 0 && hideCols.includes(h)) {
-      html += "<td></td>";
-      continue;
+    function toNum(v) {
+      if (v === undefined || v === null) return 0;
+      return Number(String(v).replace(/,/g, "")) || 0;
     }
 
-if (h === "Delta +/-") {
-  html += `<td class="${deltaClass}">${deltaText}</td>`;
-
-} else if (h === "Timestamp") {
-  html += `<td>${convertToBangkokTime(row[h])}</td>`;
-
-} else if (h === "Rack") {
-  html += `<td>${displayRack(row[h])}</td>`;
-
-} else if (h === "Act_Rack") {
-  html += `<td>${displayRack(row[h])}</td>`;
-
-} else if (h === "Edit") {
-  if (String(row.ID).trim() === "1") {
-    html += `
-      <td>
-        <button class="btn btn-sm btn-outline-primary"
-          onclick='openEditSumQty(${JSON.stringify(row)})'>
-          ✏️ Edit
-        </button>
-      </td>
-    `;
-  } else {
-    html += "<td></td>";
-  }
-
-} else {
-  html += `<td>${row[h] ?? ""}</td>`;
-}
-
-  }
-
-  html += `</tr>`;
-}
-
-
-      // ⚡ รวม Rack นี้
-      const allEmpty = rows.every(r =>
-        (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
-      );
-
-      if (!allEmpty) {
-        const rackTotal = totalActQty - baseSumQty;
-        let className = rackTotal > 0
-          ? "delta-positive"
-          : rackTotal < 0
-          ? "delta-negative"
-          : "delta-zero";
-
-        html += `
-          <tr class="rack-row" style="background:#f8fafc; font-weight:bold;">
-            <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
-            <td class="${className}">
-              ${rackTotal > 0 ? "▲ +" + rackTotal :
-                rackTotal < 0 ? "▼ " + rackTotal : "0"}
-            </td>
-          </tr>
-        `;
-      }
-    }
-  }
-
-  // ⚡ Render HTML ทีเดียว
-  body.innerHTML = html;
-}
-function renderDeleteTable(list) {
-  const body = document.getElementById("deleteTableBody");
-  body.innerHTML = "";
-
-  if (!list || list.length === 0) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td>
-      </tr>
-    `;
-    return;
-  }
-
-  list.forEach(r => {
-    const rackNorm = extractRack(r.Rack);
-    const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
-
-    body.innerHTML += `
-      <tr>
-        <td>${r.Customer}</td>
-        <td>${r.File5digit}</td>
-        <td>${r.Lot}</td>
-        <td>${rackNorm}</td>
-        <td>
-          <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
-            ลบ
-          </button>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-    function filterDeleteTable() {
-  const c = document.getElementById("delSearchCustomer").value.trim().toLowerCase();
-  const f = document.getElementById("delSearchFile").value.trim().toLowerCase();
-  const l = document.getElementById("delSearchLot").value.trim().toLowerCase();
-
-  const filtered = deleteData.filter(r => {
-    const cMatch = !c || (r.Customer || "").toLowerCase().includes(c);
-    const fMatch = !f || (r.File5digit || "").toLowerCase().includes(f);
-    const lMatch = !l || (r.Lot || "").toLowerCase().includes(l);
-    return cMatch && fMatch && lMatch;
-  });
-
-  renderDeleteTable(filtered);
-}
-
-
-// 📤 Export Excel แบบเดียวกับ UI
-// 📤 Export Excel แบบ UI + รองรับสี DeltaValue (Conditional Formatting)
-async function exportExcel() {
-  if (!allData || allData.length === 0) {
-    Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
-    return;
-  }
-
-  const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
-
-  const sortedData = [...allData].sort((a, b) => {
-    const f1 = String(a.File5digit).localeCompare(String(b.File5digit));
-    if (f1 !== 0) return f1;
-    const l1 = String(a.Lot).localeCompare(String(b.Lot));
-    if (l1 !== 0) return l1;
-    return Number(a.ID) - Number(b.ID);
-  });
-
-  const exportData = [];
-
-  // Group data
-  const mainGroups = {};
-  sortedData.forEach(r => {
-    const key = `${r.File5digit}_${r.Lot}`;
-    if (!mainGroups[key]) mainGroups[key] = [];
-    mainGroups[key].push(r);
-  });
-
-  for (const key in mainGroups) {
-    const groupRows = mainGroups[key];
-
-    const rackGroups = {};
-    groupRows.forEach(r => {
-      const rackNorm = normalizeRack(r.Rack);
-      if (!rackGroups[rackNorm]) rackGroups[rackNorm] = [];
-      rackGroups[rackNorm].push(r);
-    });
-
-    for (const rackNorm in rackGroups) {
-      const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
-
-      const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
-
-      
-      rows.forEach(row => {
-        const actQty = toNum(row.Act_Qty);
-
-// ตรวจว่าแถวนี้ยังไม่เชค
-// ตรวจว่าแถวนี้ยังไม่เชค
-const notChecked =
-  (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
-
-let delta = "";
-if (!notChecked) {
-  // คำนวนเฉพาะแถวที่เชคแล้ว
-  if (row.ID == rows[0].ID) {
-    delta = actQty - baseSumQty;
-  } else {
-    delta = actQty;
-  }
-}
-
-const isMainRow = (row.ID == rows[0].ID);
-
-exportData.push({
-Customer: row.Customer || "",
-Name: row.Name || "",
-File5digit: row.File5digit || "",
-Lot: row.Lot || "",
-Rack: displayRack(rackNorm) || "",
-
-// ⭐ Sum of Qty ต้องแสดงเฉพาะ ID = 1 เท่านั้น
-"Sum of Qty": isMainRow ? baseSumQty : "",
-
-
-  Act_Rack: displayRack(row.Act_Rack) || "",
-  Act_Lot: row.Act_Lot || "",
-  Act_Qty: row.Act_Qty || "",
-  Act_Package: row.Act_Package || "",
-
-  // ⭐ ถ้ายังไม่ Check → ค่าว่าง
-  DeltaValue: delta === "" ? "" : delta,
-
-  "Delta +/-":
-    delta === "" ? "" :
-    (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
-
-  Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
-});
-
+    async function deleteGroup(rowKey) {
+      const confirm = await Swal.fire({
+        title: "ลบข้อมูลนี้?",
+        text: "ระบบจะลบทุกแถวที่มี File + Lot + Rack เดียวกัน",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "ลบ",
+        cancelButtonText: "ยกเลิก"
       });
-    }
-  }
 
-  // สร้าง Workbook + Sheet
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
+      if (!confirm.isConfirmed) return;
 
-  // Auto width
-  ws["!cols"] = Object.keys(exportData[0]).map(key => ({
-    wch: Math.max(
-      key.length,
-      ...exportData.map(r => (r[key] ? r[key].toString().length : 0))
-    ) + 2
-  }));
+      Swal.fire({
+        title: "กำลังลบ...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
 
-  // ⭐⭐ เพิ่ม Conditional Formatting ใน Excel ⭐⭐
-  const deltaColIndex = Object.keys(exportData[0]).indexOf("DeltaValue");
-  const deltaColLetter = XLSX.utils.encode_col(deltaColIndex); // เช่น "L"
-  const startRow = 2;
-  const endRow = exportData.length + 1;
+      try {
+        const res = await fetch(`${scriptURL}?page=adminDeleteGroup`, {
+          method: "POST",
+          body: new URLSearchParams({ rowKey })
+        });
 
-ws['!condfmt'] = [
-  {
-    ref: `${deltaColLetter}${startRow}:${deltaColLetter}${endRow}`,
-    rules: [
-      // > 0 → Green fill
-      {
-        type: "cellIs",
-        operator: "greaterThan",
-        formula: ["0"],
-        style: {
-          fill: { patternType: "solid", fgColor: { rgb: "C6EFCE" } }, // เขียวอ่อน
-          font: { color: { rgb: "006100" }, bold: true }
+        const json = await res.json();
+
+        if (json.success) {
+          Swal.fire("✔️ สำเร็จ", json.message, "success").then(() => {
+            showDeletePage();
+          });
+        } else {
+          Swal.fire("❌", json.message, "error");
         }
-      },
 
-      // < 0 → Red fill
-      {
-        type: "cellIs",
-        operator: "lessThan",
-        formula: ["0"],
-        style: {
-          fill: { patternType: "solid", fgColor: { rgb: "FFC7CE" } }, // แดงอ่อน
-          font: { color: { rgb: "9C0006" }, bold: true }
-        }
+      } catch (err) {
+        Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
       }
-    ]
-  }
-];
-
-
-  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
-
-  // File name
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const hh = String(now.getHours()).padStart(2, "0");
-  const min = String(now.getMinutes()).padStart(2, "0");
-  const ss = String(now.getSeconds()).padStart(2, "0");
-
-  const fileName = `FGInventoryDataCheck_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
-
-  XLSX.writeFile(wb, fileName);
-  Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
-}
-
-    
-// ปิดหน้า Delete ตอนสลับ tab
-document.getElementById("search-tab").addEventListener("click", () => {
-  document.getElementById("contentSearch").style.display = "block";
-  document.getElementById("contentUpload").style.display = "none";
-  document.getElementById("contentDelete").style.display = "none";
-});
-
-document.getElementById("upload-tab").addEventListener("click", () => {
-  document.getElementById("contentSearch").style.display = "none";
-  document.getElementById("contentUpload").style.display = "block";
-  document.getElementById("contentDelete").style.display = "none";
-});
-
-    
-const fileInput = document.getElementById("fileInput");
-const uploadBtn = document.getElementById("uploadBtn");
-
-fileInput.addEventListener("change", () => {
-  if (fileInput.files.length === 0) {
-    uploadBtn.disabled = true;
-    uploadBtn.style.opacity = "0.5";
-    uploadBtn.style.cursor = "not-allowed";
-    return;
-  }
-
-  const name = fileInput.files[0].name.toLowerCase();
-  if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
-    Swal.fire("⚠️", "กรุณาเลือกไฟล์ Excel (.xlsx / .xls)", "warning");
-    fileInput.value = "";
-    uploadBtn.disabled = true;
-    uploadBtn.style.opacity = "0.5";
-    uploadBtn.style.cursor = "not-allowed";
-    return;
-  }
-
-  uploadBtn.disabled = false;
-  uploadBtn.style.opacity = "1";
-  uploadBtn.style.cursor = "pointer";
-});
-
-function updateSummary(data) {
-  if (!data || data.length === 0) {
-    document.getElementById("summaryBox").style.display = "none";
-    summaryGroups = {};
-    return;
-  }
-
-  // reset กลุ่มทุกครั้งที่ search ใหม่
-  summaryGroups = {};
-  document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
-
-  const id1Rows = data.filter(r => String(r.ID).trim() === "1");
-
-  let groups = [];
-
-  for (const r of id1Rows) {
-    const rackNorm = normalizeRack(r.Rack);
-    const key = `${r.File5digit}|${r.Lot}|${rackNorm}`;
-
-    const childRows = data.filter(row =>
-      row.File5digit === r.File5digit &&
-      row.Lot === r.Lot &&
-      normalizeRack(row.Rack) === rackNorm
-    );
-
-    const baseSumQty = Number(r.SumOfQty || r["Sum of Qty"] || 0);
-
-    let totalAct = 0;
-    let hasCheck = false;
-
-    childRows.forEach(c => {
-      const act = Number(c.Act_Qty || 0);
-      if (act) hasCheck = true;
-      totalAct += act;
-    });
-
-    const totalDelta = totalAct - baseSumQty;
-
-    const g = { key, totalDelta, checked: hasCheck };
-    groups.push(g);
-    summaryGroups[key] = g;  // ← เก็บไว้ใช้เวลา filterByCard
-  }
-
-  const total = groups.length;
-  const ok = groups.filter(g => g.checked && g.totalDelta === 0).length;
-  const over = groups.filter(g => g.checked && g.totalDelta > 0).length;
-  const under = groups.filter(g => g.checked && g.totalDelta < 0).length;
-  const notChecked = groups.filter(g => !g.checked).length;
-
-  document.getElementById("sumTotal").textContent = total;
-  document.getElementById("sumOK").textContent = ok;
-  document.getElementById("sumOver").textContent = over;
-  document.getElementById("sumUnder").textContent = under;
-  document.getElementById("sumNotCheck").textContent = notChecked;
-
-  document.getElementById("summaryBox").style.display = "block";
-}
-    
-function openEditSumQty(row) {
-
-  const currentQty = row.SumOfQty || row["Sum of Qty"] || 0;
-
-  Swal.fire({
-    title: "✏️ Edit Sum of Qty",
-    customClass: "swal-wide",
-    html: `
-      <div class="text-start">
-        <label class="form-label">Customer</label>
-        <input class="form-control mb-2" value="${row.Customer}" disabled>
-
-        <label class="form-label">File5digit</label>
-        <input class="form-control mb-2" value="${row.File5digit}" disabled>
-
-        <label class="form-label">Lot</label>
-        <input class="form-control mb-2" value="${row.Lot}" disabled>
-
-        <label class="form-label">Rack</label>
-        <input class="form-control mb-2" value="${row.Rack}" disabled>
-
-        <label class="form-label fw-bold text-primary">
-          Sum of Qty (Editable)
-        </label>
-        <input id="editSumQty"
-          type="number"
-          class="form-control"
-          value="${currentQty}">
-      </div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: "💾 Save",
-    cancelButtonText: "Cancel",
-    preConfirm: () => {
-      const v = document.getElementById("editSumQty").value;
-      if (v === "" || isNaN(v)) {
-        Swal.showValidationMessage("กรุณากรอกตัวเลข Sum of Qty");
-        return false;
-      }
-      return v;
     }
-  }).then(async (res) => {
-    if (!res.isConfirmed) return;
 
-    Swal.fire({
-      title: "กำลังบันทึก...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
+    // สำหรับแสดงผลใน UI
+    function renderGroupedTable(data) {
+      const head = document.getElementById("searchTableHead");
+      const body = document.getElementById("searchTableBody");
 
-    try {
-      const params = new URLSearchParams({
-        page: "adminUpdateSumQty",
-        customer: row.Customer,
-        file5digit: row.File5digit,
-        lot: row.Lot,
-        rack: row.Rack,
-        sumQty: res.value
-      });
+      body.innerHTML = "";
 
-      const resp = await fetch(scriptURL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: params
-      });
-
-      const json = await resp.json();
-      Swal.close();
-
-      if (!json.success) {
-        Swal.fire("❌ Error", json.message, "error");
+      if (!data || data.length === 0) {
+        head.innerHTML = "";
+        body.innerHTML = "<tr><td colspan='20' class='text-center text-muted'>No data found</td></tr>";
         return;
       }
 
-      Swal.fire("✅ สำเร็จ", "อัปเดต Sum of Qty แล้ว", "success");
-      searchData(); // refresh ตาราง
+      const headersRaw = Object.keys(data[0]);
+      const headers = headersRaw.filter(h => h !== "ID");
 
-    } catch (err) {
-      Swal.fire("❌ Error", "เชื่อมต่อ backend ไม่สำเร็จ", "error");
+      // ➕ เพิ่ม Edit column
+      if (!headers.includes("Edit")) headers.push("Edit");
+
+      if (!headers.includes("Delta +/-")) {
+        const insertIndex = headers.indexOf("Act_Package") + 1;
+        headers.splice(insertIndex, 0, "Delta +/-");
+      }
+
+      // Render header
+      head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+
+      // ⚡ HTML Buffer
+      let html = "";
+
+      // ⚡ GROUP 1: File + Lot
+      const mainGroups = {};
+      for (const row of data) {
+        const key = row.File5digit + "_" + row.Lot;
+        (mainGroups[key] ||= []).push(row);
+      }
+
+      for (const key in mainGroups) {
+        const groupRows = mainGroups[key];
+        const [file, lot] = key.split("_");
+
+        const allEmptyGroup = groupRows.every(r =>
+          (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
+        );
+
+        const groupStatusText = allEmptyGroup
+          ? " - <span style='color:#b45309;'>ยังไม่ Check</span>"
+          : "";
+
+        html += `
+          <tr class="table-group">
+            <td colspan="${headers.length}">
+              📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
+            </td>
+          </tr>
+        `;
+
+        // ⚡ GROUP 2: Rack
+        const rackGroups = {};
+        for (const r of groupRows) {
+          const norm = normalizeRack(r.Rack);
+          (rackGroups[norm] ||= []).push(r);
+        }
+
+        for (const rackNorm in rackGroups) {
+          const rows = rackGroups[rackNorm]
+            .slice()
+            .sort((a, b) => Number(a.ID) - Number(b.ID));
+
+          html += `
+            <tr class="rack-header" style="background:#e2e8f0;">
+              <td colspan="${headers.length}" style="font-weight:bold;">
+                <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
+              </td>
+            </tr>
+          `;
+
+          // 🚀 FAST: Prepare values first
+          const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
+          let totalActQty = 0;
+
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+
+            let deltaText = "";
+            let deltaClass = "";
+
+            // ❗ ตรวจว่ากลุ่มนี้ยังไม่ Check
+            const isNotChecked =
+              (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
+
+            // ถ้ายังไม่ Check → ไม่คิด Delta, ไม่คิดรวม, ไม่คิด totalActQty
+            if (!isNotChecked) {
+              const actQty = toNum(row.Act_Qty);
+              totalActQty += actQty;
+
+              let delta = 0;
+              if (i === 0) delta = actQty - baseSumQty;
+              else delta = actQty;
+
+              if (delta > 0) {
+                deltaText = `▲ +${delta}`;
+                deltaClass = "delta-positive";
+              } else if (delta < 0) {
+                deltaText = `▼ ${delta}`;
+                deltaClass = "delta-negative";
+              } else {
+                deltaText = "0";
+                deltaClass = "delta-zero";
+              }
+            }
+
+            const hideCols = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty", "Sum of Qty"];
+
+            html += `<tr class="rack-row">`;
+
+            for (const h of headers) {
+              if (i !== 0 && hideCols.includes(h)) {
+                html += "<td></td>";
+                continue;
+              }
+
+              if (h === "Delta +/-") {
+                html += `<td class="${deltaClass}">${deltaText}</td>`;
+
+              } else if (h === "Timestamp") {
+                html += `<td>${convertToBangkokTime(row[h])}</td>`;
+
+              } else if (h === "Rack") {
+                html += `<td>${displayRack(row[h])}</td>`;
+
+              } else if (h === "Act_Rack") {
+                html += `<td>${displayRack(row[h])}</td>`;
+
+              } else if (h === "Edit") {
+                if (String(row.ID).trim() === "1") {
+                  html += `
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary"
+                        onclick='openEditSumQty(${JSON.stringify(row)})'>
+                        ✏️ Edit
+                      </button>
+                    </td>
+                  `;
+                } else {
+                  html += "<td></td>";
+                }
+
+              } else {
+                html += `<td>${row[h] ?? ""}</td>`;
+              }
+            }
+
+            html += `</tr>`;
+          }
+
+          // ⚡ รวม Rack นี้
+          const allEmpty = rows.every(r =>
+            (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
+          );
+
+          if (!allEmpty) {
+            const rackTotal = totalActQty - baseSumQty;
+            let className = rackTotal > 0
+              ? "delta-positive"
+              : rackTotal < 0
+              ? "delta-negative"
+              : "delta-zero";
+
+            html += `
+              <tr class="rack-row" style="background:#f8fafc; font-weight:bold;">
+                <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+                <td class="${className}">
+                  ${rackTotal > 0 ? "▲ +" + rackTotal :
+                    rackTotal < 0 ? "▼ " + rackTotal : "0"}
+                </td>
+              </tr>
+            `;
+          }
+        }
+      }
+
+      body.innerHTML = html;
     }
-  });
-}
 
-    
-function filterByCard(type, el) {
-  if (!allData || allData.length === 0) return;
+    function renderDeleteTable(list) {
+      const body = document.getElementById("deleteTableBody");
+      body.innerHTML = "";
 
-  // เคลียร์ active เดิม แล้ว set active ให้การ์ดที่กด
-  document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
-  if (el) el.classList.add("active");
+      if (!list || list.length === 0) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td>
+          </tr>
+        `;
+        return;
+      }
 
-  // กรณี Total Records → แสดงทั้งหมดตามผล search ปกติ
-  if (type === "ALL") {
-    renderGroupedTable(allData);
-    return;
-  }
+      list.forEach(r => {
+        const rackNorm = extractRack(r.Rack);
+        const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
 
-  const filtered = allData.filter(row => {
-    const rackNorm = normalizeRack(row.Rack);
-    const key = `${row.File5digit}|${row.Lot}|${rackNorm}`;
-    const g = summaryGroups[key];
-    if (!g) return false;
+        body.innerHTML += `
+          <tr>
+            <td>${r.Customer}</td>
+            <td>${r.File5digit}</td>
+            <td>${r.Lot}</td>
+            <td>${rackNorm}</td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
+                ลบ
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
 
-    if (type === "OK")      return g.checked && g.totalDelta === 0;
-    if (type === "OVER")    return g.checked && g.totalDelta > 0;
-    if (type === "UNDER")   return g.checked && g.totalDelta < 0;
-    if (type === "NOTCHECK")return !g.checked;
+    function filterDeleteTable() {
+      const c = document.getElementById("delSearchCustomer").value.trim().toLowerCase();
+      const f = document.getElementById("delSearchFile").value.trim().toLowerCase();
+      const l = document.getElementById("delSearchLot").value.trim().toLowerCase();
 
-    return true;
-  });
+      const filtered = deleteData.filter(r => {
+        const cMatch = !c || (r.Customer || "").toLowerCase().includes(c);
+        const fMatch = !f || (r.File5digit || "").toLowerCase().includes(f);
+        const lMatch = !l || (r.Lot || "").toLowerCase().includes(l);
+        return cMatch && fMatch && lMatch;
+      });
 
-  renderGroupedTable(filtered);
-}
+      renderDeleteTable(filtered);
+    }
 
+    // 📤 Export Excel แบบ UI + รองรับสี DeltaValue (Conditional Formatting)
+    async function exportExcel() {
+      if (!allData || allData.length === 0) {
+        Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
+        return;
+      }
+
+      const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+
+      const sortedData = [...allData].sort((a, b) => {
+        const f1 = String(a.File5digit).localeCompare(String(b.File5digit));
+        if (f1 !== 0) return f1;
+        const l1 = String(a.Lot).localeCompare(String(b.Lot));
+        if (l1 !== 0) return l1;
+        return Number(a.ID) - Number(b.ID);
+      });
+
+      const exportData = [];
+
+      // Group data
+      const mainGroups = {};
+      sortedData.forEach(r => {
+        const key = `${r.File5digit}_${r.Lot}`;
+        if (!mainGroups[key]) mainGroups[key] = [];
+        mainGroups[key].push(r);
+      });
+
+      for (const key in mainGroups) {
+        const groupRows = mainGroups[key];
+
+        const rackGroups = {};
+        groupRows.forEach(r => {
+          const rackNorm = normalizeRack(r.Rack);
+          if (!rackGroups[rackNorm]) rackGroups[rackNorm] = [];
+          rackGroups[rackNorm].push(r);
+        });
+
+        for (const rackNorm in rackGroups) {
+          const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
+          const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
+
+          rows.forEach(row => {
+            const actQty = toNum(row.Act_Qty);
+
+            // ตรวจว่าแถวนี้ยังไม่เชค
+            const notChecked = (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
+
+            let delta = "";
+            if (!notChecked) {
+              if (row.ID == rows[0].ID) delta = actQty - baseSumQty;
+              else delta = actQty;
+            }
+
+            const isMainRow = (row.ID == rows[0].ID);
+
+            exportData.push({
+              Customer: row.Customer || "",
+              Name: row.Name || "",
+              File5digit: row.File5digit || "",
+              Lot: row.Lot || "",
+              Rack: displayRack(rackNorm) || "",
+              "Sum of Qty": isMainRow ? baseSumQty : "",
+              Act_Rack: displayRack(row.Act_Rack) || "",
+              Act_Lot: row.Act_Lot || "",
+              Act_Qty: row.Act_Qty || "",
+              Act_Package: row.Act_Package || "",
+              DeltaValue: delta === "" ? "" : delta,
+              "Delta +/-":
+                delta === "" ? "" :
+                (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
+              Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+            });
+          });
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
+
+      // Auto width
+      ws["!cols"] = Object.keys(exportData[0]).map(key => ({
+        wch: Math.max(
+          key.length,
+          ...exportData.map(r => (r[key] ? r[key].toString().length : 0))
+        ) + 2
+      }));
+
+      // Conditional formatting
+      const deltaColIndex = Object.keys(exportData[0]).indexOf("DeltaValue");
+      const deltaColLetter = XLSX.utils.encode_col(deltaColIndex);
+      const startRow = 2;
+      const endRow = exportData.length + 1;
+
+      ws['!condfmt'] = [
+        {
+          ref: `${deltaColLetter}${startRow}:${deltaColLetter}${endRow}`,
+          rules: [
+            {
+              type: "cellIs",
+              operator: "greaterThan",
+              formula: ["0"],
+              style: {
+                fill: { patternType: "solid", fgColor: { rgb: "C6EFCE" } },
+                font: { color: { rgb: "006100" }, bold: true }
+              }
+            },
+            {
+              type: "cellIs",
+              operator: "lessThan",
+              formula: ["0"],
+              style: {
+                fill: { patternType: "solid", fgColor: { rgb: "FFC7CE" } },
+                font: { color: { rgb: "9C0006" }, bold: true }
+              }
+            }
+          ]
+        }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
+
+      // File name (UPDATED)
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+
+      const fileName = `PowderInventoryDataCheck_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
+
+      XLSX.writeFile(wb, fileName);
+      Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
+    }
+
+    // ปิดหน้า Delete ตอนสลับ tab
+    document.getElementById("search-tab").addEventListener("click", () => {
+      document.getElementById("contentSearch").style.display = "block";
+      document.getElementById("contentUpload").style.display = "none";
+      document.getElementById("contentDelete").style.display = "none";
+    });
+
+    document.getElementById("upload-tab").addEventListener("click", () => {
+      document.getElementById("contentSearch").style.display = "none";
+      document.getElementById("contentUpload").style.display = "block";
+      document.getElementById("contentDelete").style.display = "none";
+    });
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length === 0) {
+        uploadBtn.disabled = true;
+        uploadBtn.style.opacity = "0.5";
+        uploadBtn.style.cursor = "not-allowed";
+        return;
+      }
+
+      const name = fileInput.files[0].name.toLowerCase();
+      if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+        Swal.fire("⚠️", "กรุณาเลือกไฟล์ Excel (.xlsx / .xls)", "warning");
+        fileInput.value = "";
+        uploadBtn.disabled = true;
+        uploadBtn.style.opacity = "0.5";
+        uploadBtn.style.cursor = "not-allowed";
+        return;
+      }
+
+      uploadBtn.disabled = false;
+      uploadBtn.style.opacity = "1";
+      uploadBtn.style.cursor = "pointer";
+    });
+
+    function updateSummary(data) {
+      if (!data || data.length === 0) {
+        document.getElementById("summaryBox").style.display = "none";
+        summaryGroups = {};
+        return;
+      }
+
+      // reset กลุ่มทุกครั้งที่ search ใหม่
+      summaryGroups = {};
+      document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
+
+      const id1Rows = data.filter(r => String(r.ID).trim() === "1");
+
+      let groups = [];
+
+      for (const r of id1Rows) {
+        const rackNorm = normalizeRack(r.Rack);
+        const key = `${r.File5digit}|${r.Lot}|${rackNorm}`;
+
+        const childRows = data.filter(row =>
+          row.File5digit === r.File5digit &&
+          row.Lot === r.Lot &&
+          normalizeRack(row.Rack) === rackNorm
+        );
+
+        const baseSumQty = Number(r.SumOfQty || r["Sum of Qty"] || 0);
+
+        let totalAct = 0;
+        let hasCheck = false;
+
+        childRows.forEach(c => {
+          const act = Number(c.Act_Qty || 0);
+          if (act) hasCheck = true;
+          totalAct += act;
+        });
+
+        const totalDelta = totalAct - baseSumQty;
+
+        const g = { key, totalDelta, checked: hasCheck };
+        groups.push(g);
+        summaryGroups[key] = g;
+      }
+
+      const total = groups.length;
+      const ok = groups.filter(g => g.checked && g.totalDelta === 0).length;
+      const over = groups.filter(g => g.checked && g.totalDelta > 0).length;
+      const under = groups.filter(g => g.checked && g.totalDelta < 0).length;
+      const notChecked = groups.filter(g => !g.checked).length;
+
+      document.getElementById("sumTotal").textContent = total;
+      document.getElementById("sumOK").textContent = ok;
+      document.getElementById("sumOver").textContent = over;
+      document.getElementById("sumUnder").textContent = under;
+      document.getElementById("sumNotCheck").textContent = notChecked;
+
+      document.getElementById("summaryBox").style.display = "block";
+    }
+
+    function openEditSumQty(row) {
+      const currentQty = row.SumOfQty || row["Sum of Qty"] || 0;
+
+      Swal.fire({
+        title: "✏️ Edit Sum of Qty",
+        customClass: "swal-wide",
+        html: `
+          <div class="text-start">
+            <label class="form-label">Customer</label>
+            <input class="form-control mb-2" value="${row.Customer}" disabled>
+
+            <label class="form-label">File5digit</label>
+            <input class="form-control mb-2" value="${row.File5digit}" disabled>
+
+            <label class="form-label">Lot</label>
+            <input class="form-control mb-2" value="${row.Lot}" disabled>
+
+            <label class="form-label">Rack</label>
+            <input class="form-control mb-2" value="${row.Rack}" disabled>
+
+            <label class="form-label fw-bold" style="color:#f59e0b;">
+              Sum of Qty (Editable)
+            </label>
+            <input id="editSumQty"
+              type="number"
+              class="form-control"
+              value="${currentQty}">
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "💾 Save",
+        cancelButtonText: "Cancel",
+        preConfirm: () => {
+          const v = document.getElementById("editSumQty").value;
+          if (v === "" || isNaN(v)) {
+            Swal.showValidationMessage("กรุณากรอกตัวเลข Sum of Qty");
+            return false;
+          }
+          return v;
+        }
+      }).then(async (res) => {
+        if (!res.isConfirmed) return;
+
+        Swal.fire({
+          title: "กำลังบันทึก...",
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        try {
+          const params = new URLSearchParams({
+            page: "adminUpdateSumQty",
+            customer: row.Customer,
+            file5digit: row.File5digit,
+            lot: row.Lot,
+            rack: row.Rack,
+            sumQty: res.value
+          });
+
+          const resp = await fetch(scriptURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+          });
+
+          const json = await resp.json();
+          Swal.close();
+
+          if (!json.success) {
+            Swal.fire("❌ Error", json.message, "error");
+            return;
+          }
+
+          Swal.fire("✅ สำเร็จ", "อัปเดต Sum of Qty แล้ว", "success");
+          searchData(); // refresh ตาราง
+
+        } catch (err) {
+          Swal.fire("❌ Error", "เชื่อมต่อ backend ไม่สำเร็จ", "error");
+        }
+      });
+    }
+
+    function filterByCard(type, el) {
+      if (!allData || allData.length === 0) return;
+
+      document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
+      if (el) el.classList.add("active");
+
+      if (type === "ALL") {
+        renderGroupedTable(allData);
+        return;
+      }
+
+      const filtered = allData.filter(row => {
+        const rackNorm = normalizeRack(row.Rack);
+        const key = `${row.File5digit}|${row.Lot}|${rackNorm}`;
+        const g = summaryGroups[key];
+        if (!g) return false;
+
+        if (type === "OK")       return g.checked && g.totalDelta === 0;
+        if (type === "OVER")     return g.checked && g.totalDelta > 0;
+        if (type === "UNDER")    return g.checked && g.totalDelta < 0;
+        if (type === "NOTCHECK") return !g.checked;
+        return true;
+      });
+
+      renderGroupedTable(filtered);
+    }
   </script>
 </body>
 </html>
