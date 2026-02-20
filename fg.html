@@ -31,14 +31,17 @@
       color: #cbd5e1; border: none; border-radius: 0; background: transparent;
     }
     .nav-tabs .nav-link.active {
-      background-color: #334155; color: #ffffff; font-weight: 600;
+      background-color: #0f7250;
+      color: #ffffff;
+      font-weight: 600;
     }
     .nav-tabs .nav-link:hover {
-      background-color: #475569; color: #fff;
+      background-color: #1a8a62;
+      color: #fff;
     }
 
     .collapse-content {
-      background-color: #243043;
+      background-color: #0f7250;
       border-radius: 8px; padding: 10px; margin-bottom: 10px;
     }
 
@@ -151,6 +154,285 @@
     border-color: rgba(226,232,240,.45);
   }
     
+
+  /* Match Powder Inventory green tone */
+  .navbar {
+    background: linear-gradient(136deg, #129266, #0f7250) !important;
+    color: white !important;
+  }
+
+  .sidebar {
+    background: linear-gradient(136deg, #129266, #0f7250) !important;
+    color: white !important;
+  }
+
+  /* ===== UI Polish v2 ===== */
+  :root {
+    --ui-green-1: #129266;
+    --ui-green-2: #0f7250;
+    --ui-green-3: #0c5f43;
+    --ui-bg: #edf2f5;
+    --ui-ink: #102030;
+    --ui-soft: #6b7b8c;
+  }
+
+  body {
+    background: radial-gradient(circle at 14% 8%, #f7fcf9 0%, #edf2f5 46%, #e8eef2 100%);
+    color: var(--ui-ink);
+  }
+
+  .navbar {
+    min-height: 64px;
+    background: linear-gradient(135deg, var(--ui-green-1), var(--ui-green-2)) !important;
+    box-shadow: 0 10px 24px rgba(8, 52, 36, 0.24);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .navbar-brand {
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+  }
+
+  .navbar-time {
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-mainmenu {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .sidebar {
+    width: 280px;
+    top: 64px;
+    height: calc(100vh - 64px);
+    padding: 16px;
+    background: linear-gradient(165deg, var(--ui-green-1), var(--ui-green-2)) !important;
+    box-shadow: 10px 0 24px rgba(9, 50, 36, 0.2);
+  }
+
+  .content {
+    margin-left: 280px;
+    padding: 88px 36px 26px;
+  }
+
+  .content h4 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0d2a1f;
+    margin-bottom: 14px;
+  }
+
+  .nav-tabs {
+    border-bottom: 0;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .nav-tabs .nav-link {
+    border-radius: 10px;
+    color: #e8fff5;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+
+  .nav-tabs .nav-link.active {
+    background: rgba(10, 84, 59, 0.95) !important;
+    box-shadow: inset 0 0 0 1px rgba(192, 255, 227, 0.35), 0 6px 12px rgba(0, 0, 0, 0.16);
+  }
+
+  .collapse-content {
+    border-radius: 14px;
+    background: rgba(8, 66, 47, 0.9) !important;
+    border: 1px solid rgba(180, 255, 222, 0.22);
+    padding: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .collapse-content label {
+    font-weight: 600;
+    color: #ebfff6;
+    margin-bottom: 6px;
+  }
+
+  .sidebar .form-control {
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: none;
+  }
+
+  .sidebar .form-control:focus {
+    border-color: #90ffd2;
+    box-shadow: 0 0 0 0.18rem rgba(144, 255, 210, 0.24);
+  }
+
+  .sidebar .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
+  }
+
+  .sidebar .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(8, 32, 23, 0.24);
+    filter: brightness(1.04);
+  }
+
+  .table-responsive {
+    background: #ffffff;
+    border: 1px solid #dbe5ec;
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(18, 33, 48, 0.08);
+    padding: 8px;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  .table-dark {
+    --bs-table-bg: #144733;
+    --bs-table-striped-bg: #174e38;
+    --bs-table-striped-color: #ffffff;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f1fbf6;
+  }
+
+  .summary-grid {
+    gap: 12px;
+  }
+
+  .summary-card {
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(16, 32, 48, 0.1);
+  }
+
+  .summary-card.active {
+    box-shadow: 0 0 0 2px #167c5a inset, 0 8px 18px rgba(16, 32, 48, 0.12);
+  }
+
+  .summary-title {
+    color: #3f5468;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .summary-value {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  /* Sidebar font size reduce */
+  .sidebar {
+    font-size: 13px;
+  }
+
+  .sidebar .nav-tabs .nav-link {
+    font-size: 12px;
+  }
+
+  .sidebar label {
+    font-size: 12px;
+  }
+
+  .sidebar .form-control {
+    font-size: 12px;
+  }
+
+  .sidebar .btn {
+    font-size: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  /* Export Excel button color */
+  .sidebar button[onclick="exportExcel()"] {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #ffffff !important;
+    border: none !important;
+  }
+
+  .sidebar button[onclick="exportExcel()"]:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fbbf24, #ea8a00) !important;
+  }
+
+  /* Smaller Edit button in search table */
+  #searchTable button.btn-outline-primary[onclick^="openEditSumQty"] {
+    font-size: 11px;
+    padding: 2px 8px;
+    line-height: 1.2;
+    border-radius: 8px;
+  }
+
+  /* Header column separators */
+  .table thead th {
+    border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+  }
+
+  .table thead th:last-child {
+    border-right: none !important;
+  }
+
+  /* Center header text */
+  .table thead th {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  /* Table header color = FG button tone */
+  .table-dark {
+    --bs-table-bg: #0a66d1;
+    --bs-table-striped-bg: #084da0;
+    --bs-table-striped-color: #ffffff;
+    --bs-table-color: #ffffff;
+  }
+
+  /* Head bar + Side bar = FG blue tone */
+  .navbar {
+    background: linear-gradient(135deg, #0a66d1, #084da0) !important;
+    color: #ffffff !important;
+  }
+
+  .sidebar {
+    background: linear-gradient(135deg, #0a66d1, #084da0) !important;
+    color: #ffffff !important;
+  }
+
+  /* Force all sidebar internals to FG blue theme */
+  .sidebar .nav-tabs .nav-link.active {
+    background: #084da0 !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25) !important;
+  }
+
+  .sidebar .nav-tabs .nav-link:hover {
+    background: #0a66d1 !important;
+    color: #ffffff !important;
+  }
+
+  .sidebar .collapse-content {
+    background: #083f86 !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+  }
+
+  /* Darker table header to match FG blue theme */
+  .table-dark {
+    --bs-table-bg: #084da0;
+    --bs-table-striped-bg: #083f86;
+    --bs-table-striped-color: #ffffff;
+    --bs-table-color: #ffffff;
+  }
+
+  /* Darker top headbar */
+  .navbar {
+    background: linear-gradient(135deg, #073978, #052d61) !important;
+    color: #ffffff !important;
+  }
 </style>
 </head>
 <body>
@@ -1408,3 +1690,15 @@ function filterByCard(type, el) {
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
