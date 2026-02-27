@@ -413,7 +413,7 @@
             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div>
           </div>
 <button class="btn btn-danger w-100 mt-3" onclick="showDeletePage()">
-Delete Data</button>
+Manage Delete</button>
 
 
         </div>
@@ -1388,16 +1388,33 @@ ws['!condfmt'] = [
 
     
 // ปิดหน้า Delete ตอนสลับ tab
+function resetSearchView() {
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  document.getElementById("searchFile5").value = "";
+  document.getElementById("searchLot").value = "";
+  document.getElementById("searchCustomer").value = "";
+
+  allData = [];
+  summaryGroups = {};
+  document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
+  document.getElementById("summaryBox").style.display = "none";
+  document.getElementById("searchTableHead").innerHTML = "";
+  document.getElementById("searchTableBody").innerHTML = "";
+}
+
 document.getElementById("search-tab").addEventListener("click", () => {
   document.getElementById("contentSearch").style.display = "block";
   document.getElementById("contentUpload").style.display = "none";
   document.getElementById("contentDelete").style.display = "none";
+  resetSearchView();
 });
 
 document.getElementById("upload-tab").addEventListener("click", () => {
   document.getElementById("contentSearch").style.display = "none";
   document.getElementById("contentUpload").style.display = "block";
   document.getElementById("contentDelete").style.display = "none";
+  resetSearchView();
 });
 
     
@@ -1561,8 +1578,8 @@ function openEditSumQty(row) {
         return;
       }
 
-      Swal.fire("✅ สำเร็จ", "อัปเดต Sum of Qty แล้ว", "success");
-      searchData(); // refresh ตาราง
+      await Swal.fire("✅ สำเร็จ", "อัปเดต Sum of Qty แล้ว", "success");
+      await searchData(); // refresh ตารางหลังกด OK
 
     } catch (err) {
       Swal.fire("❌ Error", "เชื่อมต่อ backend ไม่สำเร็จ", "error");
