@@ -875,7 +875,7 @@
           String(r.remark || '').trim()
         );
         lastUpdatedText = hasSavedRows ? new Date().toLocaleString('en-GB') : '-';
-        renderDashboardKpiFromRows(dataRows);
+        renderDashboardKpiFromRows(collectRows());
         clearDirty();
       } catch (e) {
         if (showLoading) Swal.close();
