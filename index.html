@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -77,37 +77,36 @@
     }
 
     .content {
-      padding: 34px 32px 56px;
+      padding: 18px 24px 40px;
     }
 
     .headline {
-      margin: 0;
-      font-size: 44px;
+      margin: 0 0 16px;
+      font-size: 34px;
       line-height: 1.12;
       letter-spacing: 0.01em;
     }
 
     .subtext {
-      margin: 14px 0 28px;
+      margin: 10px 0 18px;
       color: var(--text-sub);
-      font-size: 17px;
+      font-size: 16px;
       max-width: 760px;
     }
 
     .content-row {
       display: flex;
-      align-items: flex-start;
+      align-items: stretch;
       justify-content: space-between;
-      gap: 28px;
+      gap: 20px;
     }
 
     .cards {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
       width: 560px;
       min-width: 560px;
-      align-items: stretch;
       margin: 0;
     }
 
@@ -115,9 +114,9 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      min-height: 180px;
-      border-radius: 18px;
-      padding: 18px;
+      min-height: 152px;
+      border-radius: 14px;
+      padding: 13px;
       text-decoration: none;
       color: #ffffff;
       box-shadow: var(--shadow-md);
@@ -144,23 +143,23 @@
     }
 
     .card h2 {
-      margin: 16px 0 10px;
-      font-size: 24px;
+      margin: 10px 0 6px;
+      font-size: 19px;
       line-height: 1.15;
       letter-spacing: 0.01em;
     }
 
     .card p {
       margin: 0;
-      font-size: 13px;
-      line-height: 1.45;
+      font-size: 12px;
+      line-height: 1.34;
       opacity: 0.95;
       max-width: 390px;
     }
 
     .card .go {
-      margin-top: 10px;
-      font-size: 13px;
+      margin-top: 8px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
@@ -173,21 +172,25 @@
       background: linear-gradient(136deg, var(--accent-2), var(--accent-2-deep));
     }
 
+    .subcon {
+      background: linear-gradient(136deg, #4b5563, #334155);
+    }
+
     .warehouse-side {
       flex: 1;
       display: flex;
       justify-content: flex-end;
-      padding-top: 4px;
+      align-items: center;
+      padding-top: 0;
     }
 
     .warehouse-side img {
       width: 100%;
       max-width: 760px;
-      max-height: 460px;
+      max-height: 420px;
       height: auto;
-      
-      transform: translateY(-40px);
-object-fit: contain;
+      transform: translateY(-8px);
+      object-fit: contain;
       border-radius: 0;
       border: none;
       box-shadow: none;
@@ -230,7 +233,6 @@ object-fit: contain;
 
     <section class="content">
       <h1 class="headline">Warehouse Inventory Data Check</h1>
-      <p class="subtext">เลือกระบบที่ต้องการตรวจสอบ</p>
 
       <div class="content-row">
         <div class="cards">
@@ -248,6 +250,15 @@ object-fit: contain;
               <span class="label">Powder Stock</span>
               <h2>Powder Inventory Data Check</h2>
               <p>Review powder inventory balances and verify data consistency before daily reconciliation.</p>
+            </div>
+            <span class="go">Open Module -></span>
+          </a>
+
+          <a class="card subcon" href="login.html">
+            <div>
+              <span class="label">Sub-con System</span>
+              <h2>Sub-con Inventory Data Check</h2>
+              <p>Login for Subcon and RMT users to submit and review monthly inventory reports.</p>
             </div>
             <span class="go">Open Module -></span>
           </a>

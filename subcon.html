@@ -1,0 +1,992 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subcon | Monthly Inventory Report</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body { overflow-x: hidden; background-color: #f3f4f6; font-family: "Segoe UI", Tahoma, sans-serif; color: #1f2937; }
+    .navbar { background: #111827; color: #fff; min-height: 60px; border-bottom: 1px solid #1f2937; }
+    .navbar-right { display: flex; align-items: center; gap: 10px; }
+    .role-pill { padding: 6px 12px; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; color: #fff; font-weight: 600; }
+    .sidebar {
+      width: 220px; height: calc(100vh - 60px);
+      position: fixed; left: 0; top: 60px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      color: #111827; padding: 14px; overflow-y: auto;
+    }
+    .content { margin-left: 220px; padding: 74px 18px 18px; }
+    .menu-title { display: none; }
+    .menu-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #fff;
+      color: #111827;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-btn i {
+      width: 18px;
+      text-align: center;
+      color: #64748b;
+      transition: color .14s ease;
+    }
+    .menu-btn:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+      transform: translateX(2px);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, .06);
+    }
+    .menu-btn:hover i { color: #334155; }
+    .menu-btn.active { background: #111827; border-color: #111827; color: #fff; }
+    .menu-btn.active i { color: #cbd5e1; }
+    .search-toolbar { display: flex; justify-content: stretch; margin-bottom: 12px; }
+    .search-panel {
+      width: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 12px;
+    }
+    .search-title { font-size: 12px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+    .report-title { font-size: 28px; font-weight: 700; color: #0f172a; margin: 0 0 10px; }
+    .report-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .month-picker-inline { width: 240px; }
+    .search-grid { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: end; }
+    .table-wrap { overflow-x: hidden; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 10px; margin-top: 12px; background: #fff; }
+    table { border-collapse: collapse; width: 100%; min-width: 0; table-layout: fixed; }
+    th, td { border: 1px solid #edf0f3; padding: 3px; font-size: 12px; }
+    th { background: #1f2937; color: #ffffff; text-align: center; position: sticky; top: 0; z-index: 2; font-weight: 700; }
+    td input {
+      font-size: 13px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      width: 100%;
+      background: #fff;
+      min-height: 28px;
+    }
+    td input:focus { outline: none; border-color: #94a3b8; box-shadow: 0 0 0 2px rgba(148,163,184,.2); }
+    td.num input { text-align: right; }
+    tfoot td {
+      background: #dbeafe;
+      color: #0f172a;
+      font-weight: 800;
+      border-top: 2px solid #93c5fd;
+    }
+    .diff-col { color: #b91c1c !important; font-weight: 700; }
+    .actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
+    .actions .btn { border-radius: 10px; min-width: 44px; width: 44px; height: 40px; padding: 0; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
+    .actions .btn-save { min-width: 44px; width: 44px; padding: 0; font-size: 18px; }
+    .excel-hint { color: #6b7280; font-size: 12px; margin-top: 6px; }
+    .deadline-box {
+      margin: 8px 0 2px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 44px;
+      width: fit-content;
+      min-width: 360px;
+      margin-left: auto;
+    }
+    .deadline-note {
+      font-size: 12px;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: .01em;
+    }
+    .deadline-countdown {
+      font-size: 12px;
+      font-weight: 800;
+      margin: 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .deadline-note.lock { color: #b91c1c; }
+    .deadline-note.open { color: #b91c1c; }
+    .deadline-box.lock {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .deadline-box.lock .deadline-countdown {
+      color: #991b1b;
+      border-color: #fecaca;
+      background: #fff;
+    }
+    .deadline-box.open {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .deadline-box.open .deadline-countdown {
+      color: #991b1b;
+      border-color: #fecaca;
+      background: #fff;
+    }
+    .section-title { font-size: 24px; font-weight: 700; color: #111827; }
+    .section-sub { color: #6b7280; margin-top: 4px; font-size: 14px; }
+    .dash-card {
+      width: 100%;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+    }
+    .dash-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .dash-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+    .dash-sub {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .status-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+    .status-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px 14px;
+      box-shadow: 0 12px 22px rgba(15, 23, 42, .10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: fit-content;
+      min-width: 460px;
+      border-left: 5px solid #ef4444;
+    }
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+    .status-chip {
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid transparent;
+    }
+    .status-chip.open {
+      background: #16a34a;
+      color: #fff;
+      border-color: #16a34a;
+    }
+    .status-chip.locked {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+    .status-deadline {
+      font-size: 13px;
+      font-weight: 800;
+      color: #991b1b;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-left: 4px solid #dc2626;
+      border-radius: 10px;
+      padding: 6px 10px;
+      box-shadow: 0 4px 10px rgba(220, 38, 38, .12);
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .kpi-section {
+      background: #ffffff;
+      border: 1px solid #dbe3ee;
+      border-radius: 12px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    .kpi-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 2px 4px;
+    }
+    .kpi-section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: .01em;
+    }
+    .kpi-section-sub {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .kpi-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, .05);
+    }
+    .kpi-label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.1;
+    }
+    .kpi-meta {
+      font-size: 12px;
+      color: #475569;
+      font-weight: 700;
+    }
+    .chart-wrap {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+    .chart-wrap canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+    .btn-secondary { background: #111827; border: 0; }
+    .btn-secondary:hover { background: #0b1220; }
+    .btn-primary { background: #2563eb; border: 0; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .hidden { display: none !important; }
+    @media (max-width: 1024px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid #e5e7eb;
+        margin-top: 60px;
+      }
+      .content {
+        margin-left: 0;
+        padding: 16px 12px 12px;
+      }
+      .search-grid {
+        grid-template-columns: 1fr;
+      }
+      .search-grid .btn {
+        width: 100%;
+      }
+      .actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
+    <span class="navbar-brand h4 mb-0">Sub-con Inventory Data Check</span>
+    <div class="navbar-right">
+      <div class="role-pill" id="rolePill">SUBCON</div>
+      <button class="btn btn-danger btn-sm" title="Logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <div class="sidebar">
+    <button class="menu-btn" id="menuDashboard" onclick="setMenu('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
+    <button class="menu-btn active" id="menuAddData" onclick="setMenu('addData')"><i class="fa-solid fa-table-cells-large"></i><span>Add Data</span></button>
+  </div>
+
+  <main class="content">
+    <div id="pageHeader">
+      <div class="section-title" id="dashboardTitle">Subcon Dashboard</div>
+      <div class="section-sub" id="userLabel"></div>
+    </div>
+
+    <div id="dashboardView" class="hidden">
+      <div class="status-wrap">
+        <div class="status-card">
+          <div class="status-left">
+            <h3 class="status-title">Submission Status</h3>
+            <span id="submissionStatusChip" class="status-chip">-</span>
+          </div>
+          <div id="submissionStatusDate" class="status-deadline">Final submission date: -</div>
+        </div>
+      </div>
+      <div class="kpi-section">
+        <div class="kpi-section-head">
+          <div class="kpi-section-title">This Month Submitted Data</div>
+          <div id="kpiMonthLabel" class="kpi-section-sub">-</div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total File No.</div>
+            <div id="kpiRows" class="kpi-value">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Qty</div>
+            <div id="kpiTotalQty" class="kpi-value">-</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Diff Qty</div>
+            <div id="kpiDiffQty" class="kpi-value">-</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Last Updated</div>
+            <div id="kpiLastUpdated" class="kpi-meta">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-head">
+          <div>
+            <h3 class="dash-title">12-Month Total Trend</h3>
+            <div class="dash-sub" id="trendYearLabel"></div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadDashboardTrend(true)" title="Reload trend"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="yearTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div id="addDataView">
+      <div class="search-toolbar">
+        <div class="search-panel">
+          <div class="report-head-row">
+            <div class="report-title" id="monthlyTitle">Monthly Inventory report</div>
+            <input id="monthInput" type="month" class="form-control month-picker-inline" />
+          </div>
+        </div>
+      </div>
+      <div id="deadlineBox" class="deadline-box">
+        <div id="deadlineNote" class="deadline-note"></div>
+        <div id="deadlineCountdown" class="deadline-countdown"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col style="width:3.5%;">
+            <col style="width:6.5%;">
+            <col style="width:6%;">
+            <col style="width:6%;">
+            <col style="width:6%;">
+            <col style="width:5%;">
+            <col style="width:6%;">
+            <col style="width:6.5%;">
+            <col style="width:6.5%;">
+            <col style="width:6%;">
+            <col style="width:5%;">
+            <col style="width:37%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>File No.</th>
+              <th>BOH</th>
+              <th>Supply</th>
+              <th>Delivery</th>
+              <th>NG</th>
+              <th>EOH</th>
+              <th>Supplier confirm OK</th>
+              <th>Supplier confirm Hold</th>
+              <th>Total</th>
+              <th>Diff</th>
+              <th>Remark</th>
+            </tr>
+          </thead>
+          <tbody id="reportBody"></tbody>
+          <tfoot>
+            <tr>
+              <td></td>
+              <td class="text-center">Total</td>
+              <td id="sumBoh" class="text-end">-</td>
+              <td id="sumSupply" class="text-end">-</td>
+              <td id="sumDelivery" class="text-end">-</td>
+              <td id="sumNg" class="text-end">-</td>
+              <td id="sumEoh" class="text-end">-</td>
+              <td id="sumConfirmOk" class="text-end">-</td>
+              <td id="sumConfirmHold" class="text-end">-</td>
+              <td id="sumTotal" class="text-end">-</td>
+              <td id="sumDiff" class="text-end diff-col">-</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="excel-hint">Press Enter to move to the next field. Press Enter on the last field to auto-add a new row.</div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" title="Add row" onclick="addRow()"><i class="fa-solid fa-plus"></i></button>
+        <button class="btn btn-danger" title="Delete last row" onclick="deleteLastRow()"><i class="fa-regular fa-trash-can"></i></button>
+        <button class="btn btn-primary btn-save" title="Save data" onclick="saveReport()"><i class="fa-regular fa-floppy-disk"></i></button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMzFoDb_as_oOZQVDCeIz4nfwXqwSMjgQGCfr-jiaIVI9p5VFeWtUXKp0M75h7b_A/exec';
+    const SESSION_KEY = 'subcon_auth';
+    let currentUser = null;
+    let editAllowed = true;
+    let currentDeadlineDate = '';
+    let deadlineTimer = null;
+    let yearTrendChart = null;
+    let isDirty = false;
+    let isLoadingReport = false;
+    let lastLoadedMonth = '';
+    let lastUpdatedText = '-';
+
+    function swalTheme(base = {}) { return Object.assign({ showCloseButton: true, confirmButtonColor: '#4C6272', background: '#ffffff', color: '#102027' }, base); }
+    async function api(action, payload = {}) {
+      const res = await fetch(SCRIPT_URL + '?action=' + encodeURIComponent(action), {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    function safeNum(v) {
+      const n = Number(String(v ?? '').replace(/,/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatNumOrDash(n) {
+      if (!Number.isFinite(n) || n === 0) return '-';
+      return n.toLocaleString('en-US');
+    }
+
+    function monthLabel(yyyyMM) {
+      if (!yyyyMM || !/^\d{4}-\d{2}$/.test(yyyyMM)) return '';
+      const [y, m] = yyyyMM.split('-').map(Number);
+      const dt = new Date(y, m - 1, 1);
+      return dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    function formatDeadlineDateDisplay(v) {
+      const s = String(v || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      const [y, m, d] = s.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function renderDashboardSubmissionStatus() {
+      const chip = document.getElementById('submissionStatusChip');
+      const dateEl = document.getElementById('submissionStatusDate');
+      if (!chip || !dateEl) return;
+      const hasDate = !!String(currentDeadlineDate || '').trim();
+      const dateText = hasDate ? formatDeadlineDateDisplay(currentDeadlineDate) : 'not set';
+      if (editAllowed) {
+        chip.className = 'status-chip open';
+        chip.textContent = 'Open';
+      } else {
+        chip.className = 'status-chip locked';
+        chip.textContent = 'Locked';
+      }
+      dateEl.textContent = `Final submission date: ${dateText}`;
+    }
+
+    function updateMonthlyTitle() {
+      const month = document.getElementById('monthInput').value;
+      const label = monthLabel(month);
+      const subcon = (currentUser?.subcon || currentUser?.username || '').toUpperCase();
+      document.getElementById('monthlyTitle').textContent = `Monthly Inventory report  ${label} (${subcon})`;
+      const dashTitle = document.getElementById('dashboardTitle');
+      if (dashTitle) dashTitle.textContent = `${subcon} Dashboard`;
+    }
+
+    function markDirty() {
+      if (isLoadingReport) return;
+      isDirty = true;
+    }
+
+    function clearDirty() {
+      isDirty = false;
+    }
+
+    async function guardUnsavedChanges() {
+      if (!isDirty) return true;
+      const cf = await Swal.fire(swalTheme({
+        icon: 'warning',
+        title: 'Unsaved changes',
+        text: 'You have unsaved changes. Discard changes and continue?',
+        showCancelButton: true,
+        confirmButtonText: 'Discard',
+        cancelButtonText: 'Stay'
+      }));
+      return !!cf.isConfirmed;
+    }
+
+    function renderDashboardKpiFromRows(rows = []) {
+      const mm = document.getElementById('monthInput')?.value || '';
+      const monthText = monthLabel(mm);
+      const monthEl = document.getElementById('kpiMonthLabel');
+      if (monthEl) monthEl.textContent = monthText || '-';
+      const validRows = (rows || []).filter((r) =>
+        String(r.fileNo || '').trim() ||
+        String(r.boh || '').trim() ||
+        String(r.supply || '').trim() ||
+        String(r.delivery || '').trim() ||
+        String(r.ng || '').trim() ||
+        String(r.eoh || '').trim() ||
+        String(r.confirmOk || '').trim() ||
+        String(r.confirmHold || '').trim() ||
+        String(r.remark || '').trim()
+      );
+      const rowsCount = validRows.length;
+      const totalQty = validRows.reduce((sum, r) => sum + safeNum(r.total), 0);
+      const diffQty = validRows.reduce((sum, r) => sum + Math.abs(safeNum(r.diff)), 0);
+      document.getElementById('kpiRows').textContent = String(rowsCount);
+      document.getElementById('kpiTotalQty').textContent = formatNumOrDash(totalQty);
+      document.getElementById('kpiDiffQty').textContent = formatNumOrDash(diffQty);
+      document.getElementById('kpiLastUpdated').textContent = lastUpdatedText || '-';
+    }
+
+    function buildYearMonths(year) {
+      const out = [];
+      for (let m = 1; m <= 12; m++) out.push(`${year}-${String(m).padStart(2, '0')}`);
+      return out;
+    }
+
+    function renderYearTrendChart(year, monthlyTotals) {
+      const ctx = document.getElementById('yearTrendChart');
+      if (!ctx) return;
+      document.getElementById('trendYearLabel').textContent = `Year ${year}`;
+      const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      if (yearTrendChart) yearTrendChart.destroy();
+      yearTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Total',
+            data: monthlyTotals,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, .14)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 4,
+            fill: true,
+            tension: 0.25
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Total: ${Number(ctx.raw || 0).toLocaleString('en-US')}`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: (v) => Number(v).toLocaleString('en-US')
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function loadDashboardTrend(showLoading = false) {
+      const month = document.getElementById('monthInput').value;
+      if (!month) return;
+      const year = Number((month || '').split('-')[0]);
+      if (!year) return;
+      if (showLoading) {
+        Swal.fire(swalTheme({ title: 'Loading trend data...', showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() }));
+      }
+      try {
+        const res = await api('getSubconYearTrend', { year, username: currentUser.username });
+        const totals = (res && res.ok && Array.isArray(res.totals)) ? res.totals : Array(12).fill(0);
+        renderYearTrendChart(year, totals);
+      } catch (_) {
+        renderYearTrendChart(year, Array(12).fill(0));
+      } finally {
+        if (showLoading) Swal.close();
+      }
+    }
+
+    function normalizeFileNo(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return raw;
+      if (/^\d+$/.test(raw)) return `F${raw.padStart(4, '0')}`;
+      const m = raw.match(/^(\d+)([A-Za-z]+)$/);
+      if (m) return `F${m[1].padStart(4, '0')}${m[2].toUpperCase()}`;
+      return raw;
+    }
+
+    function normalizeFileNoInput(input) {
+      if (!input) return;
+      input.value = normalizeFileNo(input.value);
+    }
+
+    function recalcRow(tr) {
+      const boh = safeNum(tr.querySelector('[name="boh"]').value);
+      const supply = safeNum(tr.querySelector('[name="supply"]').value);
+      const delivery = safeNum(tr.querySelector('[name="delivery"]').value);
+      const ng = safeNum(tr.querySelector('[name="ng"]').value);
+      const ok = safeNum(tr.querySelector('[name="confirmOk"]').value);
+      const hold = safeNum(tr.querySelector('[name="confirmHold"]').value);
+      const eoh = (boh + supply) - delivery - ng;
+      const total = ok + hold;
+      const diff = Math.abs(eoh - total);
+      tr.querySelector('[name="eoh"]').value = eoh || '';
+      tr.querySelector('[name="total"]').value = total || '';
+      tr.querySelector('[name="diff"]').value = diff || '';
+      recalcTotals();
+    }
+
+    function rowTemplate(r = {}, index = 1) {
+      return `
+      <tr>
+        <td class="text-center">${index}</td>
+        <td><input name="fileNo" value="${r.fileNo ?? ''}" onblur="normalizeFileNoInput(this)" /></td>
+        <td class="num"><input name="boh" value="${r.boh ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="supply" value="${r.supply ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="delivery" value="${r.delivery ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="ng" value="${r.ng ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="eoh" value="${r.eoh ?? ''}" disabled /></td>
+        <td class="num"><input name="confirmOk" value="${r.confirmOk ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="confirmHold" value="${r.confirmHold ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="total" value="${r.total ?? ''}" disabled /></td>
+        <td class="num diff-col"><input class="diff-col" name="diff" value="${r.diff ?? ''}" disabled /></td>
+        <td><input name="remark" value="${r.remark ?? ''}" /></td>
+      </tr>`;
+    }
+
+    function renderRows(rows = []) {
+      const body = document.getElementById('reportBody');
+      if (!rows.length) rows = [{}];
+      body.innerHTML = rows.map((r, i) => rowTemplate(r, i + 1)).join('');
+      [...body.querySelectorAll('tr')].forEach(recalcRow);
+      setEditMode(editAllowed, currentDeadlineDate);
+    }
+
+    function collectRows() {
+      return [...document.querySelectorAll('#reportBody tr')].map((tr, i) => ({
+        item: i + 1,
+        fileNo: normalizeFileNo(tr.querySelector('[name="fileNo"]').value),
+        boh: tr.querySelector('[name="boh"]').value.trim(),
+        supply: tr.querySelector('[name="supply"]').value.trim(),
+        delivery: tr.querySelector('[name="delivery"]').value.trim(),
+        ng: tr.querySelector('[name="ng"]').value.trim(),
+        eoh: tr.querySelector('[name="eoh"]').value.trim(),
+        confirmOk: tr.querySelector('[name="confirmOk"]').value.trim(),
+        confirmHold: tr.querySelector('[name="confirmHold"]').value.trim(),
+        total: tr.querySelector('[name="total"]').value.trim(),
+        diff: tr.querySelector('[name="diff"]').value.trim(),
+        remark: tr.querySelector('[name="remark"]').value.trim()
+      })).filter(x => x.fileNo || x.boh || x.supply || x.delivery || x.ng || x.eoh || x.confirmOk || x.confirmHold || x.remark);
+    }
+
+    function addRow() {
+      const body = document.getElementById('reportBody');
+      body.insertAdjacentHTML('beforeend', rowTemplate({}, body.children.length + 1));
+      recalcTotals();
+    }
+
+    function recalcTotals() {
+      const rows = [...document.querySelectorAll('#reportBody tr')];
+      let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
+      rows.forEach((tr) => {
+        boh += safeNum(tr.querySelector('[name="boh"]')?.value);
+        supply += safeNum(tr.querySelector('[name="supply"]')?.value);
+        delivery += safeNum(tr.querySelector('[name="delivery"]')?.value);
+        ng += safeNum(tr.querySelector('[name="ng"]')?.value);
+        eoh += safeNum(tr.querySelector('[name="eoh"]')?.value);
+        ok += safeNum(tr.querySelector('[name="confirmOk"]')?.value);
+        hold += safeNum(tr.querySelector('[name="confirmHold"]')?.value);
+        total += safeNum(tr.querySelector('[name="total"]')?.value);
+        diff += Math.abs(safeNum(tr.querySelector('[name="diff"]')?.value));
+      });
+      document.getElementById('sumBoh').textContent = formatNumOrDash(boh);
+      document.getElementById('sumSupply').textContent = formatNumOrDash(supply);
+      document.getElementById('sumDelivery').textContent = formatNumOrDash(delivery);
+      document.getElementById('sumNg').textContent = formatNumOrDash(ng);
+      document.getElementById('sumEoh').textContent = formatNumOrDash(eoh);
+      document.getElementById('sumConfirmOk').textContent = formatNumOrDash(ok);
+      document.getElementById('sumConfirmHold').textContent = formatNumOrDash(hold);
+      document.getElementById('sumTotal').textContent = formatNumOrDash(total);
+      document.getElementById('sumDiff').textContent = formatNumOrDash(diff);
+    }
+
+    async function deleteLastRow() {
+      const body = document.getElementById('reportBody');
+      if (!body.children.length) return;
+      if (body.children.length === 1) {
+        await Swal.fire(swalTheme({ icon: 'warning', title: 'At least 1 row is required' }));
+        return;
+      }
+      const cf = await Swal.fire(swalTheme({
+        icon: 'question',
+        title: 'Delete the last row?',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel'
+      }));
+      if (!cf.isConfirmed) return;
+      body.removeChild(body.lastElementChild);
+      recalcTotals();
+    }
+
+    function getEditableCells() {
+      return [...document.querySelectorAll('#reportBody input:not([disabled]), #reportBody textarea')];
+    }
+
+    function bindExcelKeys() {
+      document.getElementById('reportBody').addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const target = e.target;
+        if (!(target.matches('input') || target.matches('textarea'))) return;
+        e.preventDefault();
+        const cells = getEditableCells();
+        const idx = cells.indexOf(target);
+        if (idx < 0) return;
+        const next = cells[idx + 1];
+        if (next) {
+          next.focus();
+          if (next.select) next.select();
+          return;
+        }
+        addRow();
+        const updated = getEditableCells();
+        const firstNew = updated[idx + 1];
+        if (firstNew) firstNew.focus();
+      });
+    }
+
+    async function loadReport(showLoading = true) {
+      const month = document.getElementById('monthInput').value;
+      updateMonthlyTitle();
+      if (!month) return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select a month' }));
+      isLoadingReport = true;
+      if (showLoading) {
+        Swal.fire(swalTheme({ title: 'Loading data...', showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() }));
+      }
+      try {
+        const res = await api('getSubconMonthData', { month, username: currentUser.username });
+        if (showLoading) Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load data' }));
+        setEditMode(!!res.allowed, res.deadlineDate || '');
+        const dataRows = res.rows || [];
+        renderRows(dataRows);
+        lastLoadedMonth = month;
+        const hasSavedRows = dataRows.some((r) =>
+          String(r.fileNo || '').trim() ||
+          String(r.boh || '').trim() ||
+          String(r.supply || '').trim() ||
+          String(r.delivery || '').trim() ||
+          String(r.ng || '').trim() ||
+          String(r.eoh || '').trim() ||
+          String(r.confirmOk || '').trim() ||
+          String(r.confirmHold || '').trim() ||
+          String(r.remark || '').trim()
+        );
+        lastUpdatedText = hasSavedRows ? new Date().toLocaleString('en-GB') : '-';
+        renderDashboardKpiFromRows(dataRows);
+        clearDirty();
+      } catch (e) {
+        if (showLoading) Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load data', text: e.message }));
+      } finally {
+        isLoadingReport = false;
+      }
+    }
+
+    async function saveReport() {
+      if (!editAllowed) return Swal.fire(swalTheme({ icon: 'warning', title: 'This month is locked by deadline' }));
+      const ok = await Swal.fire(swalTheme({ icon: 'question', title: 'Save report data?', showCancelButton: true, confirmButtonText: 'Save', cancelButtonText: 'Cancel' }));
+      if (!ok.isConfirmed) return;
+      const rows = collectRows();
+      if (!rows.length) return Swal.fire(swalTheme({ icon: 'warning', title: 'No data to save' }));
+
+      Swal.fire(swalTheme({ title: 'Saving data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }));
+      try {
+        const res = await api('saveReport', { month: document.getElementById('monthInput').value, subcon: currentUser.subcon, username: currentUser.username, rows });
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Save failed' }));
+        await Swal.fire(swalTheme({ icon: 'success', title: 'Data saved successfully' }));
+        clearDirty();
+        lastUpdatedText = new Date().toLocaleString('en-GB');
+        loadReport();
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Save failed', text: e.message }));
+      }
+    }
+
+    async function setMenu(menu) {
+      const isDashboard = menu === 'dashboard';
+      const isAddData = menu === 'addData';
+      if (isDashboard) {
+        const ok = await guardUnsavedChanges();
+        if (!ok) return;
+      }
+      document.getElementById('dashboardView').classList.toggle('hidden', !isDashboard);
+      document.getElementById('addDataView').classList.toggle('hidden', !isAddData);
+      document.getElementById('menuDashboard').classList.toggle('active', isDashboard);
+      document.getElementById('menuAddData').classList.toggle('active', isAddData);
+      document.getElementById('pageHeader').classList.toggle('hidden', !isDashboard);
+      if (isDashboard) {
+        renderDashboardSubmissionStatus();
+        renderDashboardKpiFromRows(collectRows());
+        loadDashboardTrend(true);
+      }
+    }
+
+    async function logout() {
+      const cf = await Swal.fire(swalTheme({
+        icon: 'question',
+        title: 'Confirm logout?',
+        showCancelButton: true,
+        confirmButtonText: 'Logout',
+        cancelButtonText: 'Cancel'
+      }));
+      if (!cf.isConfirmed) return;
+
+      await Swal.fire(swalTheme({ icon: 'success', title: 'Logged out successfully', timer: 700, showConfirmButton: false }));
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.href = 'login.html';
+    }
+
+    function boot() {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) { window.location.href = 'login.html'; return; }
+      try {
+        currentUser = JSON.parse(raw);
+      } catch (_) {
+        sessionStorage.removeItem(SESSION_KEY);
+        window.location.href = 'login.html';
+        return;
+      }
+      if (!currentUser || currentUser.role !== 'SUBCON') {
+        window.location.href = currentUser && currentUser.role === 'RMT' ? 'rmt.html' : 'login.html';
+        return;
+      }
+      const month = new Date();
+      document.getElementById('monthInput').value = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('userLabel').textContent = '';
+      document.getElementById('rolePill').textContent = (currentUser.subcon || 'SUBCON').toUpperCase();
+      document.getElementById('reportBody').addEventListener('input', markDirty);
+      document.getElementById('monthInput').addEventListener('change', async () => {
+        const nextMonth = document.getElementById('monthInput').value;
+        const ok = await guardUnsavedChanges();
+        if (!ok) {
+          document.getElementById('monthInput').value = lastLoadedMonth || nextMonth;
+          return;
+        }
+        updateMonthlyTitle();
+        loadReport();
+        if (!document.getElementById('dashboardView').classList.contains('hidden')) loadDashboardTrend();
+      });
+      updateMonthlyTitle();
+      loadReport(false);
+      setMenu('dashboard');
+      bindExcelKeys();
+    }
+
+    function setEditMode(allowed, deadlineDate = '') {
+      editAllowed = !!allowed;
+      currentDeadlineDate = deadlineDate || '';
+      if (deadlineTimer) {
+        clearInterval(deadlineTimer);
+        deadlineTimer = null;
+      }
+      const fields = document.querySelectorAll('#reportBody input:not([name="eoh"]):not([name="total"]):not([name="diff"]), #reportBody textarea');
+      fields.forEach(el => el.disabled = !editAllowed);
+      const buttons = document.querySelectorAll('.actions button');
+      buttons.forEach(btn => btn.disabled = !editAllowed);
+      const note = document.getElementById('deadlineNote');
+      const countdown = document.getElementById('deadlineCountdown');
+      const box = document.getElementById('deadlineBox');
+      if (editAllowed) {
+        note.className = 'deadline-note open';
+        if (box) box.className = 'deadline-box open';
+        note.textContent = currentDeadlineDate ? `Final submission date: ${formatDeadlineDateDisplay(currentDeadlineDate)}` : 'Final submission date: not set';
+        if (currentDeadlineDate) {
+          const tick = () => {
+            const end = new Date(currentDeadlineDate + 'T23:59:59').getTime();
+            const now = Date.now();
+            const ms = end - now;
+            if (ms <= 0) {
+              countdown.textContent = '00d 00h 00m 00s';
+              return;
+            }
+            const sec = Math.floor(ms / 1000);
+            const d = Math.floor(sec / 86400);
+            const h = Math.floor((sec % 86400) / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            countdown.textContent = `${String(d).padStart(2, '0')}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+          };
+          tick();
+          deadlineTimer = setInterval(tick, 1000);
+        } else {
+          countdown.textContent = '';
+        }
+      } else {
+        note.className = 'deadline-note lock';
+        if (box) box.className = 'deadline-box lock';
+        note.textContent = currentDeadlineDate ? `Locked (deadline: ${formatDeadlineDateDisplay(currentDeadlineDate)})` : 'Locked by monthly deadline';
+        countdown.textContent = '';
+      }
+      renderDashboardSubmissionStatus();
+    }
+
+    boot();
+  </script>
+</body>
+</html>
+

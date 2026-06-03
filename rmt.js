@@ -1,0 +1,1564 @@
+﻿
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMzFoDb_as_oOZQVDCeIz4nfwXqwSMjgQGCfr-jiaIVI9p5VFeWtUXKp0M75h7b_A/exec';
+    const SESSION_KEY = 'subcon_auth';
+    const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    let currentUser = null;
+    let deadlineState = {};
+    let dashboardDeadlineState = {};
+    let fileNoMapState = {};
+    let summaryCollapsedState = {};
+    let userRowsState = [];
+    let fileNoRowsState = [];
+    let d365SubstockRowsState = [];
+    let d365FilterState = {
+      itemNumber: '', processNo: '', cmt: '', kdt: '', kkft: '', mdi: '', snt: '', ssp: '', skc: '', tpk: '', tisco: '', tyn: '', grandTotal: ''
+    };
+    let d365FilterMultiState = {
+      itemNumber: [], processNo: [], cmt: [], kdt: [], kkft: [], mdi: [], snt: [], ssp: [], skc: [], tpk: [], tisco: [], tyn: [], grandTotal: []
+    };
+
+    function swalTheme(base = {}) { return Object.assign({ showCloseButton: true, confirmButtonColor: '#4C6272', background: '#ffffff', color: '#102027' }, base); }
+    function swalLoading(title) {
+      return swalTheme({
+        title: title || 'Loading...',
+        showCloseButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      });
+    }
+    async function api(action, payload = {}) {
+      const res = await fetch(SCRIPT_URL + '?action=' + encodeURIComponent(action), {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    function safeNum(v) {
+      const n = Number(String(v ?? '').replace(/,/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatNumOrDash(n) {
+      if (!Number.isFinite(n) || n === 0) return '-';
+      return n.toLocaleString('en-US');
+    }
+    function textOrDash(v) {
+      const s = String(v ?? '').trim();
+      return s ? s : '-';
+    }
+
+    function monthLabel(yyyyMM) {
+      if (!yyyyMM || !/^\d{4}-\d{2}$/.test(yyyyMM)) return '';
+      const [y, m] = yyyyMM.split('-').map(Number);
+      const dt = new Date(y, m - 1, 1);
+      return dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    function formatDashboardDate(v) {
+      const s = String(v || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      const [y, m, d] = s.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      if (isNaN(dt.getTime())) return s;
+      const day = String(dt.getDate()).padStart(2, '0');
+      const mon = dt.toLocaleDateString('en-US', { month: 'short' });
+      const year = dt.getFullYear();
+      return `${day}-${mon}-${year}`;
+    }
+
+    function renderDashboardDeadline(month) {
+      const el = document.getElementById('dashboardDeadlineStatus');
+      if (!el) return;
+      const dd = (dashboardDeadlineState && dashboardDeadlineState[month]) ? String(dashboardDeadlineState[month]).trim() : '';
+      if (!dd) {
+        el.innerHTML = `Deadline: <span>-</span> <span class="chip na">NOT SET</span>`;
+        return;
+      }
+      const ddDisplay = formatDashboardDate(dd);
+      const end = new Date(dd + 'T23:59:59');
+      const now = new Date();
+      const closed = Number.isFinite(end.getTime()) ? now > end : false;
+      const chipClass = closed ? 'closed' : 'open';
+      const chipText = closed ? 'CLOSED' : 'OPEN';
+      el.innerHTML = `Deadline: <span>${ddDisplay}</span> <span class="chip ${chipClass}">${chipText}</span>`;
+    }
+
+    function updateDashboardTitle() {
+      const month = document.getElementById('monthInput').value;
+      const label = monthLabel(month);
+      document.getElementById('dashboardTitle').textContent = label
+        ? `RMT Dashboard (Monthly Inventory) - ${label}`
+        : 'RMT Dashboard (Monthly Inventory)';
+    }
+
+    function syncDashboardMonthInput() {
+      const base = document.getElementById('monthInput');
+      const dash = document.getElementById('dashboardMonthInput');
+      if (base && dash && dash.value !== base.value) dash.value = base.value || '';
+    }
+
+    function renderRows(rows = []) {
+      const body = document.getElementById('reportBody');
+      if (!rows.length) {
+        body.innerHTML = '<tr><td class="text-center" colspan="12">No data found</td></tr>';
+        recalcTotals([]);
+        return;
+      }
+      body.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td class="text-center">${i + 1}</td>
+          <td>${r.fileNo || ''}</td>
+          <td>${r.boh || ''}</td>
+          <td>${r.supply || ''}</td>
+          <td>${r.delivery || ''}</td>
+          <td>${r.ng || ''}</td>
+          <td>${r.eoh || ''}</td>
+          <td>${r.confirmOk || ''}</td>
+          <td>${r.confirmHold || ''}</td>
+          <td>${r.total || ''}</td>
+          <td>${r.diff || ''}</td>
+          <td>${r.remark || ''}</td>
+        </tr>
+      `).join('');
+      recalcTotals(rows);
+    }
+
+    function recalcTotals(rows = []) {
+      let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
+      rows.forEach((r) => {
+        boh += safeNum(r.boh);
+        supply += safeNum(r.supply);
+        delivery += safeNum(r.delivery);
+        ng += safeNum(r.ng);
+        eoh += safeNum(r.eoh);
+        ok += safeNum(r.confirmOk);
+        hold += safeNum(r.confirmHold);
+        total += safeNum(r.total);
+        diff += safeNum(r.diff);
+      });
+      document.getElementById('sumBoh').textContent = formatNumOrDash(boh);
+      document.getElementById('sumSupply').textContent = formatNumOrDash(supply);
+      document.getElementById('sumDelivery').textContent = formatNumOrDash(delivery);
+      document.getElementById('sumNg').textContent = formatNumOrDash(ng);
+      document.getElementById('sumEoh').textContent = formatNumOrDash(eoh);
+      document.getElementById('sumConfirmOk').textContent = formatNumOrDash(ok);
+      document.getElementById('sumConfirmHold').textContent = formatNumOrDash(hold);
+      document.getElementById('sumTotal').textContent = formatNumOrDash(total);
+      document.getElementById('sumDiff').textContent = formatNumOrDash(diff);
+    }
+
+    async function loadReport() {
+      const month = document.getElementById('monthInput').value;
+      if (!month) return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select a month' }));
+      const subcon = document.getElementById('subconSelect').value || 'ALL';
+      if (!subcon || subcon === '__SELECT__' || subcon === '__LOADING__') {
+        renderRows([]);
+        return;
+      }
+
+      Swal.fire(swalLoading('Loading data...'));
+      try {
+        const res = await api('getReport', { month, subcon, role: currentUser.role, username: currentUser.username });
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load data' }));
+        const rows = res.rows || [];
+        renderRows(rows);
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load data', text: e.message }));
+      }
+    }
+
+    async function loadDashboard(showLoadingSwal = true) {
+      const month = document.getElementById('monthInput').value;
+      if (!month) return;
+      const cards = document.getElementById('dashStatusCards');
+      if (showLoadingSwal) {
+        Swal.fire(swalLoading('Loading Dashboard...'));
+      }
+      cards.innerHTML = '<div class="subcon-card">Loading data...</div>';
+      try {
+        const [dataRes, dlRes] = await Promise.all([
+          api('getDashboard', { month, username: currentUser.username }),
+          api('listDeadlines', { username: currentUser.username })
+        ]);
+        dashboardDeadlineState = (dlRes && dlRes.ok && dlRes.deadlines) ? dlRes.deadlines : {};
+        renderDashboardDeadline(month);
+        if (!dataRes || !dataRes.ok) {
+          document.getElementById('dashTotalSub').textContent = '0';
+          document.getElementById('dashSubmitted').textContent = '0';
+          document.getElementById('dashPending').textContent = '0';
+          document.getElementById('dashTotalRows').textContent = '0';
+          cards.innerHTML = '<div class="subcon-card">Failed to load data</div>';
+          return;
+        }
+
+        const summary = dataRes.summary || {};
+        const statusRows = dataRes.statusRows || [];
+        document.getElementById('dashTotalSub').textContent = String(summary.totalSub || 0);
+        document.getElementById('dashSubmitted').textContent = String(summary.submitted || 0);
+        document.getElementById('dashPending').textContent = String(summary.pending || 0);
+        document.getElementById('dashTotalRows').textContent = Number(summary.grandTotal || 0).toLocaleString('en-US');
+
+        if (!statusRows.length) {
+          cards.innerHTML = '<div class="subcon-card">No data found</div>';
+          return;
+        }
+        cards.innerHTML = statusRows.map(x => {
+          const isSubmitted = x.status === 'submitted';
+          const st = isSubmitted ? 'Submitted' : 'Pending';
+          const cls = isSubmitted ? 'submitted' : 'pending';
+          const tv = Number(x.totalValue || 0).toLocaleString('en-US');
+          const icon = isSubmitted ? 'fa-solid fa-circle-check' : 'fa-regular fa-clock';
+          const iconCls = isSubmitted ? 'submitted' : 'pending';
+          return `
+            <div class="subcon-card ${cls}" onclick='openSubconDashboardSwal(${JSON.stringify(String(x.subcon || ""))})'>
+              <span class="subcon-status-icon ${iconCls}"><i class="${icon}"></i></span>
+              <div class="subcon-name">${x.subcon || ''}</div>
+              <div class="subcon-meta"><span>${st}</span></div>
+              <div class="subcon-total">${tv}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (_) {
+        renderDashboardDeadline(month);
+        document.getElementById('dashTotalSub').textContent = '0';
+        document.getElementById('dashSubmitted').textContent = '0';
+        document.getElementById('dashPending').textContent = '0';
+        document.getElementById('dashTotalRows').textContent = '0';
+        cards.innerHTML = '<div class="subcon-card">Failed to load data</div>';
+      }
+      finally {
+        if (showLoadingSwal) Swal.close();
+      }
+    }
+
+    async function refreshDashboard() {
+      await loadDashboard(true);
+    }
+
+    async function openSubconDashboardSwal(subcon) {
+      const month = document.getElementById('monthInput').value;
+      if (!subcon || !month) return;
+      Swal.fire(swalLoading(`Loading ${String(subcon).toUpperCase()}...`));
+      try {
+        const res = await api('getReport', { month, subcon, role: currentUser.role, username: currentUser.username });
+        if (!res || !res.ok) {
+          Swal.close();
+          return Swal.fire(swalTheme({ icon: 'error', title: (res && res.message) || 'Failed to load data' }));
+        }
+        const rows = res.rows || [];
+        let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
+        rows.forEach((r) => {
+          boh += safeNum(r.boh);
+          supply += safeNum(r.supply);
+          delivery += safeNum(r.delivery);
+          ng += safeNum(r.ng);
+          eoh += safeNum(r.eoh);
+          ok += safeNum(r.confirmOk);
+          hold += safeNum(r.confirmHold);
+          total += safeNum(r.total);
+          diff += safeNum(r.diff);
+        });
+
+        const html = `
+          <div style="max-height:60vh; overflow:auto;">
+            <table class="mini-table" style="min-width:1100px;">
+              <colgroup>
+                <col style="width:4%;">
+                <col style="width:8%;">
+                <col style="width:7%;">
+                <col style="width:7%;">
+                <col style="width:7%;">
+                <col style="width:6%;">
+                <col style="width:7%;">
+                <col style="width:8%;">
+                <col style="width:8%;">
+                <col style="width:7%;">
+                <col style="width:7%;">
+                <col style="width:24%;">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>File No.</th>
+                  <th>BOH</th>
+                  <th>Supply</th>
+                  <th>Delivery</th>
+                  <th>NG</th>
+                  <th>EOH</th>
+                  <th>Supplier confirm OK</th>
+                  <th>Supplier confirm Hold</th>
+                  <th>Total</th>
+                  <th>Diff</th>
+                  <th>Remark</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.length ? rows.map((r) => `
+                  <tr>
+                    <td class="text-center">${textOrDash(r.item)}</td>
+                    <td>${textOrDash(r.fileNo)}</td>
+                    <td>${textOrDash(r.boh)}</td>
+                    <td>${textOrDash(r.supply)}</td>
+                    <td>${textOrDash(r.delivery)}</td>
+                    <td>${textOrDash(r.ng)}</td>
+                    <td>${textOrDash(r.eoh)}</td>
+                    <td>${textOrDash(r.confirmOk)}</td>
+                    <td>${textOrDash(r.confirmHold)}</td>
+                    <td>${textOrDash(r.total)}</td>
+                    <td>${textOrDash(r.diff)}</td>
+                    <td style="text-align:left;">${textOrDash(r.remark)}</td>
+                  </tr>
+                `).join('') : '<tr><td colspan="12" class="text-center">No data found</td></tr>'}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td></td>
+                  <td class="text-center">Total</td>
+                  <td>${formatNumOrDash(boh)}</td>
+                  <td>${formatNumOrDash(supply)}</td>
+                  <td>${formatNumOrDash(delivery)}</td>
+                  <td>${formatNumOrDash(ng)}</td>
+                  <td>${formatNumOrDash(eoh)}</td>
+                  <td>${formatNumOrDash(ok)}</td>
+                  <td>${formatNumOrDash(hold)}</td>
+                  <td>${formatNumOrDash(total)}</td>
+                  <td>${formatNumOrDash(diff)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        `;
+        Swal.fire(swalTheme({
+          title: `Subcon: ${String(subcon).toUpperCase()} (${monthLabel(month)})`,
+          width: 1200,
+          html,
+          showConfirmButton: false
+        }));
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load data', text: e.message }));
+      }
+    }
+
+    function setSettingTab(tab) {
+      const isUser = tab === 'user';
+      const isFileNo = tab === 'fileno';
+      const isDeadline = tab === 'deadline';
+      document.getElementById('settingTabUser').classList.toggle('active', isUser);
+      document.getElementById('settingTabFileNo').classList.toggle('active', isFileNo);
+      document.getElementById('settingTabDeadline').classList.toggle('active', isDeadline);
+      document.getElementById('settingUserPanel').classList.toggle('hidden', !isUser);
+      document.getElementById('settingFileNoPanel').classList.toggle('hidden', !isFileNo);
+      document.getElementById('settingDeadlinePanel').classList.toggle('hidden', !isDeadline);
+      if (isFileNo) loadFileNoMap();
+      if (isDeadline) loadDeadlines();
+    }
+
+    function buildDeadlineMonths() {
+      const yInput = Number(document.getElementById('deadlineYearInput')?.value || 0);
+      const m = document.getElementById('monthInput').value;
+      const year = yInput || (m && /^\d{4}-\d{2}$/.test(m) ? Number(m.split('-')[0]) : (new Date().getFullYear()));
+      const out = [];
+      for (let i = 1; i <= 12; i++) out.push(`${year}-${String(i).padStart(2, '0')}`);
+      return out;
+    }
+
+    function formatDeadlineDate(v) {
+      if (!v) return 'Not set';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return v;
+      return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    }
+
+    function safePct(a, b) {
+      if (!b) return '-';
+      return ((a / b) * 100).toFixed(2) + '%';
+    }
+
+    function toD365Code(fileNo) {
+      const raw = String(fileNo || '').trim().toUpperCase();
+      if (!raw) return '-';
+      const core = raw.startsWith('F') ? raw.slice(1) : raw;
+      if (!core) return '-';
+      const m = core.match(/^(\d+)/);
+      if (!m) return '-';
+      return `56110T${m[1]}`;
+    }
+
+    function getRowD365Qty() {
+      return 0;
+    }
+
+    function toggleSummaryGroup(groupId) {
+      const cur = !!summaryCollapsedState[groupId];
+      summaryCollapsedState[groupId] = !cur;
+      document.querySelectorAll(`tr[data-summary-group="${groupId}"]`).forEach((tr) => {
+        tr.style.display = summaryCollapsedState[groupId] ? 'none' : '';
+      });
+      const icon = document.getElementById(`sumToggle_${groupId}`);
+      if (icon) icon.textContent = summaryCollapsedState[groupId] ? '+' : '-';
+    }
+
+    function renderSummaryRows(rows = [], allSubcons = []) {
+      const body = document.getElementById('summaryBody');
+      if (!rows.length && !allSubcons.length) {
+        body.innerHTML = '<tr><td class="text-center" colspan="24">No data found</td></tr>';
+        return;
+      }
+      const grouped = rows.reduce((acc, r) => {
+        const key = String(r.subcon || 'UNKNOWN').trim() || 'UNKNOWN';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(r);
+        return acc;
+      }, {});
+      (allSubcons || []).forEach((s) => {
+        const key = String(s || '').trim();
+        if (key && !grouped[key]) grouped[key] = [];
+      });
+      const keys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
+      let html = '';
+      keys.forEach((sub, groupIndex) => {
+        const gRows = grouped[sub];
+        const subUpper = String(sub || 'UNKNOWN').toUpperCase();
+        const groupId = `g${groupIndex}`;
+        if (typeof summaryCollapsedState[groupId] === 'undefined') {
+          summaryCollapsedState[groupId] = !gRows.length;
+        }
+        let sumTotalD365 = 0;
+        let sumTotalSubc = 0;
+        let totalItem = 0;
+        let okItem = 0;
+
+        html += `<tr>
+          <td colspan="24" style="background:#e2e8f0; font-weight:800; text-align:left; cursor:pointer;" onclick="toggleSummaryGroup('${groupId}')">
+            <span id="sumToggle_${groupId}" style="display:inline-block; width:20px;">${summaryCollapsedState[groupId] ? '+' : '-'}</span>SUBCON: ${subUpper}
+          </td>
+        </tr>`;
+        html += gRows.map((r, i) => {
+          const m = fileNoMapState[String(r.fileNo || '').trim()] || {};
+          const totalD365 = getRowD365Qty(r, m);
+          const totalSubc = safeNum(r.confirmOk) + safeNum(r.confirmHold);
+          const hasD365Qty = totalD365 > 0;
+          const diffQty = hasD365Qty ? (totalD365 - safeNum(r.total)) : null;
+          const d365Code = toD365Code(r.fileNo);
+          sumTotalD365 += totalD365;
+          sumTotalSubc += totalSubc;
+          totalItem += 1;
+          if (diffQty === 0) okItem += 1;
+          return `
+            <tr data-summary-group="${groupId}" style="${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
+              <td>${i + 1}</td>
+              <td>${r.fileNo || '-'}</td>
+              <td>${d365Code}</td>
+              <td></td>
+              <td>${diffQty === null ? '-' : formatNumOrDash(diffQty)}</td>
+              <td>${r.boh || '-'}</td>
+              <td>${r.supply || '-'}</td>
+              <td>${r.delivery || '-'}</td>
+              <td>${r.ng || '-'}</td>
+              <td>${r.eoh || '-'}</td>
+              <td>${r.confirmOk || '-'}</td>
+              <td>${r.confirmHold || '-'}</td>
+              <td>${r.total || '-'}</td>
+              <td>${r.diff || '-'}</td>
+              <td style="text-align:left;">${r.remark || '-'}</td>
+              <td>${String(r.subcon || '-').toUpperCase()}</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>${m.plant || '-'}</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+            </tr>
+          `;
+        }).join('');
+
+        if (!gRows.length) {
+          html += `
+            <tr data-summary-group="${groupId}" style="${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
+              <td colspan="24" class="text-center" style="color:#64748b;">No data submitted</td>
+            </tr>
+          `;
+        }
+
+        const diffItem = Math.max(0, totalItem - okItem);
+        const qtyPct = safePct(sumTotalSubc, sumTotalD365);
+        const accPct = safePct(okItem, totalItem);
+        html += `
+          <tr data-summary-group="${groupId}" style="background:#f8fafc; font-weight:700; ${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
+            <td colspan="16" style="text-align:right;">Total (${subUpper})</td>
+            <td>${formatNumOrDash(sumTotalD365)}</td>
+            <td>${formatNumOrDash(sumTotalSubc)}</td>
+            <td>${qtyPct}</td>
+            <td>-</td>
+            <td>${formatNumOrDash(totalItem)}</td>
+            <td>${formatNumOrDash(okItem)}</td>
+            <td>${formatNumOrDash(diffItem)}</td>
+            <td>${accPct}</td>
+          </tr>
+        `;
+      });
+      body.innerHTML = html;
+    }
+
+    function initSubstockMonth() {
+      const src = document.getElementById('monthInput');
+      const dst = document.getElementById('substockMonthInput');
+      if (!src || !dst) return;
+      if (!dst.value) dst.value = src.value || '';
+    }
+
+    function pickHeaderValue(row, candidates = []) {
+      for (let i = 0; i < candidates.length; i++) {
+        const key = candidates[i];
+        if (Object.prototype.hasOwnProperty.call(row, key) && String(row[key] ?? '').trim() !== '') {
+          return row[key];
+        }
+      }
+      return '';
+    }
+
+    function normalizeSubstockRows(rawRows = []) {
+      const plantCols = ['CMT', 'KDT', 'KKFT', 'MDI', 'SNT', 'SSP', 'SKC', 'TPK', 'TISCO', 'TYN'];
+      const vendorToSubcon = [
+        { key: 'CENTRAL MACHINERY TECH', sub: 'CMT' },
+        { key: 'K.D.HEAT TECHNOLOGY', sub: 'KDT' },
+        { key: 'KYORITSU KIDEN FUJI', sub: 'KKFT' },
+        { key: 'MDI HEAT TREATMENT', sub: 'MDI' },
+        { key: 'S.N.T MOULD', sub: 'SNT' },
+        { key: 'S.S.P. BURAPHA', sub: 'SSP' },
+        { key: 'SIAM KOCHI', sub: 'SKC' },
+        { key: 'THAI PARKERZING', sub: 'TPK' },
+        { key: 'THAIINDUCTION SERVICES', sub: 'TISCO' },
+        { key: 'TOYONAGA', sub: 'TYN' }
+      ];
+      const isPivotShape = rawRows.some((row) => String(pickHeaderValue(row, ['CMT'])).trim() !== '' || String(pickHeaderValue(row, ['KKFT'])).trim() !== '');
+      if (isPivotShape) {
+        return rawRows.map((row) => {
+          const itemNumber = pickHeaderValue(row, ['Item Number', 'ITEM NUMBER', 'ItemNumber', 'item number']);
+          const processNo = pickHeaderValue(row, ['Process No.', 'Process No', 'PROCESS NO.', 'PROCESS NO', 'Process']);
+          const out = { itemNumber, processNo };
+          let gt = 0;
+          plantCols.forEach((p) => {
+            const v = safeNum(pickHeaderValue(row, [p]));
+            out[p.toLowerCase()] = v ? v : '';
+            gt += v;
+          });
+          out.grandTotal = gt ? gt : '';
+          return out;
+        }).filter((r) => String(r.itemNumber || '').trim() !== '' || String(r.processNo || '').trim() !== '');
+      }
+
+      // Raw D365 shape (as sample): aggregate by Item Number + Process No., split qty by Vendor Name.
+      const map = {};
+      rawRows.forEach((row) => {
+        const itemNumber = String(pickHeaderValue(row, ['Item Number', 'ITEM NUMBER', 'ItemNumber'])).trim();
+        const processNoRaw = pickHeaderValue(row, ['Process No.', 'Process No', 'PROCESS NO.', 'PROCESS NO']);
+        const processNo = String(processNoRaw ?? '').trim();
+        if (!itemNumber && !processNo) return;
+
+        const vendorRaw = String(pickHeaderValue(row, ['Vendor Name', 'VENDOR NAME', 'Vendor', 'VENDOR'])).trim().toUpperCase();
+        const vendorNormalized = vendorRaw.replace(/[^A-Z0-9]/g, '');
+        let subconKey = '';
+        for (let i = 0; i < vendorToSubcon.length; i++) {
+          const m = vendorToSubcon[i];
+          const k = m.key.replace(/[^A-Z0-9]/g, '');
+          if (vendorNormalized.indexOf(k) >= 0) {
+            subconKey = m.sub;
+            break;
+          }
+        }
+        if (!subconKey) return;
+
+        const qty = safeNum(
+          pickHeaderValue(row, ['Remaining Qty', 'REMAINING QTY', 'Remaining', 'Available Qty', 'Good Qty'])
+        );
+
+        const key = `${itemNumber}||${processNo}`;
+        if (!map[key]) {
+          map[key] = {
+            itemNumber,
+            processNo,
+            cmt: 0, kdt: 0, kkft: 0, mdi: 0, snt: 0, ssp: 0, skc: 0, tpk: 0, tisco: 0, tyn: 0,
+            grandTotal: 0
+          };
+        }
+        const targetCol = subconKey.toLowerCase();
+        map[key][targetCol] += qty;
+        map[key].grandTotal += qty;
+      });
+
+      return Object.values(map).map((r) => {
+        const out = { ...r };
+        plantCols.forEach((p) => {
+          const k = p.toLowerCase();
+          out[k] = out[k] ? out[k] : '';
+        });
+        out.grandTotal = out.grandTotal ? out.grandTotal : '';
+        return out;
+      }).sort((a, b) => {
+        const ai = String(a.itemNumber || '');
+        const bi = String(b.itemNumber || '');
+        if (ai === bi) {
+          const ap = safeNum(a.processNo);
+          const bp = safeNum(b.processNo);
+          if (ap !== bp) return ap - bp;
+          return String(a.processNo || '').localeCompare(String(b.processNo || ''));
+        }
+        return ai.localeCompare(bi);
+      });
+    }
+
+    function renderD365SubstockRows(rows = []) {
+      const body = document.getElementById('d365SubstockBody');
+      if (!body) return;
+      const filtered = applyD365SubstockFilter(rows || []);
+      if (!filtered.length) {
+        body.innerHTML = '<tr><td colspan="13" class="text-center">No data uploaded</td></tr>';
+        renderD365SubstockTotals([]);
+        return;
+      }
+      body.innerHTML = filtered.map((r) => `
+        <tr>
+          <td>${textOrDash(r.itemNumber)}</td>
+          <td>${textOrDash(r.processNo)}</td>
+          <td>${textOrDash(r.cmt)}</td>
+          <td>${textOrDash(r.kdt)}</td>
+          <td>${textOrDash(r.kkft)}</td>
+          <td>${textOrDash(r.mdi)}</td>
+          <td>${textOrDash(r.snt)}</td>
+          <td>${textOrDash(r.ssp)}</td>
+          <td>${textOrDash(r.skc)}</td>
+          <td>${textOrDash(r.tpk)}</td>
+          <td>${textOrDash(r.tisco)}</td>
+          <td>${textOrDash(r.tyn)}</td>
+          <td>${textOrDash(r.grandTotal)}</td>
+        </tr>
+      `).join('');
+      renderD365SubstockTotals(filtered);
+    }
+
+    function renderD365SubstockTotals(rows = []) {
+      const sumCols = {
+        cmt: 0, kdt: 0, kkft: 0, mdi: 0, snt: 0, ssp: 0, skc: 0, tpk: 0, tisco: 0, tyn: 0, grandTotal: 0
+      };
+      (rows || []).forEach((r) => {
+        sumCols.cmt += safeNum(r.cmt);
+        sumCols.kdt += safeNum(r.kdt);
+        sumCols.kkft += safeNum(r.kkft);
+        sumCols.mdi += safeNum(r.mdi);
+        sumCols.snt += safeNum(r.snt);
+        sumCols.ssp += safeNum(r.ssp);
+        sumCols.skc += safeNum(r.skc);
+        sumCols.tpk += safeNum(r.tpk);
+        sumCols.tisco += safeNum(r.tisco);
+        sumCols.tyn += safeNum(r.tyn);
+        sumCols.grandTotal += safeNum(r.grandTotal);
+      });
+      const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = formatNumOrDash(v);
+      };
+      set('sumSubstockCmt', sumCols.cmt);
+      set('sumSubstockKdt', sumCols.kdt);
+      set('sumSubstockKkft', sumCols.kkft);
+      set('sumSubstockMdi', sumCols.mdi);
+      set('sumSubstockSnt', sumCols.snt);
+      set('sumSubstockSsp', sumCols.ssp);
+      set('sumSubstockSkc', sumCols.skc);
+      set('sumSubstockTpk', sumCols.tpk);
+      set('sumSubstockTisco', sumCols.tisco);
+      set('sumSubstockTyn', sumCols.tyn);
+      set('sumSubstockGrandTotal', sumCols.grandTotal);
+    }
+
+    function applyD365SubstockFilter(rows = []) {
+      const keys = Object.keys(d365FilterState);
+      return rows.filter((r) => {
+        for (let i = 0; i < keys.length; i++) {
+          const k = keys[i];
+          const picked = Array.isArray(d365FilterMultiState[k]) ? d365FilterMultiState[k] : [];
+          const kw = String(d365FilterState[k] || '').trim().toLowerCase();
+          const cellRaw = textOrDash(r[k]);
+          const cell = String(cellRaw).toLowerCase();
+
+          if (picked.length > 0) {
+            const found = picked.some((v) => String(v).toLowerCase() === cell);
+            if (!found) return false;
+            continue;
+          }
+          if (!kw) continue;
+          if (!cell.includes(kw)) return false;
+        }
+        return true;
+      });
+    }
+
+    function updateD365FilterHeaderState() {
+      document.querySelectorAll('.d365-filter-head').forEach((th) => {
+        const key = th.getAttribute('data-filter-key') || '';
+        const active = String(d365FilterState[key] || '').trim() !== '' || ((d365FilterMultiState[key] || []).length > 0);
+        th.classList.toggle('active-filter', active);
+      });
+    }
+
+    function getD365DistinctValues(key) {
+      const s = new Set();
+      (d365SubstockRowsState || []).forEach((r) => {
+        s.add(textOrDash(r[key]));
+      });
+      return Array.from(s).sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }));
+    }
+
+    async function openD365FilterSwal(key, label) {
+      const allValues = getD365DistinctValues(key);
+      const selectedNow = new Set((d365FilterMultiState[key] || []).map((v) => String(v).toLowerCase()));
+      const rowsHtml = allValues.map((v, idx) => {
+        const checked = selectedNow.has(String(v).toLowerCase()) ? 'checked' : '';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 0;">
+            <input type="checkbox" class="d365-opt" value="${String(v).replace(/"/g, '&quot;')}" ${checked} data-i="${idx}">
+            <span>${String(v).replace(/</g, '&lt;')}</span>
+          </label>
+        `;
+      }).join('');
+      const rs = await Swal.fire(swalTheme({
+        title: `Filter: ${label}`,
+        html: `
+          <div style="text-align:left; margin-top:4px;">
+            <input id="swD365FilterSearch" class="swal2-input" placeholder="Search value..." style="margin:0 0 10px 0; height:40px; width:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+              <div id="swD365Count" style="font-size:12px; color:#64748b; font-weight:600;">0 selected</div>
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="swD365SelAll" class="swal2-styled" style="background:#334155; margin:0; padding:8px 12px; border-radius:8px;">Select All</button>
+                <button type="button" id="swD365ClrAll" class="swal2-styled" style="background:#64748b; margin:0; padding:8px 12px; border-radius:8px;">Clear</button>
+              </div>
+            </div>
+            <div style="font-size:12px; color:#475569; font-weight:700; margin:0 0 6px 2px;">Values</div>
+            <div id="swD365List" style="max-height:280px; overflow:auto; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; background:#f8fafc;">
+              ${rowsHtml || '<div style="color:#64748b;">No values</div>'}
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Apply',
+        cancelButtonText: 'Cancel',
+        didOpen: () => {
+          const search = document.getElementById('swD365FilterSearch');
+          const list = document.getElementById('swD365List');
+          const btnAll = document.getElementById('swD365SelAll');
+          const btnClr = document.getElementById('swD365ClrAll');
+          const countEl = document.getElementById('swD365Count');
+          const syncCount = () => {
+            if (!list || !countEl) return;
+            const n = list.querySelectorAll('input.d365-opt:checked').length;
+            countEl.textContent = `${n} selected`;
+          };
+          if (search && list) {
+            search.addEventListener('input', () => {
+              const kw = String(search.value || '').trim().toLowerCase();
+              list.querySelectorAll('label').forEach((lb) => {
+                const txt = (lb.textContent || '').toLowerCase();
+                lb.style.display = !kw || txt.includes(kw) ? 'flex' : 'none';
+              });
+            });
+          }
+          if (btnAll && list) {
+            btnAll.addEventListener('click', () => {
+              list.querySelectorAll('label').forEach((lb) => {
+                if (lb.style.display === 'none') return;
+                const cb = lb.querySelector('input.d365-opt');
+                if (cb) cb.checked = true;
+              });
+              syncCount();
+            });
+          }
+          if (btnClr && list) {
+            btnClr.addEventListener('click', () => {
+              list.querySelectorAll('input.d365-opt').forEach((cb) => { cb.checked = false; });
+              syncCount();
+            });
+          }
+          if (list) {
+            list.addEventListener('change', (e) => {
+              if (e.target && e.target.classList && e.target.classList.contains('d365-opt')) syncCount();
+            });
+          }
+          syncCount();
+        },
+        preConfirm: () => {
+          const list = document.getElementById('swD365List');
+          if (!list) return [];
+          const vals = [];
+          list.querySelectorAll('input.d365-opt:checked').forEach((cb) => {
+            vals.push(String(cb.value || '').trim());
+          });
+          return vals;
+        }
+      }));
+      if (rs.isConfirmed) {
+        const picked = Array.isArray(rs.value) ? rs.value : [];
+        d365FilterMultiState[key] = picked;
+        d365FilterState[key] = '';
+        updateD365FilterHeaderState();
+        renderD365SubstockRows(d365SubstockRowsState);
+      }
+    }
+
+    function bindD365FilterInputs() {
+      document.querySelectorAll('.d365-filter-head').forEach((th) => {
+        th.addEventListener('click', () => {
+          const key = th.getAttribute('data-filter-key') || '';
+          const label = (th.textContent || '').trim() || key;
+          if (!key) return;
+          openD365FilterSwal(key, label);
+        });
+      });
+    }
+
+    async function loadD365Substock(month) {
+      const targetMonth = String(month || '').trim();
+      if (!targetMonth) {
+        renderD365SubstockRows([]);
+        return;
+      }
+      Swal.fire(swalLoading('Loading D365 Substock data...'));
+      try {
+        const res = await api('getD365Substock', { username: currentUser.username, month: targetMonth });
+        Swal.close();
+        if (!res || !res.ok) {
+          renderD365SubstockRows([]);
+          return Swal.fire(swalTheme({ icon: 'error', title: (res && res.message) || 'Failed to load D365 Substock data' }));
+        }
+        d365SubstockRowsState = res.rows || [];
+        renderD365SubstockRows(d365SubstockRowsState);
+      } catch (e) {
+        Swal.close();
+        renderD365SubstockRows([]);
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load D365 Substock data', text: e.message }));
+      }
+    }
+
+    async function uploadD365Substock() {
+      const month = (document.getElementById('substockMonthInput')?.value || '').trim();
+      const fileInput = document.getElementById('substockFileInput');
+      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+      if (!month) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select month for upload' }));
+      }
+      if (!file) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select an Excel file' }));
+      }
+      const cf = await Swal.fire(swalTheme({
+        icon: 'question',
+        title: `Confirm upload for ${monthLabel(month)}?`,
+        text: file.name,
+        showCancelButton: true,
+        confirmButtonText: 'Upload',
+        cancelButtonText: 'Cancel'
+      }));
+      if (!cf.isConfirmed) return;
+
+      Swal.fire(swalLoading('Uploading and reading file...'));
+      try {
+        const fileBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(fileBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        const normalized = normalizeSubstockRows(jsonRows);
+        if (!normalized.length) {
+          Swal.close();
+          return Swal.fire(swalTheme({ icon: 'warning', title: 'No valid rows found in file' }));
+        }
+
+        const saveRes = await api('saveD365Substock', {
+          username: currentUser.username,
+          month,
+          rows: normalized
+        });
+        if (!saveRes || !saveRes.ok) {
+          Swal.close();
+          return Swal.fire(swalTheme({ icon: 'error', title: (saveRes && saveRes.message) || 'Failed to save D365 Substock data' }));
+        }
+        d365SubstockRowsState = normalized;
+        renderD365SubstockRows(normalized);
+        Swal.close();
+        await Swal.fire(swalTheme({
+          icon: 'success',
+          title: 'Upload completed',
+          text: `Saved ${Number(saveRes.count || normalized.length).toLocaleString('en-US')} rows (${monthLabel(month)})`
+        }));
+        await loadD365Substock(month);
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Upload failed', text: e.message }));
+      }
+    }
+
+    function renderSummaryTop(rows = []) {
+      const body = document.getElementById('summaryTopBody');
+      if (!body) return;
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="9">No data</td></tr>';
+        return;
+      }
+
+      const byPlant = {};
+      let grandD365 = 0;
+      let grandSubc = 0;
+      let grandItems = 0;
+      let grandOk = 0;
+
+      rows.forEach((r) => {
+        const fileNo = String(r.fileNo || '').trim();
+        const m = fileNoMapState[fileNo] || {};
+        const plant = String(m.plant || '-').toUpperCase() || '-';
+        if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0 };
+
+        const d365Qty = getRowD365Qty(r, m);
+        const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
+        const hasD365Qty = d365Qty > 0;
+        const diffQty = hasD365Qty ? (d365Qty - safeNum(r.total)) : null;
+        const isOk = diffQty === 0;
+
+        byPlant[plant].d365 += d365Qty;
+        byPlant[plant].subc += subcQty;
+        byPlant[plant].totalItem += 1;
+        if (isOk) byPlant[plant].okItem += 1;
+
+        grandD365 += d365Qty;
+        grandSubc += subcQty;
+        grandItems += 1;
+        if (isOk) grandOk += 1;
+      });
+
+      const plants = ['CHP', 'G1P'];
+      let html = '';
+
+      plants.forEach((plant) => {
+        const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0 };
+        const diffItem = Math.max(0, p.totalItem - p.okItem);
+        html += `
+          <tr>
+            <td class="label"></td>
+            <td>${formatNumOrDash(p.d365)}</td>
+            <td>${formatNumOrDash(p.subc)}</td>
+            <td>${safePct(p.subc, p.d365)}</td>
+            <td>${plant || '-'}</td>
+            <td>${formatNumOrDash(p.totalItem)}</td>
+            <td>${formatNumOrDash(p.okItem)}</td>
+            <td>${formatNumOrDash(diffItem)}</td>
+            <td>${safePct(p.okItem, p.totalItem)}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+        <tr class="grand">
+          <td class="label">Total</td>
+          <td>${formatNumOrDash(grandD365)}</td>
+          <td>${formatNumOrDash(grandSubc)}</td>
+          <td>${safePct(grandSubc, grandD365)}</td>
+          <td>-</td>
+          <td>${formatNumOrDash(grandItems)}</td>
+          <td>${formatNumOrDash(grandOk)}</td>
+          <td>${formatNumOrDash(Math.max(0, grandItems - grandOk))}</td>
+          <td>${safePct(grandOk, grandItems)}</td>
+        </tr>
+      `;
+
+      body.innerHTML = html;
+    }
+
+    async function loadSummaryReport() {
+      const month = document.getElementById('monthInput').value;
+      if (!month) return;
+      Swal.fire(swalLoading('Loading summary report...'));
+      try {
+        const [res, mapRes, dashRes] = await Promise.all([
+          api('getReport', { month, subcon: 'ALL', role: currentUser.role, username: currentUser.username }),
+          api('listFileNoMap', { username: currentUser.username }),
+          api('getDashboard', { month, username: currentUser.username })
+        ]);
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load summary report' }));
+        fileNoMapState = {};
+        if (mapRes && mapRes.ok) {
+          (mapRes.rows || []).forEach((x) => {
+            const k = String(x.fileNo || '').trim();
+            if (!k) return;
+            fileNoMapState[k] = { plant: x.plant || '' };
+          });
+        }
+        const allSubcons = (dashRes && dashRes.ok)
+          ? Array.from(new Set((dashRes.statusRows || []).map(x => String(x.subcon || '').trim()).filter(Boolean)))
+          : Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
+        renderSummaryTop(res.rows || []);
+        renderSummaryRows(res.rows || [], allSubcons);
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load summary report', text: e.message }));
+      }
+    }
+
+    function renderFileNoMapRows(rows = []) {
+      const body = document.getElementById('fileNoTableBody');
+      if (!rows.length) {
+        body.innerHTML = '<tr><td class="text-center" colspan="3">No records found</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map((r) => `
+        <tr>
+          <td>${r.fileNo || ''}</td>
+          <td>${r.plant || ''}</td>
+          <td class="text-center">
+            <button class="icon-btn edit" title="Edit" onclick="openFileNoSwal('${(r.fileNo||'').replace(/'/g, "\\'")}', '${(r.plant||'').replace(/'/g, "\\'")}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="icon-btn del" title="Delete" onclick="deleteFileNoMap('${(r.fileNo||'').replace(/'/g, "\\'")}')"><i class="fa-regular fa-trash-can"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function applyFileNoFilter() {
+      const kw = String(document.getElementById('fileNoSearchInput')?.value || '').trim().toLowerCase();
+      if (!kw) return renderFileNoMapRows(fileNoRowsState || []);
+      const rows = (fileNoRowsState || []).filter((r) =>
+        String(r.fileNo || '').toLowerCase().includes(kw)
+      );
+      renderFileNoMapRows(rows);
+    }
+
+    async function loadFileNoMap() {
+      Swal.fire(swalLoading('Loading File No mapping...'));
+      try {
+        const res = await api('listFileNoMap', { username: currentUser.username });
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load File No mapping' }));
+        fileNoRowsState = res.rows || [];
+        applyFileNoFilter();
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load File No mapping', text: e.message }));
+      }
+    }
+
+    async function openFileNoSwal(fileNo = '', plant = '') {
+      const isEdit = !!fileNo;
+      const plantVal = String(plant || '').trim().toUpperCase();
+      const rs = await Swal.fire(swalTheme({
+        title: isEdit ? 'Edit File No.' : 'Add File No.',
+        html: `
+          <div class="text-start">
+            <label class="form-label fw-semibold mb-1">File No</label>
+            <input id="swFileNo" class="form-control mb-2" value="${fileNo || ''}" ${isEdit ? 'disabled' : ''}>
+            <label class="form-label fw-semibold mb-1">Plant</label>
+            <select id="swPlant" class="form-select mb-2">
+              <option value="">Select Plant</option>
+              <option value="CHP" ${plantVal === 'CHP' ? 'selected' : ''}>CHP</option>
+              <option value="G1P" ${plantVal === 'G1P' ? 'selected' : ''}>G1P</option>
+            </select>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel',
+        preConfirm: () => {
+          const vFileNo = (document.getElementById('swFileNo').value || '').trim();
+          const vPlant = (document.getElementById('swPlant').value || '').trim().toUpperCase();
+          if (!vFileNo) {
+            Swal.showValidationMessage('Please enter File No');
+            return false;
+          }
+          if (vPlant !== 'CHP' && vPlant !== 'G1P') {
+            Swal.showValidationMessage('Please select Plant (CHP or G1P)');
+            return false;
+          }
+          return { fileNo: vFileNo, plant: vPlant };
+        }
+      }));
+      if (!rs.isConfirmed) return;
+
+      Swal.fire(swalLoading('Saving File No mapping...'));
+      try {
+        const res = await api('upsertFileNoMap', Object.assign({ username: currentUser.username }, rs.value));
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Save failed' }));
+        await Swal.fire(swalTheme({ icon: 'success', title: 'File No mapping saved successfully' }));
+        loadFileNoMap();
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Save failed', text: e.message }));
+      }
+    }
+
+    async function deleteFileNoMap(fileNo) {
+      const cf = await Swal.fire(swalTheme({ icon: 'warning', title: `Delete mapping for ${fileNo}?`, showCancelButton: true, confirmButtonText: 'Delete', cancelButtonText: 'Cancel' }));
+      if (!cf.isConfirmed) return;
+      Swal.fire(swalLoading('Deleting File No mapping...'));
+      try {
+        const res = await api('deleteFileNoMap', { username: currentUser.username, fileNo });
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Delete failed' }));
+        await Swal.fire(swalTheme({ icon: 'success', title: 'File No mapping deleted successfully' }));
+        loadFileNoMap();
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Delete failed', text: e.message }));
+      }
+    }
+
+    function bindSummaryDragScroll() {
+      const wrap = document.querySelector('.summary-wrap');
+      if (!wrap) return;
+      let isDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+
+      wrap.addEventListener('mousedown', (e) => {
+        isDown = true;
+        wrap.classList.add('dragging');
+        startX = e.pageX - wrap.offsetLeft;
+        scrollLeft = wrap.scrollLeft;
+      });
+      window.addEventListener('mouseup', () => {
+        isDown = false;
+        wrap.classList.remove('dragging');
+      });
+      wrap.addEventListener('mouseleave', () => {
+        isDown = false;
+        wrap.classList.remove('dragging');
+      });
+      wrap.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - wrap.offsetLeft;
+        const walk = (x - startX) * 1.2;
+        wrap.scrollLeft = scrollLeft - walk;
+      });
+    }
+
+    function monthKeyToShortLabel(monthKey) {
+      if (!/^\d{4}-\d{2}$/.test(monthKey || '')) return monthKey || '';
+      const [y, m] = monthKey.split('-');
+      const idx = Number(m) - 1;
+      const mm = MONTH_SHORT[idx] || m;
+      return `${mm}-${y}`;
+    }
+
+    function renderDeadlineGrid() {
+      const grid = document.getElementById('deadlineGrid');
+      const months = buildDeadlineMonths();
+      grid.innerHTML = months.map((mm, idx) => {
+        const val = deadlineState[mm] || '';
+        const statusClass = val ? 'has-deadline' : 'no-deadline';
+        return `<div class="deadline-box ${statusClass}" onclick="openDeadlineSwal('${mm}')">
+          <div class="m">${MONTH_SHORT[idx]}</div>
+          <div class="d">${formatDeadlineDate(val)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function shiftDeadlineYear(delta) {
+      const yEl = document.getElementById('deadlineYearInput');
+      const y = Number(yEl.value || new Date().getFullYear());
+      const next = Math.min(2100, Math.max(2020, y + Number(delta || 0)));
+      yEl.value = String(next);
+      renderDeadlineGrid();
+    }
+
+    async function loadDeadlines() {
+      const yearInput = document.getElementById('deadlineYearInput');
+      const m = document.getElementById('monthInput').value;
+      const y = m && /^\d{4}-\d{2}$/.test(m) ? Number(m.split('-')[0]) : new Date().getFullYear();
+      if (yearInput && !yearInput.value) yearInput.value = String(y);
+      Swal.fire(swalLoading('Loading deadlines...'));
+      try {
+        const res = await api('listDeadlines', { username: currentUser.username });
+        Swal.close();
+        deadlineState = (res && res.ok && res.deadlines) ? res.deadlines : {};
+        renderDeadlineGrid();
+      } catch (_) {
+        Swal.close();
+      }
+    }
+
+    async function openDeadlineSwal(monthKey) {
+      const currentVal = deadlineState[monthKey] || '';
+      const [yy, mm] = (monthKey || '').split('-').map(Number);
+      const defaultDate = currentVal || `${monthKey}-01`;
+      const monthStart = `${monthKey}-01`;
+      const monthEnd = `${monthKey}-${String(new Date(yy, mm, 0).getDate()).padStart(2, '0')}`;
+      const rs = await Swal.fire(swalTheme({
+        title: `Set deadline (${monthKeyToShortLabel(monthKey)})`,
+        html: `
+          <input id="swDeadlineDate" type="hidden" value="${currentVal}">
+          <div class="deadline-modal-wrap">
+            <div class="deadline-modal-note">Select the final submission date for this month.</div>
+            <div id="swDeadlineCalendar"></div>
+          </div>
+        `,
+        customClass: {
+          popup: 'deadline-swal-popup',
+          title: 'deadline-swal-title',
+          htmlContainer: 'deadline-swal-html'
+        },
+        showCancelButton: false,
+        showDenyButton: true,
+        confirmButtonText: 'Save',
+        denyButtonText: 'Clear',
+        didOpen: () => {
+          flatpickr('#swDeadlineCalendar', {
+            inline: true,
+            disableMobile: true,
+            showMonths: 1,
+            weekNumbers: false,
+            dateFormat: 'Y-m-d',
+            defaultDate: defaultDate,
+            minDate: monthStart,
+            maxDate: monthEnd,
+            onChange: (selectedDates, dateStr) => {
+              document.getElementById('swDeadlineDate').value = dateStr || '';
+            }
+          });
+          if (!currentVal) document.getElementById('swDeadlineDate').value = '';
+        },
+        preConfirm: () => (document.getElementById('swDeadlineDate').value || '').trim()
+      }));
+      if (rs.isConfirmed) {
+        deadlineState[monthKey] = rs.value || '';
+        renderDeadlineGrid();
+        await saveDeadlines(true);
+      } else if (rs.isDenied) {
+        delete deadlineState[monthKey];
+        renderDeadlineGrid();
+        await saveDeadlines(true);
+      }
+    }
+
+    async function saveDeadlines(skipConfirm) {
+      const deadlines = {};
+      Object.keys(deadlineState || {}).forEach(mm => {
+        const v = (deadlineState[mm] || '').trim();
+        if (v) deadlines[mm] = v;
+      });
+      if (!skipConfirm) {
+        const cf = await Swal.fire(swalTheme({ icon: 'question', title: 'Confirm saving deadlines?', showCancelButton: true, confirmButtonText: 'Save', cancelButtonText: 'Cancel' }));
+        if (!cf.isConfirmed) return;
+      }
+      Swal.fire(swalLoading('Saving deadlines...'));
+      try {
+        const res = await api('saveDeadlines', { username: currentUser.username, deadlines });
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Save failed' }));
+        await Swal.fire(swalTheme({ icon: 'success', title: 'Deadline saved successfully' }));
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Save failed', text: e.message }));
+      }
+    }
+
+    function setMenu(menu) {
+      const isDashboard = menu === 'dashboard';
+      const isSummary = menu === 'summary';
+      const isSetting = menu === 'setting';
+      const isD365Substock = menu === 'd365substock';
+
+      document.getElementById('dashboardView').classList.toggle('hidden', !isDashboard);
+      document.getElementById('searchView').classList.add('hidden');
+      document.getElementById('summaryView').classList.toggle('hidden', !isSummary);
+      document.getElementById('settingView').classList.toggle('hidden', !isSetting);
+      document.getElementById('d365SubstockView').classList.toggle('hidden', !isD365Substock);
+      document.getElementById('menuDashboard').classList.toggle('active', isDashboard);
+      document.getElementById('menuSummary').classList.toggle('active', isSummary);
+      document.getElementById('menuSetting').classList.toggle('active', isSetting);
+      document.getElementById('menuD365Substock').classList.toggle('active', isD365Substock);
+      document.getElementById('pageHeader').classList.toggle('hidden', !isDashboard);
+      if (isSetting) {
+        setSettingTab('user');
+        loadUsers();
+      }
+      if (isSummary) {
+        refreshSubconOptions();
+        loadSummaryReport();
+      }
+      if (isD365Substock) {
+        initSubstockMonth();
+        const m = (document.getElementById('substockMonthInput')?.value || '').trim();
+        loadD365Substock(m);
+      }
+      if (isDashboard) loadDashboard();
+    }
+
+    function renderUsers(rows = []) {
+      const body = document.getElementById('userTableBody');
+      if (!rows.length) {
+        body.innerHTML = '<tr><td class="text-center" colspan="4">No users found</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.username || ''}</td>
+          <td class="text-center">${r.role || ''}</td>
+          <td>${r.subcon || ''}</td>
+          <td class="text-center">
+            <button class="icon-btn edit" title="Edit" onclick="openUserSwal('${(r.username||'').replace(/'/g, "\\'")}', '${(r.password||'').replace(/'/g, "\\'")}', '${(r.role||'').replace(/'/g, "\\'")}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="icon-btn del" title="Delete" onclick="deleteUserSetting('${(r.username||'').replace(/'/g, "\\'")}')"><i class="fa-regular fa-trash-can"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function applyUserFilter() {
+      const kw = String(document.getElementById('userSearchInput')?.value || '').trim().toLowerCase();
+      if (!kw) return renderUsers(userRowsState || []);
+      const rows = (userRowsState || []).filter((r) =>
+        String(r.username || '').toLowerCase().includes(kw)
+      );
+      renderUsers(rows);
+    }
+
+    async function loadUsers() {
+      Swal.fire(swalLoading('Loading users...'));
+      try {
+        const res = await api('listUsers', { username: currentUser.username });
+        Swal.close();
+        if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load users' }));
+        userRowsState = res.rows || [];
+        applyUserFilter();
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load users', text: e.message }));
+      }
+    }
+
+    async function refreshSubconOptions() {
+      const sel = document.getElementById('subconSelect');
+      const prev = sel.value;
+      sel.disabled = true;
+      sel.innerHTML = '<option value="__LOADING__" selected>Loading subcons...</option>';
+      try {
+        const month = document.getElementById('monthInput').value;
+        const dash = month
+          ? await api('getDashboard', { month, username: currentUser.username })
+          : { ok: false };
+
+        let subcons = [];
+        let statusMap = {};
+        if (dash && dash.ok) {
+          subcons = (dash.statusRows || []).map(x => String(x.subcon || '').trim()).filter(Boolean);
+          statusMap = (dash.statusRows || []).reduce((acc, x) => {
+            const key = String(x.subcon || '').trim();
+            if (key) acc[key] = String(x.status || '');
+            return acc;
+          }, {});
+        } else {
+          subcons = Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
+        }
+        subcons = Array.from(new Set(subcons)).sort((a, b) => a.localeCompare(b));
+        sel.innerHTML = '<option value="__SELECT__" selected>Select Subcon</option>' + subcons.map(s => {
+          const mark = statusMap[s] === 'submitted' ? 'ðŸŸ¢' : 'âšª';
+          return `<option value="${s}">${s} ${mark}</option>`;
+        }).join('');
+        if (prev && prev !== '__SELECT__' && subcons.includes(prev)) sel.value = prev;
+      } catch (_) {
+        const fallback = Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
+        sel.innerHTML = '<option value="__SELECT__" selected>Select Subcon</option>' + fallback.map(s => `<option value="${s}">${s} âšª</option>`).join('');
+      } finally {
+        sel.disabled = false;
+      }
+    }
+
+    async function saveUserSetting(targetUsername, password, role, subcon) {
+      if (role === 'SUBCON' && !subcon) subcon = targetUsername;
+      if (!targetUsername || !password) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'Please enter username and password' }));
+      }
+      if (role === 'SUBCON' && !subcon) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'SUBCON must have a subcon name' }));
+      }
+      const cf = await Swal.fire(swalTheme({ icon: 'question', title: 'Confirm save user?', showCancelButton: true, confirmButtonText: 'Save', cancelButtonText: 'Cancel' }));
+      if (!cf.isConfirmed) return;
+      Swal.fire(swalLoading('Saving user...'));
+      try {
+        const res = await api('upsertUser', { username: currentUser.username, targetUsername, password, role, subcon });
+        Swal.close();
+          if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Save failed' }));
+          await Swal.fire(swalTheme({ icon: 'success', title: 'User saved successfully' }));
+          loadUsers();
+          refreshSubconOptions();
+        } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Save failed', text: e.message }));
+      }
+    }
+
+    async function openUserSwal(username = '', password = '', role = 'SUBCON') {
+      const isEdit = !!username;
+      const html = `
+        <div class="text-start">
+          <label class="form-label fw-semibold mb-1">Username</label>
+          <input id="swUsername" class="form-control mb-2" value="${username || ''}" ${isEdit ? 'disabled' : ''}>
+          <label class="form-label fw-semibold mb-1">Password</label>
+          <input id="swPassword" class="form-control mb-2" value="${password || ''}">
+          <label class="form-label fw-semibold mb-1">Role</label>
+          <select id="swRole" class="form-select mb-2">
+            <option value="SUBCON" ${role === 'SUBCON' ? 'selected' : ''}>SUBCON</option>
+            <option value="RMT" ${role === 'RMT' ? 'selected' : ''}>RMT</option>
+          </select>
+        </div>
+      `;
+
+      const rs = await Swal.fire(swalTheme({
+        title: isEdit ? 'Edit User' : 'Add User',
+        html,
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel',
+        preConfirm: () => {
+          const u = (document.getElementById('swUsername').value || '').trim();
+          const p = (document.getElementById('swPassword').value || '').trim();
+          const r = document.getElementById('swRole').value;
+          if (!u || !p) {
+            Swal.showValidationMessage('Please enter username and password');
+            return false;
+          }
+          return { username: u, password: p, role: r };
+        }
+      }));
+      if (!rs.isConfirmed) return;
+      await saveUserSetting(rs.value.username, rs.value.password, rs.value.role, '');
+    }
+
+    async function deleteUserSetting(targetUsername) {
+      const cf = await Swal.fire(swalTheme({ icon: 'warning', title: `Delete ${targetUsername}?`, showCancelButton: true, confirmButtonText: 'Delete', cancelButtonText: 'Cancel' }));
+      if (!cf.isConfirmed) return;
+      Swal.fire(swalLoading('Deleting user...'));
+      try {
+        const res = await api('deleteUser', { username: currentUser.username, targetUsername });
+        Swal.close();
+          if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Delete failed' }));
+          await Swal.fire(swalTheme({ icon: 'success', title: 'User deleted successfully' }));
+          loadUsers();
+          refreshSubconOptions();
+        } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Delete failed', text: e.message }));
+      }
+    }
+
+    async function logout() {
+      const cf = await Swal.fire(swalTheme({
+        icon: 'question',
+        title: 'Confirm logout?',
+        showCancelButton: true,
+        confirmButtonText: 'Logout',
+        cancelButtonText: 'Cancel'
+      }));
+      if (!cf.isConfirmed) return;
+
+      await Swal.fire(swalTheme({
+        icon: 'success',
+        title: 'Logged out successfully',
+        timer: 700,
+        showConfirmButton: false
+      }));
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.href = 'login.html';
+    }
+
+    function boot() {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) { window.location.href = 'login.html'; return; }
+      try {
+        currentUser = JSON.parse(raw);
+      } catch (_) {
+        sessionStorage.removeItem(SESSION_KEY);
+        window.location.href = 'login.html';
+        return;
+      }
+      if (!currentUser || currentUser.role !== 'RMT') {
+        window.location.href = currentUser && currentUser.role === 'SUBCON' ? 'subcon.html' : 'login.html';
+        return;
+      }
+
+      const month = new Date();
+      document.getElementById('monthInput').value = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+      syncDashboardMonthInput();
+
+      const sel = document.getElementById('subconSelect');
+      sel.innerHTML = '<option value="__LOADING__" selected>Loading subcons...</option>';
+      sel.disabled = true;
+      document.getElementById('monthInput').addEventListener('change', async () => {
+        syncDashboardMonthInput();
+        initSubstockMonth();
+        if (document.getElementById('menuD365Substock').classList.contains('active')) {
+          const m = (document.getElementById('substockMonthInput')?.value || '').trim();
+          if (m) await loadD365Substock(m);
+        }
+        updateDashboardTitle();
+        const dashPromise = loadDashboard(true);
+        await refreshSubconOptions();
+        if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
+          loadReport();
+          loadSummaryReport();
+        }
+        await dashPromise;
+      });
+      document.getElementById('dashboardMonthInput').addEventListener('change', async (e) => {
+        const v = (e.target.value || '').trim();
+        if (!v) return;
+        document.getElementById('monthInput').value = v;
+        initSubstockMonth();
+        if (document.getElementById('menuD365Substock').classList.contains('active')) {
+          const m = (document.getElementById('substockMonthInput')?.value || '').trim();
+          if (m) await loadD365Substock(m);
+        }
+        updateDashboardTitle();
+        const dashPromise = loadDashboard(true);
+        await refreshSubconOptions();
+        if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
+          loadReport();
+          loadSummaryReport();
+        }
+        await dashPromise;
+      });
+      document.getElementById('deadlineYearInput').addEventListener('change', () => {
+        renderDeadlineGrid();
+      });
+      sel.addEventListener('change', () => {
+        if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
+          loadReport();
+          loadSummaryReport();
+        } else {
+          renderRows([]);
+          renderSummaryRows([]);
+        }
+      });
+      document.getElementById('substockMonthInput').addEventListener('change', async () => {
+        const m = (document.getElementById('substockMonthInput')?.value || '').trim();
+        if (!m) return renderD365SubstockRows([]);
+        await loadD365Substock(m);
+      });
+
+      setMenu('dashboard');
+      updateDashboardTitle();
+      syncDashboardMonthInput();
+      initSubstockMonth();
+      refreshSubconOptions();
+      bindSummaryDragScroll();
+      bindD365FilterInputs();
+      updateD365FilterHeaderState();
+    }
+
+    boot();
+  
+

@@ -1,0 +1,326 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Sub-con Inventory Data Check</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --line: #dbe3ee;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #0f172a;
+      --primary-2: #1e293b;
+      --focus: rgba(59, 130, 246, .18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,.45)),
+        url('assets/login-bg.svg') center/cover no-repeat,
+        var(--bg);
+    }
+    .topbar {
+      height: 48px;
+      background: #94a3b8;
+      border-bottom: 1px solid #7f8da2;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 14px;
+      color: #fff;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.28),
+        inset 0 -1px 0 rgba(15,23,42,.14);
+    }
+    .topbar-logo {
+      height: 24px;
+      width: auto;
+      display: block;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 6px;
+      padding: 3px 6px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .12);
+    }
+
+    .page {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      grid-template-columns: minmax(320px, 1.05fr) minmax(360px, 460px);
+      gap: 24px;
+      align-items: center;
+      padding: 32px;
+    }
+
+    .brand {
+      background: linear-gradient(135deg, rgba(15, 23, 42, .94) 0%, rgba(30, 41, 59, .90) 100%);
+      border: 1px solid rgba(255,255,255,.08);
+      color: #fff;
+      border-radius: 20px;
+      padding: 28px;
+      min-height: 420px;
+      height: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 20px 44px rgba(15, 23, 42, .25);
+    }
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      width: fit-content;
+      opacity: .95;
+    }
+    .brand h1 {
+      margin: 18px 0 6px;
+      font-size: 48px;
+      line-height: 1.02;
+      letter-spacing: .01em;
+      font-weight: 900;
+    }
+    .brand p {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #d1d5db;
+      max-width: 560px;
+    }
+    .brand-foot {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, .12);
+      height: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .login-head {
+      margin-bottom: 14px;
+    }
+    .login-title {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: .01em;
+    }
+    .login-sub {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .field { margin-bottom: 12px; }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #334155;
+    }
+    input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 11px;
+      padding: 11px 12px;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--surface-2);
+      outline: none;
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    input:focus {
+      border-color: #93c5fd;
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+    .btn {
+      width: 100%;
+      margin-top: 8px;
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(90deg, var(--primary), var(--primary-2));
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 22px rgba(15, 23, 42, .22); filter: brightness(1.02); }
+    .btn:active { transform: translateY(0); }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    @media (max-width: 1080px) {
+      .page {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 20px 14px;
+      }
+      .brand {
+        min-height: auto;
+        padding: 18px;
+      }
+      .brand h1 {
+        font-size: 34px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <img class="topbar-logo" src="assets/logo.png" alt="Company Logo" />
+  </header>
+
+  <main class="page">
+    <section class="brand">
+      <div>
+        <div class="brand-badge">Warehouse System</div>
+        <h1>Sub-con Inventory<br>Data Check</h1>
+        <p>Monthly inventory reporting and verification for Subcon and RMT operations.</p>
+      </div>
+      <div class="brand-foot">© 2026 Resonac Materials (Thailand) Co., Ltd. - Developed by IT Department</div>
+    </section>
+
+    <section class="login-card">
+      <div class="login-head">
+        <h2 class="login-title">Sign in</h2>
+        <p class="login-sub">Authorized users only</p>
+      </div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" autocomplete="username" />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" />
+      </div>
+
+      <button class="btn" onclick="login()">Login</button>
+      <div class="hint">Press Enter to login</div>
+    </section>
+  </main>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMzFoDb_as_oOZQVDCeIz4nfwXqwSMjgQGCfr-jiaIVI9p5VFeWtUXKp0M75h7b_A/exec';
+    const SESSION_KEY = 'subcon_auth';
+
+    function swalTheme(base = {}) {
+      return Object.assign({
+        showCloseButton: true,
+        confirmButtonColor: '#4C6272',
+        background: '#ffffff',
+        color: '#102027'
+      }, base);
+    }
+
+    function swalLoading(title) {
+      return swalTheme({
+        title: title || 'Loading...',
+        showCloseButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      });
+    }
+
+    async function api(action, payload = {}) {
+      const url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    function routeByRole(user) {
+      if (user.role === 'SUBCON') {
+        window.location.href = 'subcon.html';
+      } else if (user.role === 'RMT') {
+        window.location.href = 'rmt.html';
+      }
+    }
+
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (!username || !password) {
+        await Swal.fire(swalTheme({ icon: 'warning', title: 'Please enter username and password' }));
+        return;
+      }
+
+      Swal.fire(swalLoading('Signing in...'));
+      try {
+        const res = await api('login', { username, password });
+        Swal.close();
+        if (!res.ok) {
+          await Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Login failed' }));
+          return;
+        }
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
+        routeByRole(res.user);
+      } catch (e) {
+        Swal.close();
+        await Swal.fire(swalTheme({ icon: 'error', title: 'Unable to connect to server', text: e.message }));
+      }
+    }
+
+    function bindEnterToLogin() {
+      ['username', 'password'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          login();
+        });
+      });
+    }
+
+    (function init() {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return;
+      try {
+        const user = JSON.parse(raw);
+        if (user && user.role) routeByRole(user);
+      } catch (_) {
+        sessionStorage.removeItem(SESSION_KEY);
+      }
+    })();
+
+    bindEnterToLogin();
+  </script>
+</body>
+</html>
+

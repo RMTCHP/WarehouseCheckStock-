@@ -1,0 +1,356 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RMT | Monthly Inventory Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="rmt.css">
+</head>
+<body>
+  <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
+    <span class="navbar-brand h4 mb-0">Sub-con Inventory Data Check</span>
+    <div class="navbar-right">
+      <div class="role-pill">RMT ADMIN</div>
+      <button class="btn btn-danger btn-sm" title="Logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <div class="sidebar">
+    <button class="menu-btn" id="menuDashboard" onclick="setMenu('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
+    <button class="menu-btn" id="menuSummary" onclick="setMenu('summary')"><i class="fa-solid fa-table-list"></i><span>Summary Report</span></button>
+    <button class="menu-btn" id="menuD365Substock" onclick="setMenu('d365substock')"><i class="fa-solid fa-file-arrow-up"></i><span>D365 Substock</span></button>
+    <button class="menu-btn" id="menuSetting" onclick="setMenu('setting')"><i class="fa-solid fa-sliders"></i><span>Setting</span></button>
+
+  </div>
+
+  <main class="content">
+    <div id="pageHeader">
+      <div class="section-title" id="dashboardTitle">RMT Dashboard (Monthly Inventory)</div>
+      <div class="dashboard-month-box">
+        <label for="dashboardMonthInput">Month</label>
+        <input id="dashboardMonthInput" type="month" class="form-control" />
+      </div>
+    </div>
+
+    <div id="dashboardView" class="hidden">
+      <div class="dash-grid">
+        <div class="dash-card total-subcons">
+          <div class="dash-head">
+            <div class="dash-label">Total Subcons</div>
+            <span class="dash-icon"><i class="fa-solid fa-layer-group"></i></span>
+          </div>
+          <div class="dash-value" id="dashTotalSub">0</div>
+        </div>
+        <div class="dash-card submitted">
+          <div class="dash-head">
+            <div class="dash-label">Submitted</div>
+            <span class="dash-icon"><i class="fa-solid fa-circle-check"></i></span>
+          </div>
+          <div class="dash-value" id="dashSubmitted">0</div>
+        </div>
+        <div class="dash-card pending">
+          <div class="dash-head">
+            <div class="dash-label">Pending</div>
+            <span class="dash-icon"><i class="fa-regular fa-clock"></i></span>
+          </div>
+          <div class="dash-value" id="dashPending">0</div>
+        </div>
+        <div class="dash-card grand-total">
+          <div class="dash-head">
+            <div class="dash-label">Grand Total</div>
+            <span class="dash-icon"><i class="fa-solid fa-calculator"></i></span>
+          </div>
+          <div class="dash-value" id="dashTotalRows">0</div>
+        </div>
+      </div>
+
+      <div id="dashLoading" class="dash-loading">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span>Loading Dashboard...</span>
+      </div>
+
+      <div class="quick-actions">
+        <div id="dashboardDeadlineStatus" class="dashboard-deadline">Deadline: -</div>
+        <button class="btn btn-secondary btn-sm" title="Refresh Dashboard" onclick="refreshDashboard()">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title mb-2">Submission Status</div>
+        <div id="dashStatusCards" class="subcon-card-grid">
+          <div class="subcon-card">Loading data...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="searchView">
+      <div class="search-toolbar">
+        <div class="search-panel">
+          <div class="search-title">Search Filter</div>
+          <div class="search-grid">
+            <div>
+              <label class="form-label mb-1">Month</label>
+              <input id="monthInput" type="month" class="form-control" />
+            </div>
+            <div>
+              <label class="form-label mb-1">Subcon</label>
+              <select id="subconSelect" class="form-select"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col style="width:4%;">
+            <col style="width:8%;">
+            <col style="width:7%;">
+            <col style="width:7%;">
+            <col style="width:7%;">
+            <col style="width:6%;">
+            <col style="width:7%;">
+            <col style="width:8%;">
+            <col style="width:8%;">
+            <col style="width:7%;">
+            <col style="width:7%;">
+            <col style="width:24%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>File No.</th>
+              <th>BOH</th>
+              <th>Supply</th>
+              <th>Delivery</th>
+              <th>NG</th>
+              <th>EOH</th>
+              <th>Supplier confirm OK</th>
+              <th>Supplier confirm Hold</th>
+              <th>Total</th>
+              <th>Diff</th>
+              <th style="min-width:260px;">Remark</th>
+            </tr>
+          </thead>
+          <tbody id="reportBody"></tbody>
+          <tfoot>
+            <tr>
+              <td></td>
+              <td class="text-center">Total</td>
+              <td id="sumBoh">-</td>
+              <td id="sumSupply">-</td>
+              <td id="sumDelivery">-</td>
+              <td id="sumNg">-</td>
+              <td id="sumEoh">-</td>
+              <td id="sumConfirmOk">-</td>
+              <td id="sumConfirmHold">-</td>
+              <td id="sumTotal">-</td>
+              <td id="sumDiff">-</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div id="summaryView" class="hidden">
+      <div class="summary-top">
+        <table class="summary-top-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Total D365</th>
+              <th>Total Subc</th>
+              <th>%Q'ty</th>
+              <th>Plant</th>
+              <th>Total Item</th>
+              <th>OK Item</th>
+              <th>Diff Item</th>
+              <th>%Accuracy</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTopBody">
+            <tr><td colspan="9">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap summary-wrap">
+        <table class="summary-table" style="min-width:1800px;">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>File No.</th>
+              <th>D365 code</th>
+              <th>D365 Q'ty</th>
+              <th>Diff</th>
+              <th>BOH</th>
+              <th>Supply</th>
+              <th>Delivery</th>
+              <th style="background:#fef08a; color:#111827;">NG</th>
+              <th>EOH</th>
+              <th>OK</th>
+              <th>Hold</th>
+              <th>Total</th>
+              <th>Diff</th>
+              <th>Remark</th>
+              <th>SUBC</th>
+              <th>Total D365</th>
+              <th>Total Subc</th>
+              <th style="background:#fee2e2; color:#7f1d1d;">%Q'ty</th>
+              <th>Plant</th>
+              <th>Total Item</th>
+              <th style="background:#dcfce7; color:#14532d;">OK Item</th>
+              <th style="background:#fee2e2; color:#7f1d1d;">Diff Item</th>
+              <th style="background:#dcfce7; color:#14532d;">%Accuracy</th>
+            </tr>
+          </thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="settingView" class="hidden">
+      <div class="setting-tabs">
+        <button id="settingTabUser" class="setting-tab active" onclick="setSettingTab('user')">User</button>
+        <button id="settingTabFileNo" class="setting-tab" onclick="setSettingTab('fileno')">File No</button>
+        <button id="settingTabDeadline" class="setting-tab" onclick="setSettingTab('deadline')">Monthly Deadline</button>
+      </div>
+      <div class="setting-grid">
+        <div class="card" id="settingUserPanel">
+          <div class="card-head">
+            <div class="card-title mb-0">User List</div>
+            <button class="btn-add" title="Add User" onclick="openUserSwal()">+</button>
+          </div>
+          <div class="mb-2">
+            <input id="userSearchInput" class="form-control form-control-sm" placeholder="Search Username..." oninput="applyUserFilter()">
+          </div>
+          <div class="table-wrap" style="margin-top:0;">
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Subcon</th>
+                  <th style="width:120px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card hidden" id="settingFileNoPanel">
+          <div class="card-head">
+            <div class="card-title mb-0">File No Mapping</div>
+            <button class="btn-add" title="Add File No" onclick="openFileNoSwal()">+</button>
+          </div>
+          <div class="mb-2">
+            <input id="fileNoSearchInput" class="form-control form-control-sm" placeholder="Search File No..." oninput="applyFileNoFilter()">
+          </div>
+          <div class="table-wrap" style="margin-top:0;">
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>File No</th>
+                  <th>Plant</th>
+                  <th style="width:120px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="fileNoTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card hidden" id="settingDeadlinePanel">
+          <div class="deadline-head">
+            <div class="card-title mb-0">Set monthly submission deadline for each Subcon</div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="year-nav">
+                <button class="year-nav-btn" type="button" title="Previous year" onclick="shiftDeadlineYear(-1)">&#8249;</button>
+                <input id="deadlineYearInput" type="number" class="form-control form-control-sm" style="width:100px;" min="2020" max="2100">
+                <button class="year-nav-btn" type="button" title="Next year" onclick="shiftDeadlineYear(1)">&#8250;</button>
+              </div>
+            </div>
+          </div>
+          <div class="deadline-grid" id="deadlineGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="d365SubstockView" class="hidden">
+      <div class="card d365-upload-block">
+        <div class="card-title mb-2">Upload D365 Substock File</div>
+        <div class="d365-upload-grid">
+          <div>
+            <label class="form-label mb-1">Month</label>
+            <input id="substockMonthInput" type="month" class="form-control">
+          </div>
+          <div>
+            <label class="form-label mb-1">Excel File</label>
+            <input id="substockFileInput" type="file" class="form-control" accept=".xlsx,.xls,.csv">
+          </div>
+          <div class="d365-upload-action">
+            <button id="btnUploadSubstock" class="btn btn-dark" type="button" onclick="uploadD365Substock()">Upload</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card d365-table-block">
+        <div class="card-title mb-2">D365 Substock Data</div>
+        <div class="table-wrap d365-substock-wrap" style="margin-top:0;">
+          <table class="d365-substock-table">
+            <thead>
+              <tr>
+                <th class="d365-filter-head" data-filter-key="itemNumber">Item Number</th>
+                <th class="d365-filter-head" data-filter-key="processNo">Process No.</th>
+                <th class="d365-filter-head" data-filter-key="cmt">CMT</th>
+                <th class="d365-filter-head" data-filter-key="kdt">KDT</th>
+                <th class="d365-filter-head" data-filter-key="kkft">KKFT</th>
+                <th class="d365-filter-head" data-filter-key="mdi">MDI</th>
+                <th class="d365-filter-head" data-filter-key="snt">SNT</th>
+                <th class="d365-filter-head" data-filter-key="ssp">SSP</th>
+                <th class="d365-filter-head" data-filter-key="skc">SKC</th>
+                <th class="d365-filter-head" data-filter-key="tpk">TPK</th>
+                <th class="d365-filter-head" data-filter-key="tisco">TISCO</th>
+                <th class="d365-filter-head" data-filter-key="tyn">TYN</th>
+                <th class="d365-filter-head" data-filter-key="grandTotal">Grand Total</th>
+              </tr>
+            </thead>
+            <tbody id="d365SubstockBody">
+              <tr><td colspan="13" class="text-center">No data uploaded</td></tr>
+            </tbody>
+            <tfoot>
+              <tr id="d365SubstockTotalRow">
+                <td colspan="2" class="text-center">Grand Total</td>
+                <td id="sumSubstockCmt">-</td>
+                <td id="sumSubstockKdt">-</td>
+                <td id="sumSubstockKkft">-</td>
+                <td id="sumSubstockMdi">-</td>
+                <td id="sumSubstockSnt">-</td>
+                <td id="sumSubstockSsp">-</td>
+                <td id="sumSubstockSkc">-</td>
+                <td id="sumSubstockTpk">-</td>
+                <td id="sumSubstockTisco">-</td>
+                <td id="sumSubstockTyn">-</td>
+                <td id="sumSubstockGrandTotal">-</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="rmt.js"></script>
+</body>
+</html>
+
+
+
+
+
+
