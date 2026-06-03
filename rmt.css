@@ -180,6 +180,18 @@
       font-weight: 800;
       border-top: 2px solid #93c5fd;
     }
+    .diff-cell { font-weight: 700; }
+    .diff-positive {
+      color: #111827 !important;
+      background: inherit !important;
+    }
+    .diff-negative {
+      color: #b91c1c !important;
+      background: #fee2e2 !important;
+    }
+    tfoot td.diff-positive {
+      background: #dbeafe !important;
+    }
     .text-center { text-align: center; }
     .setting-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 10px; }
     .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; background: #fff; }

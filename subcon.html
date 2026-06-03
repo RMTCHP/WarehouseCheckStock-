@@ -83,7 +83,18 @@
       font-weight: 800;
       border-top: 2px solid #93c5fd;
     }
-    .diff-col { color: #b91c1c !important; font-weight: 700; }
+    .diff-col { font-weight: 700; }
+    .diff-positive {
+      color: #111827 !important;
+      background: inherit !important;
+    }
+    .diff-negative {
+      color: #b91c1c !important;
+      background: #fee2e2 !important;
+    }
+    tfoot td.diff-positive {
+      background: #dbeafe !important;
+    }
     .actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
     .actions .btn { border-radius: 10px; min-width: 44px; width: 44px; height: 40px; padding: 0; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
     .actions .btn-save { min-width: 44px; width: 44px; padding: 0; font-size: 18px; }
@@ -672,6 +683,11 @@
       input.value = normalizeFileNo(input.value);
     }
 
+    function sanitizeNumericInput(input) {
+      if (!input) return;
+      input.value = String(input.value || '').replace(/[^\d]/g, '');
+    }
+
     function recalcRow(tr) {
       const boh = safeNum(tr.querySelector('[name="boh"]').value);
       const supply = safeNum(tr.querySelector('[name="supply"]').value);
@@ -682,9 +698,17 @@
       const eoh = (boh + supply) - delivery - ng;
       const total = ok + hold;
       const diff = Math.abs(eoh - total);
+      const signedDiff = total - eoh;
+      const diffInput = tr.querySelector('[name="diff"]');
       tr.querySelector('[name="eoh"]').value = eoh || '';
       tr.querySelector('[name="total"]').value = total || '';
-      tr.querySelector('[name="diff"]').value = diff || '';
+      diffInput.value = diff || '';
+      diffInput.classList.remove('diff-positive', 'diff-negative');
+      if (signedDiff < 0) {
+        diffInput.classList.add('diff-negative');
+      } else {
+        diffInput.classList.add('diff-positive');
+      }
       recalcTotals();
     }
 
@@ -693,13 +717,13 @@
       <tr>
         <td class="text-center">${index}</td>
         <td><input name="fileNo" value="${r.fileNo ?? ''}" onblur="normalizeFileNoInput(this)" /></td>
-        <td class="num"><input name="boh" value="${r.boh ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
-        <td class="num"><input name="supply" value="${r.supply ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
-        <td class="num"><input name="delivery" value="${r.delivery ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
-        <td class="num"><input name="ng" value="${r.ng ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="boh" inputmode="numeric" value="${r.boh ?? ''}" oninput="sanitizeNumericInput(this); recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="supply" inputmode="numeric" value="${r.supply ?? ''}" oninput="sanitizeNumericInput(this); recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="delivery" inputmode="numeric" value="${r.delivery ?? ''}" oninput="sanitizeNumericInput(this); recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="ng" inputmode="numeric" value="${r.ng ?? ''}" oninput="sanitizeNumericInput(this); recalcRow(this.closest('tr'))" /></td>
         <td class="num"><input name="eoh" value="${r.eoh ?? ''}" disabled /></td>
-        <td class="num"><input name="confirmOk" value="${r.confirmOk ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
-        <td class="num"><input name="confirmHold" value="${r.confirmHold ?? ''}" oninput="recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="confirmOk" inputmode="numeric" value="${r.confirmOk ?? ''}" oninput="sanitizeNumericInput(this); recalcRow(this.closest('tr'))" /></td>
+        <td class="num"><input name="confirmHold" inputmode="numeric" value="${r.confirmHold ?? ''}" oninput="sanitizeNumericInput(this); recalcRow(this.closest('tr'))" /></td>
         <td class="num"><input name="total" value="${r.total ?? ''}" disabled /></td>
         <td class="num diff-col"><input class="diff-col" name="diff" value="${r.diff ?? ''}" disabled /></td>
         <td><input name="remark" value="${r.remark ?? ''}" /></td>
@@ -741,15 +765,24 @@
       const rows = [...document.querySelectorAll('#reportBody tr')];
       let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
       rows.forEach((tr) => {
-        boh += safeNum(tr.querySelector('[name="boh"]')?.value);
-        supply += safeNum(tr.querySelector('[name="supply"]')?.value);
-        delivery += safeNum(tr.querySelector('[name="delivery"]')?.value);
-        ng += safeNum(tr.querySelector('[name="ng"]')?.value);
-        eoh += safeNum(tr.querySelector('[name="eoh"]')?.value);
-        ok += safeNum(tr.querySelector('[name="confirmOk"]')?.value);
-        hold += safeNum(tr.querySelector('[name="confirmHold"]')?.value);
-        total += safeNum(tr.querySelector('[name="total"]')?.value);
-        diff += Math.abs(safeNum(tr.querySelector('[name="diff"]')?.value));
+        const rowBoh = safeNum(tr.querySelector('[name="boh"]')?.value);
+        const rowSupply = safeNum(tr.querySelector('[name="supply"]')?.value);
+        const rowDelivery = safeNum(tr.querySelector('[name="delivery"]')?.value);
+        const rowNg = safeNum(tr.querySelector('[name="ng"]')?.value);
+        const rowEoh = safeNum(tr.querySelector('[name="eoh"]')?.value);
+        const rowOk = safeNum(tr.querySelector('[name="confirmOk"]')?.value);
+        const rowHold = safeNum(tr.querySelector('[name="confirmHold"]')?.value);
+        const rowTotal = safeNum(tr.querySelector('[name="total"]')?.value);
+        const rowSignedDiff = rowTotal - rowEoh;
+        boh += rowBoh;
+        supply += rowSupply;
+        delivery += rowDelivery;
+        ng += rowNg;
+        eoh += rowEoh;
+        ok += rowOk;
+        hold += rowHold;
+        total += rowTotal;
+        diff += rowSignedDiff;
       });
       document.getElementById('sumBoh').textContent = formatNumOrDash(boh);
       document.getElementById('sumSupply').textContent = formatNumOrDash(supply);
@@ -759,7 +792,14 @@
       document.getElementById('sumConfirmOk').textContent = formatNumOrDash(ok);
       document.getElementById('sumConfirmHold').textContent = formatNumOrDash(hold);
       document.getElementById('sumTotal').textContent = formatNumOrDash(total);
-      document.getElementById('sumDiff').textContent = formatNumOrDash(diff);
+      const sumDiffEl = document.getElementById('sumDiff');
+      sumDiffEl.textContent = formatNumOrDash(diff);
+      sumDiffEl.classList.remove('diff-positive', 'diff-negative');
+      if (diff < 0) {
+        sumDiffEl.classList.add('diff-negative');
+      } else {
+        sumDiffEl.classList.add('diff-positive');
+      }
     }
 
     async function deleteLastRow() {

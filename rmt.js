@@ -43,6 +43,17 @@
       if (!Number.isFinite(n) || n === 0) return '-';
       return n.toLocaleString('en-US');
     }
+    function getSignedDiffValue(row = {}) {
+      return safeNum(row.total) - safeNum(row.eoh);
+    }
+    function getDisplayDiffValue(row = {}) {
+      const explicit = String(row.diff ?? '').trim();
+      if (explicit !== '') return Math.abs(safeNum(row.diff));
+      return Math.abs(getSignedDiffValue(row));
+    }
+    function diffClassFromSigned(signed) {
+      return signed < 0 ? 'diff-negative' : 'diff-positive';
+    }
     function textOrDash(v) {
       const s = String(v ?? '').trim();
       return s ? s : '-';
@@ -117,7 +128,7 @@
           <td>${r.confirmOk || ''}</td>
           <td>${r.confirmHold || ''}</td>
           <td>${r.total || ''}</td>
-          <td>${r.diff || ''}</td>
+          <td class="diff-cell ${diffClassFromSigned(getSignedDiffValue(r))}">${formatNumOrDash(getDisplayDiffValue(r))}</td>
           <td>${r.remark || ''}</td>
         </tr>
       `).join('');
@@ -135,7 +146,7 @@
         ok += safeNum(r.confirmOk);
         hold += safeNum(r.confirmHold);
         total += safeNum(r.total);
-        diff += safeNum(r.diff);
+        diff += getSignedDiffValue(r);
       });
       document.getElementById('sumBoh').textContent = formatNumOrDash(boh);
       document.getElementById('sumSupply').textContent = formatNumOrDash(supply);
@@ -145,7 +156,10 @@
       document.getElementById('sumConfirmOk').textContent = formatNumOrDash(ok);
       document.getElementById('sumConfirmHold').textContent = formatNumOrDash(hold);
       document.getElementById('sumTotal').textContent = formatNumOrDash(total);
-      document.getElementById('sumDiff').textContent = formatNumOrDash(diff);
+      const sumDiffEl = document.getElementById('sumDiff');
+      sumDiffEl.textContent = formatNumOrDash(diff);
+      sumDiffEl.classList.remove('diff-positive', 'diff-negative');
+      sumDiffEl.classList.add(diffClassFromSigned(diff));
     }
 
     async function loadReport() {
@@ -259,7 +273,7 @@
           ok += safeNum(r.confirmOk);
           hold += safeNum(r.confirmHold);
           total += safeNum(r.total);
-          diff += safeNum(r.diff);
+          diff += getSignedDiffValue(r);
         });
 
         const html = `
@@ -308,7 +322,7 @@
                     <td>${textOrDash(r.confirmOk)}</td>
                     <td>${textOrDash(r.confirmHold)}</td>
                     <td>${textOrDash(r.total)}</td>
-                    <td>${textOrDash(r.diff)}</td>
+                    <td class="diff-cell ${diffClassFromSigned(getSignedDiffValue(r))}">${formatNumOrDash(getDisplayDiffValue(r))}</td>
                     <td style="text-align:left;">${textOrDash(r.remark)}</td>
                   </tr>
                 `).join('') : '<tr><td colspan="12" class="text-center">No data found</td></tr>'}
@@ -325,7 +339,7 @@
                   <td>${formatNumOrDash(ok)}</td>
                   <td>${formatNumOrDash(hold)}</td>
                   <td>${formatNumOrDash(total)}</td>
-                  <td>${formatNumOrDash(diff)}</td>
+                  <td class="${diffClassFromSigned(diff)}">${formatNumOrDash(diff)}</td>
                   <td></td>
                 </tr>
               </tfoot>
