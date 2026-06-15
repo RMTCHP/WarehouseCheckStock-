@@ -111,10 +111,22 @@
       position: relative;
       transition: background .15s ease, color .15s ease;
     }
+    .summary-filter-head {
+      cursor: pointer;
+      position: relative;
+      transition: background .15s ease, color .15s ease;
+    }
     .d365-filter-head:hover {
       background: #334155 !important;
     }
+    .summary-filter-head:hover {
+      background: #334155 !important;
+    }
     .d365-filter-head.active-filter {
+      background: #0f766e !important;
+      color: #ffffff !important;
+    }
+    .summary-filter-head.active-filter {
       background: #0f766e !important;
       color: #ffffff !important;
     }
@@ -159,6 +171,61 @@
       background: #eef6ff;
       font-weight: 800;
     }
+    .summary-toolbar {
+      display: flex;
+      align-items: end;
+      gap: 10px;
+    }
+    .summary-toolbar .btn {
+      min-width: 170px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
+    }
+    .summary-toolbar .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .10);
+    }
+    .summary-toolbar .btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, .08);
+    }
+    #saveSummaryQtyBtn:not(:disabled):hover {
+      background: #0b5ed7;
+      border-color: #0a58ca;
+      color: #ffffff;
+    }
+    #saveSummaryQtyBtn:not(:disabled):active {
+      background: #0a58ca;
+      border-color: #084298;
+    }
+    #saveSummaryQtyBtn.is-inactive {
+      opacity: .68;
+      background: #94a3b8;
+      border-color: #94a3b8;
+      color: #ffffff;
+    }
+    #saveSummaryQtyBtn.is-inactive:hover {
+      background: #0b5ed7;
+      border-color: #0a58ca;
+      color: #ffffff;
+    }
+    #exportSummaryBtn {
+      min-width: 160px;
+    }
+    #exportSummaryBtn:hover {
+      background: #198754;
+      border-color: #157347;
+      color: #ffffff;
+    }
+    #exportSummaryBtn:active {
+      background: #157347;
+      border-color: #146c43;
+      color: #ffffff;
+    }
     .summary-table {
       width: max-content !important;
       min-width: 100%;
@@ -167,6 +234,52 @@
     .summary-table th,
     .summary-table td {
       white-space: nowrap;
+    }
+    .summary-d365-input {
+      width: 108px;
+      min-width: 108px;
+      text-align: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #ffffff;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .summary-d365-input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+      background: #f8fbff;
+    }
+    .summary-d365-input.summary-edited {
+      border-color: #f59e0b;
+      background: #fff7ed;
+      color: #9a3412;
+    }
+    .summary-d365-cell {
+      min-width: 124px;
+    }
+    .summary-file-ab {
+      background: #ffedd5 !important;
+      color: #9a3412 !important;
+      font-weight: 800;
+    }
+    .summary-missing-row td {
+      background: #fee2e2 !important;
+      color: #7f1d1d;
+      font-weight: 700;
+    }
+    .summary-missing-row td .summary-d365-input {
+      background: #fff7f7;
+      border-color: #fca5a5;
+      color: #7f1d1d;
+    }
+    .d365-missing {
+      color: #b91c1c;
+      font-weight: 700;
     }
     table { border-collapse: collapse; width: 100%; min-width: 0; table-layout: fixed; }
     th, td { border: 1px solid #edf0f3; padding: 4px; font-size: 12px; }
@@ -491,6 +604,14 @@
       }
       .dash-grid {
         grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+      .summary-toolbar {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .summary-toolbar .btn {
+        width: 100%;
       }
     }
     @media (max-width: 1024px) {

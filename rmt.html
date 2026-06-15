@@ -160,6 +160,25 @@
     </div>
 
     <div id="summaryView" class="hidden">
+      <div class="card mb-3">
+        <div class="card-head mb-0">
+          <div class="card-title mb-0">Summary Report</div>
+          <div class="summary-toolbar">
+            <div class="dashboard-month-box" style="min-width:220px;">
+              <label for="summaryMonthInput">Month</label>
+              <input id="summaryMonthInput" type="month" class="form-control" />
+            </div>
+            <button id="saveSummaryQtyBtn" class="btn btn-primary" type="button" onclick="saveSummaryD365QtyOverrides()">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Save D365 Q'ty</span>
+            </button>
+            <button id="exportSummaryBtn" class="btn btn-outline-secondary" type="button" onclick="exportSummaryReportExcel()">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Export Excel</span>
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="summary-top">
         <table class="summary-top-table">
           <thead>
@@ -184,26 +203,26 @@
         <table class="summary-table" style="min-width:1800px;">
           <thead>
             <tr>
-              <th>Item</th>
-              <th>File No.</th>
-              <th>D365 code</th>
-              <th>D365 Q'ty</th>
-              <th>Diff</th>
-              <th>BOH</th>
-              <th>Supply</th>
-              <th>Delivery</th>
-              <th style="background:#fef08a; color:#111827;">NG</th>
-              <th>EOH</th>
-              <th>OK</th>
-              <th>Hold</th>
-              <th>Total</th>
-              <th>Diff</th>
-              <th>Remark</th>
-              <th>SUBC</th>
+              <th class="summary-filter-head" data-filter-key="item">Item</th>
+              <th class="summary-filter-head" data-filter-key="fileNo">File No.</th>
+              <th class="summary-filter-head" data-filter-key="d365Code">D365 code</th>
+              <th class="summary-filter-head" data-filter-key="d365Qty">D365 Q'ty</th>
+              <th class="summary-filter-head" data-filter-key="d365Diff">Diff</th>
+              <th class="summary-filter-head" data-filter-key="boh">BOH</th>
+              <th class="summary-filter-head" data-filter-key="supply">Supply</th>
+              <th class="summary-filter-head" data-filter-key="delivery">Delivery</th>
+              <th class="summary-filter-head" data-filter-key="ng" style="background:#fef08a; color:#111827;">NG</th>
+              <th class="summary-filter-head" data-filter-key="eoh">EOH</th>
+              <th class="summary-filter-head" data-filter-key="confirmOk">OK</th>
+              <th class="summary-filter-head" data-filter-key="confirmHold">Hold</th>
+              <th class="summary-filter-head" data-filter-key="total">Total</th>
+              <th class="summary-filter-head" data-filter-key="diff">Diff</th>
+              <th class="summary-filter-head" data-filter-key="remark">Remark</th>
+              <th class="summary-filter-head" data-filter-key="subcon">SUBC</th>
               <th>Total D365</th>
               <th>Total Subc</th>
               <th style="background:#fee2e2; color:#7f1d1d;">%Q'ty</th>
-              <th>Plant</th>
+              <th class="summary-filter-head" data-filter-key="plant">Plant</th>
               <th>Total Item</th>
               <th style="background:#dcfce7; color:#14532d;">OK Item</th>
               <th style="background:#fee2e2; color:#7f1d1d;">Diff Item</th>

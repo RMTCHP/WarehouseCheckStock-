@@ -1,5 +1,5 @@
 ﻿
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMzFoDb_as_oOZQVDCeIz4nfwXqwSMjgQGCfr-jiaIVI9p5VFeWtUXKp0M75h7b_A/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOwh_Br1B_jHv-q3H4x2zWQ7j4-zb_5ITO6bBvEGeeZ5CdTTxqQca6zDrAc9x9bGM/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     let currentUser = null;
@@ -10,6 +10,15 @@
     let userRowsState = [];
     let fileNoRowsState = [];
     let d365SubstockRowsState = [];
+    let d365SubstockSummaryMap = {};
+    let summaryRowsState = [];
+    let summaryAllSubconsState = [];
+    let summaryQtyOverrideState = {};
+    let summaryDirtyGroupsState = {};
+    let summaryFilterMultiState = {
+      item: [], fileNo: [], d365Code: [], d365Qty: [], d365Diff: [], boh: [], supply: [], delivery: [], ng: [], eoh: [], confirmOk: [], confirmHold: [], total: [], diff: [], remark: [], subcon: [], plant: []
+    };
+    let summaryDirty = false;
     let d365FilterState = {
       itemNumber: '', processNo: '', cmt: '', kdt: '', kkft: '', mdi: '', snt: '', ssp: '', skc: '', tpk: '', tisco: '', tyn: '', grandTotal: ''
     };
@@ -57,6 +66,36 @@
     function textOrDash(v) {
       const s = String(v ?? '').trim();
       return s ? s : '-';
+    }
+    function toSummaryRowKey(row = {}) {
+      return [
+        String(row.subcon || '').trim().toUpperCase(),
+        String(row.item || '').trim(),
+        String(row.fileNo || '').trim().toUpperCase()
+      ].join('||');
+    }
+    function normalizeSummaryQtyValue(v) {
+      if (v === '' || v === null || v === undefined) return 0;
+      return Math.max(0, safeNum(v));
+    }
+    function getSummaryGroupKey(row = {}) {
+      return `${String(row.subcon || '').trim().toUpperCase()}::${String(row.__d365Tail || getFileNoTail(row.fileNo) || '').trim().toUpperCase()}`;
+    }
+    function getSummaryDisplayDiff(qty, row = {}) {
+      return normalizeSummaryQtyValue(qty) - safeNum(row.total);
+    }
+    function formatSummaryQtyInputValue(n) {
+      return normalizeSummaryQtyValue(n) > 0 ? String(normalizeSummaryQtyValue(n)) : '';
+    }
+    function setSummaryDirtyState(isDirty) {
+      summaryDirty = !!isDirty;
+      const btn = document.getElementById('saveSummaryQtyBtn');
+      if (!btn) return;
+      btn.classList.toggle('is-inactive', !summaryDirty);
+      btn.classList.toggle('btn-warning', summaryDirty);
+    }
+    function isSummaryQtyEditable(fileNo) {
+      return /[AB]$/i.test(String(fileNo || '').trim());
     }
 
     function monthLabel(yyyyMM) {
@@ -107,6 +146,11 @@
       const base = document.getElementById('monthInput');
       const dash = document.getElementById('dashboardMonthInput');
       if (base && dash && dash.value !== base.value) dash.value = base.value || '';
+    }
+    function syncSummaryMonthInput() {
+      const base = document.getElementById('monthInput');
+      const summary = document.getElementById('summaryMonthInput');
+      if (base && summary && summary.value !== base.value) summary.value = base.value || '';
     }
 
     function renderRows(rows = []) {
@@ -403,8 +447,217 @@
       return `56110T${m[1]}`;
     }
 
-    function getRowD365Qty() {
-      return 0;
+    function getFileNoTail(fileNo) {
+      const raw = String(fileNo || '').trim().toUpperCase();
+      if (!raw) return '';
+      const core = raw.startsWith('F') ? raw.slice(1) : raw;
+      const m = core.match(/^(\d+)/);
+      if (!m) return '';
+      return `T${m[1].padStart(4, '0')}`;
+    }
+
+    function getD365Tail(code) {
+      const raw = String(code || '').trim().toUpperCase();
+      if (!raw) return '';
+      const idx = raw.indexOf('T');
+      if (idx < 0 || idx === raw.length - 1) return raw;
+      return raw.slice(idx);
+    }
+
+    function buildD365SubstockSummaryMap(rows = []) {
+      const out = {};
+      const cols = ['cmt', 'kdt', 'kkft', 'mdi', 'snt', 'ssp', 'skc', 'tpk', 'tisco', 'tyn'];
+      (rows || []).forEach((r) => {
+        const rawItem = String(r.itemNumber || '').trim().toUpperCase();
+        const item = getD365Tail(rawItem);
+        if (!item) return;
+        if (!out[item]) {
+          out[item] = { displayCode: rawItem, cmt: 0, kdt: 0, kkft: 0, mdi: 0, snt: 0, ssp: 0, skc: 0, tpk: 0, tisco: 0, tyn: 0, grandTotal: 0 };
+        }
+        cols.forEach((c) => {
+          out[item][c] += safeNum(r[c]);
+        });
+        out[item].grandTotal += safeNum(r.grandTotal);
+      });
+      d365SubstockSummaryMap = out;
+    }
+
+    function findD365SummaryItem(fileNo) {
+      const tail = getFileNoTail(fileNo);
+      if (!tail) return null;
+      if (d365SubstockSummaryMap[tail]) return d365SubstockSummaryMap[tail];
+      const direct = (d365SubstockRowsState || []).find((r) => getD365Tail(r.itemNumber) === tail);
+      if (!direct) return null;
+      return {
+        displayCode: String(direct.itemNumber || '').trim().toUpperCase(),
+        cmt: safeNum(direct.cmt),
+        kdt: safeNum(direct.kdt),
+        kkft: safeNum(direct.kkft),
+        mdi: safeNum(direct.mdi),
+        snt: safeNum(direct.snt),
+        ssp: safeNum(direct.ssp),
+        skc: safeNum(direct.skc),
+        tpk: safeNum(direct.tpk),
+        tisco: safeNum(direct.tisco),
+        tyn: safeNum(direct.tyn),
+        grandTotal: safeNum(direct.grandTotal)
+      };
+    }
+
+    function resolveDisplayD365Code(fileNo) {
+      const item = findD365SummaryItem(fileNo);
+      if (item && item.displayCode) return { text: item.displayCode, found: true };
+      return { text: 'No in D365', found: false };
+    }
+
+    function getRowD365Qty(row = {}) {
+      const subconKey = String(row.subcon || '').trim().toLowerCase();
+      if (!subconKey) return 0;
+      const item = findD365SummaryItem(row.fileNo);
+      if (!item) return 0;
+      return safeNum(item[subconKey]);
+    }
+    function fileNoFromD365Code(code) {
+      const tail = getD365Tail(code);
+      if (!tail) return '';
+      return `F${tail.replace(/^T/i, '')}`;
+    }
+    function buildSummaryRows(rows = [], allSubcons = []) {
+      const grouped = rows.reduce((acc, r) => {
+        const key = String(r.subcon || 'UNKNOWN').trim() || 'UNKNOWN';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(r);
+        return acc;
+      }, {});
+      (allSubcons || []).forEach((sub) => {
+        const key = String(sub || '').trim();
+        if (key && !grouped[key]) grouped[key] = [];
+      });
+      const keys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+      const out = [];
+      keys.forEach((sub) => {
+        const existingTails = {};
+        const preferredRowByTail = {};
+        let maxItem = 0;
+        grouped[sub].forEach((row) => {
+          const d365Tail = getFileNoTail(row.fileNo);
+          if (!d365Tail) return;
+          if (!preferredRowByTail[d365Tail]) {
+            preferredRowByTail[d365Tail] = row;
+            return;
+          }
+          const currentPreferred = preferredRowByTail[d365Tail];
+          if (!isSummaryQtyEditable(currentPreferred.fileNo) && isSummaryQtyEditable(row.fileNo)) {
+            preferredRowByTail[d365Tail] = row;
+          }
+        });
+        grouped[sub].forEach((row) => {
+          const rowItem = safeNum(row.item);
+          if (rowItem > maxItem) maxItem = rowItem;
+          const d365Tail = getFileNoTail(row.fileNo);
+          if (d365Tail) existingTails[d365Tail] = true;
+          const sourceQty = getRowD365Qty(row);
+          const preferred = d365Tail ? preferredRowByTail[d365Tail] : null;
+          const defaultQty = d365Tail && preferred === row ? sourceQty : 0;
+          const key = toSummaryRowKey(row);
+          const overrideQty = Object.prototype.hasOwnProperty.call(summaryQtyOverrideState, key)
+            ? normalizeSummaryQtyValue(summaryQtyOverrideState[key])
+            : defaultQty;
+          out.push(Object.assign({}, row, {
+            __summaryKey: key,
+            __d365Tail: d365Tail,
+            __d365QtySource: sourceQty,
+            __d365QtyDefault: defaultQty,
+            __d365Qty: overrideQty
+          }));
+        });
+        const subconKey = String(sub || '').trim().toLowerCase();
+        const missingD365Rows = (d365SubstockRowsState || [])
+          .filter((r) => safeNum(r[subconKey]) > 0)
+          .filter((r) => {
+            const tail = getD365Tail(r.itemNumber);
+            return tail && !existingTails[tail];
+          })
+          .sort((a, b) => {
+            const ai = String(a.itemNumber || '').trim();
+            const bi = String(b.itemNumber || '').trim();
+            if (ai !== bi) return ai.localeCompare(bi);
+            return safeNum(a.processNo) - safeNum(b.processNo);
+          });
+        missingD365Rows.forEach((d365Row, idx) => {
+          const fileNo = fileNoFromD365Code(d365Row.itemNumber) || '-';
+          const syntheticRow = {
+            subcon: sub,
+            item: maxItem + idx + 1,
+            fileNo,
+            boh: '',
+            supply: '',
+            delivery: '',
+            ng: '',
+            eoh: '',
+            confirmOk: '',
+            confirmHold: '',
+            total: '',
+            diff: '',
+            remark: 'Missing in Subcon submission'
+          };
+          const d365Tail = getFileNoTail(fileNo);
+          const key = toSummaryRowKey(syntheticRow);
+          const sourceQty = safeNum(d365Row[subconKey]);
+          const overrideQty = Object.prototype.hasOwnProperty.call(summaryQtyOverrideState, key)
+            ? normalizeSummaryQtyValue(summaryQtyOverrideState[key])
+            : sourceQty;
+          out.push(Object.assign({}, syntheticRow, {
+            __summaryKey: key,
+            __d365Tail: d365Tail,
+            __d365QtySource: sourceQty,
+            __d365QtyDefault: sourceQty,
+            __d365Qty: overrideQty,
+            __isMissingInSub: true
+          }));
+        });
+      });
+      return out;
+    }
+    function validateSummaryQtyOverrides(rows = []) {
+      const bucket = {};
+      for (let i = 0; i < rows.length; i += 1) {
+        const row = rows[i];
+        const qty = normalizeSummaryQtyValue(row.__d365Qty);
+        if (qty < 0) {
+          return { ok: false, message: `D365 Q'ty must be 0 or greater (${row.fileNo || '-'})` };
+        }
+        const tail = String(row.__d365Tail || '').trim();
+        const subcon = String(row.subcon || '').trim().toUpperCase();
+        if (!tail || !subcon) continue;
+        const gKey = `${subcon}::${tail}`;
+        if (!bucket[gKey]) {
+          bucket[gKey] = {
+            subcon,
+            tail,
+            sourceQty: normalizeSummaryQtyValue(row.__d365QtySource),
+            editedQty: 0
+          };
+        }
+        bucket[gKey].editedQty += qty;
+      }
+      const keys = Object.keys(bucket);
+      for (let i = 0; i < keys.length; i += 1) {
+        const item = bucket[keys[i]];
+        if (item.sourceQty > 0 && item.editedQty > item.sourceQty) {
+          return {
+            ok: false,
+            message: `${item.subcon} ${item.tail} exceeds source D365 quantity (${item.editedQty.toLocaleString('en-US')} > ${item.sourceQty.toLocaleString('en-US')})`
+          };
+        }
+      }
+      return { ok: true };
+    }
+    function validateSummaryDirtyGroups(rows = []) {
+      const dirtyGroupKeys = Object.keys(summaryDirtyGroupsState || {}).filter((k) => summaryDirtyGroupsState[k]);
+      if (!dirtyGroupKeys.length) return { ok: true };
+      const targetRows = rows.filter((row) => dirtyGroupKeys.includes(getSummaryGroupKey(row)));
+      return validateSummaryQtyOverrides(targetRows);
     }
 
     function toggleSummaryGroup(groupId) {
@@ -419,21 +672,23 @@
 
     function renderSummaryRows(rows = [], allSubcons = []) {
       const body = document.getElementById('summaryBody');
-      if (!rows.length && !allSubcons.length) {
+      const filteredRows = applySummaryFilter(rows || []);
+      if (!filteredRows.length && !allSubcons.length) {
+        setSummaryDirtyState(false);
         body.innerHTML = '<tr><td class="text-center" colspan="24">No data found</td></tr>';
         return;
       }
-      const grouped = rows.reduce((acc, r) => {
+      const grouped = filteredRows.reduce((acc, r) => {
         const key = String(r.subcon || 'UNKNOWN').trim() || 'UNKNOWN';
         if (!acc[key]) acc[key] = [];
         acc[key].push(r);
         return acc;
       }, {});
-      (allSubcons || []).forEach((s) => {
-        const key = String(s || '').trim();
-        if (key && !grouped[key]) grouped[key] = [];
-      });
       const keys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+      if (!keys.length) {
+        body.innerHTML = '<tr><td class="text-center" colspan="24">No matching records found</td></tr>';
+        return;
+      }
 
       let html = '';
       keys.forEach((sub, groupIndex) => {
@@ -447,6 +702,7 @@
         let sumTotalSubc = 0;
         let totalItem = 0;
         let okItem = 0;
+        let diffItem = 0;
 
         html += `<tr>
           <td colspan="24" style="background:#e2e8f0; font-weight:800; text-align:left; cursor:pointer;" onclick="toggleSummaryGroup('${groupId}')">
@@ -454,22 +710,41 @@
           </td>
         </tr>`;
         html += gRows.map((r, i) => {
-          const m = fileNoMapState[String(r.fileNo || '').trim()] || {};
-          const totalD365 = getRowD365Qty(r, m);
+          const m = getFileNoMapEntry(r.fileNo);
+          const totalD365 = normalizeSummaryQtyValue(r.__d365Qty);
           const totalSubc = safeNum(r.confirmOk) + safeNum(r.confirmHold);
-          const hasD365Qty = totalD365 > 0;
-          const diffQty = hasD365Qty ? (totalD365 - safeNum(r.total)) : null;
-          const d365Code = toD365Code(r.fileNo);
+          const hasComparableD365 = normalizeSummaryQtyValue(r.__d365QtySource) > 0
+            || totalD365 > 0
+            || totalD365 !== normalizeSummaryQtyValue(r.__d365QtyDefault);
+          const diffQty = hasComparableD365 ? getSummaryDisplayDiff(totalD365, r) : null;
+          const d365Code = resolveDisplayD365Code(r.fileNo);
+          const isEditable = isSummaryQtyEditable(r.fileNo);
+          const fileNoClass = isEditable ? 'summary-file-ab' : '';
           sumTotalD365 += totalD365;
           sumTotalSubc += totalSubc;
           totalItem += 1;
-          if (diffQty === 0) okItem += 1;
+          if (diffQty === null || diffQty === 0) okItem += 1;
+          if (diffQty !== null && diffQty !== 0) diffItem += 1;
+          const editedClass = totalD365 !== normalizeSummaryQtyValue(r.__d365QtyDefault) ? 'summary-edited' : '';
           return `
-            <tr data-summary-group="${groupId}" style="${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
+            <tr data-summary-group="${groupId}" class="${r.__isMissingInSub ? 'summary-missing-row' : ''}" style="${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
               <td>${i + 1}</td>
-              <td>${r.fileNo || '-'}</td>
-              <td>${d365Code}</td>
-              <td></td>
+              <td class="${fileNoClass}">${r.fileNo || '-'}</td>
+              <td class="${d365Code.found ? '' : 'd365-missing'}">${d365Code.text}</td>
+              <td class="summary-d365-cell">
+                ${isEditable ? `
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    class="summary-d365-input ${editedClass}"
+                    value="${formatSummaryQtyInputValue(totalD365)}"
+                    data-summary-key="${r.__summaryKey}"
+                    onchange="handleSummaryD365QtyChange(this)"
+                  >
+                ` : `<span>${formatNumOrDash(totalD365)}</span>`}
+              </td>
               <td>${diffQty === null ? '-' : formatNumOrDash(diffQty)}</td>
               <td>${r.boh || '-'}</td>
               <td>${r.supply || '-'}</td>
@@ -502,7 +777,6 @@
           `;
         }
 
-        const diffItem = Math.max(0, totalItem - okItem);
         const qtyPct = safePct(sumTotalSubc, sumTotalD365);
         const accPct = safePct(okItem, totalItem);
         html += `
@@ -722,6 +996,282 @@
         th.classList.toggle('active-filter', active);
       });
     }
+    function getFileNoMapEntry(fileNo) {
+      const raw = String(fileNo || '').trim().toUpperCase();
+      if (!raw) return {};
+      if (fileNoMapState[raw]) return fileNoMapState[raw];
+      const base = raw.replace(/([AB])$/i, '');
+      if (base && fileNoMapState[base]) return fileNoMapState[base];
+      return {};
+    }
+    function getSummaryRowPlant(row = {}) {
+      const m = getFileNoMapEntry(row.fileNo);
+      return String(m.plant || '-').toUpperCase() || '-';
+    }
+    function getSummaryRowD365Qty(row = {}) {
+      return normalizeSummaryQtyValue(row.__d365Qty);
+    }
+    function getSummaryRowD365Diff(row = {}) {
+      const totalD365 = getSummaryRowD365Qty(row);
+      const hasComparableD365 = normalizeSummaryQtyValue(row.__d365QtySource) > 0
+        || totalD365 > 0
+        || totalD365 !== normalizeSummaryQtyValue(row.__d365QtyDefault);
+      return hasComparableD365 ? getSummaryDisplayDiff(totalD365, row) : null;
+    }
+    function getSummaryCellValue(row = {}, key) {
+      switch (key) {
+        case 'item': return textOrDash(row.item);
+        case 'fileNo': return textOrDash(row.fileNo);
+        case 'd365Code': return textOrDash(resolveDisplayD365Code(row.fileNo).text);
+        case 'd365Qty': return formatNumOrDash(getSummaryRowD365Qty(row));
+        case 'd365Diff': {
+          const diffQty = getSummaryRowD365Diff(row);
+          return diffQty === null ? '-' : formatNumOrDash(diffQty);
+        }
+        case 'boh': return textOrDash(row.boh);
+        case 'supply': return textOrDash(row.supply);
+        case 'delivery': return textOrDash(row.delivery);
+        case 'ng': return textOrDash(row.ng);
+        case 'eoh': return textOrDash(row.eoh);
+        case 'confirmOk': return textOrDash(row.confirmOk);
+        case 'confirmHold': return textOrDash(row.confirmHold);
+        case 'total': return textOrDash(row.total);
+        case 'diff': return textOrDash(row.diff);
+        case 'remark': return textOrDash(row.remark);
+        case 'subcon': return textOrDash(String(row.subcon || '').toUpperCase());
+        case 'plant': return textOrDash(getSummaryRowPlant(row));
+        default: return '-';
+      }
+    }
+    function applySummaryFilter(rows = []) {
+      const keys = Object.keys(summaryFilterMultiState || {});
+      return rows.filter((row) => {
+        for (let i = 0; i < keys.length; i += 1) {
+          const key = keys[i];
+          const picked = Array.isArray(summaryFilterMultiState[key]) ? summaryFilterMultiState[key] : [];
+          if (!picked.length) continue;
+          const cell = String(getSummaryCellValue(row, key)).toLowerCase();
+          const found = picked.some((v) => String(v).toLowerCase() === cell);
+          if (!found) return false;
+        }
+        return true;
+      });
+    }
+    function getSummaryTopRowsForExport(rows = []) {
+      const filteredRows = applySummaryFilter(rows || []);
+      const byPlant = {};
+      let grandD365 = 0;
+      let grandSubc = 0;
+      let grandItems = 0;
+      let grandOk = 0;
+      let grandDiff = 0;
+
+      filteredRows.forEach((r) => {
+        const plant = getSummaryRowPlant(r);
+        if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+        const d365Qty = getSummaryRowD365Qty(r);
+        const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
+        const diffQty = getSummaryRowD365Diff(r);
+        const isOk = diffQty === null || diffQty === 0;
+
+        byPlant[plant].d365 += d365Qty;
+        byPlant[plant].subc += subcQty;
+        byPlant[plant].totalItem += 1;
+        if (isOk) byPlant[plant].okItem += 1;
+        if (diffQty !== null && diffQty !== 0) byPlant[plant].diffItem = (byPlant[plant].diffItem || 0) + 1;
+
+        grandD365 += d365Qty;
+        grandSubc += subcQty;
+        grandItems += 1;
+        if (isOk) grandOk += 1;
+        if (diffQty !== null && diffQty !== 0) grandDiff += 1;
+      });
+
+      const plants = ['CHP', 'G1P'];
+      if (byPlant['-']) plants.push('-');
+      const out = plants.map((plant) => {
+        const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+        const plantLabel = plant === '-' ? 'Unmapped Plant' : plant;
+        return {
+          Group: plantLabel,
+          'Total D365': p.d365,
+          'Total Subc': p.subc,
+          "%Q'ty": safePct(p.subc, p.d365),
+          Plant: plantLabel,
+          'Total Item': p.totalItem,
+          'OK Item': p.okItem,
+          'Diff Item': p.diffItem || 0,
+          '%Accuracy': safePct(p.okItem, p.totalItem)
+        };
+      });
+      out.push({
+        Group: 'Total',
+        'Total D365': grandD365,
+        'Total Subc': grandSubc,
+        "%Q'ty": safePct(grandSubc, grandD365),
+        Plant: '-',
+        'Total Item': grandItems,
+        'OK Item': grandOk,
+        'Diff Item': grandDiff,
+        '%Accuracy': safePct(grandOk, grandItems)
+      });
+      return out;
+    }
+    function getSummaryDetailRowsForExport(rows = []) {
+      const filteredRows = applySummaryFilter(rows || []);
+      return filteredRows.map((r, idx) => {
+        const d365Code = resolveDisplayD365Code(r.fileNo);
+        const d365Qty = getSummaryRowD365Qty(r);
+        const d365Diff = getSummaryRowD365Diff(r);
+        return {
+          Item: idx + 1,
+          'File No.': textOrDash(r.fileNo),
+          'D365 code': d365Code.text,
+          "D365 Q'ty": d365Qty || '',
+          Diff: d365Diff === null ? '' : d365Diff,
+          BOH: textOrDash(r.boh),
+          Supply: textOrDash(r.supply),
+          Delivery: textOrDash(r.delivery),
+          NG: textOrDash(r.ng),
+          EOH: textOrDash(r.eoh),
+          OK: textOrDash(r.confirmOk),
+          Hold: textOrDash(r.confirmHold),
+          Total: textOrDash(r.total),
+          'Diff (Subcon)': textOrDash(r.diff),
+          Remark: textOrDash(r.remark),
+          SUBC: textOrDash(String(r.subcon || '').toUpperCase()),
+          Plant: getSummaryRowPlant(r),
+          'Missing in Subcon': r.__isMissingInSub ? 'YES' : ''
+        };
+      });
+    }
+    function updateSummaryFilterHeaderState() {
+      document.querySelectorAll('.summary-filter-head').forEach((th) => {
+        const key = th.getAttribute('data-filter-key') || '';
+        const active = ((summaryFilterMultiState[key] || []).length > 0);
+        th.classList.toggle('active-filter', active);
+      });
+    }
+    function getSummaryDistinctValues(key) {
+      const s = new Set();
+      (summaryRowsState || []).forEach((row) => {
+        s.add(getSummaryCellValue(row, key));
+      });
+      return Array.from(s).sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }));
+    }
+    async function openSummaryFilterSwal(key, label) {
+      const allValues = getSummaryDistinctValues(key);
+      const selectedNow = new Set((summaryFilterMultiState[key] || []).map((v) => String(v).toLowerCase()));
+      const rowsHtml = allValues.map((v) => {
+        const checked = selectedNow.has(String(v).toLowerCase()) ? 'checked' : '';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 0;">
+            <input type="checkbox" class="summary-opt" value="${String(v).replace(/"/g, '&quot;')}" ${checked}>
+            <span>${String(v).replace(/</g, '&lt;')}</span>
+          </label>
+        `;
+      }).join('');
+      const rs = await Swal.fire(swalTheme({
+        title: `Filter: ${label}`,
+        html: `
+          <div style="text-align:left; margin-top:4px;">
+            <input id="swSummaryFilterSearch" class="swal2-input" placeholder="Search value..." style="margin:0 0 10px 0; height:40px; width:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+              <div id="swSummaryCount" style="font-size:12px; color:#64748b; font-weight:600;">0 selected</div>
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="swSummarySelAll" class="swal2-styled" style="background:#334155; margin:0; padding:8px 12px; border-radius:8px;">Select All</button>
+                <button type="button" id="swSummaryClrAll" class="swal2-styled" style="background:#64748b; margin:0; padding:8px 12px; border-radius:8px;">Clear</button>
+              </div>
+            </div>
+            <div style="font-size:12px; color:#475569; font-weight:700; margin:0 0 6px 2px;">Values</div>
+            <div id="swSummaryList" style="max-height:280px; overflow:auto; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; background:#f8fafc;">
+              ${rowsHtml || '<div style="color:#64748b;">No values</div>'}
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Apply',
+        cancelButtonText: 'Cancel',
+        didOpen: () => {
+          const search = document.getElementById('swSummaryFilterSearch');
+          const list = document.getElementById('swSummaryList');
+          const btnAll = document.getElementById('swSummarySelAll');
+          const btnClr = document.getElementById('swSummaryClrAll');
+          const countEl = document.getElementById('swSummaryCount');
+          const syncCount = () => {
+            if (!list || !countEl) return;
+            countEl.textContent = `${list.querySelectorAll('input.summary-opt:checked').length} selected`;
+          };
+          if (search && list) {
+            search.addEventListener('input', () => {
+              const kw = String(search.value || '').trim().toLowerCase();
+              list.querySelectorAll('label').forEach((lb) => {
+                const txt = (lb.textContent || '').toLowerCase();
+                lb.style.display = !kw || txt.includes(kw) ? 'flex' : 'none';
+              });
+            });
+          }
+          if (btnAll && list) {
+            btnAll.addEventListener('click', () => {
+              list.querySelectorAll('label').forEach((lb) => {
+                if (lb.style.display === 'none') return;
+                const cb = lb.querySelector('input.summary-opt');
+                if (cb) cb.checked = true;
+              });
+              syncCount();
+            });
+          }
+          if (btnClr && list) {
+            btnClr.addEventListener('click', () => {
+              list.querySelectorAll('input.summary-opt').forEach((cb) => { cb.checked = false; });
+              syncCount();
+            });
+          }
+          if (list) {
+            list.addEventListener('change', (e) => {
+              if (e.target && e.target.classList && e.target.classList.contains('summary-opt')) syncCount();
+            });
+          }
+          syncCount();
+        },
+        preConfirm: () => {
+          const list = document.getElementById('swSummaryList');
+          if (!list) return [];
+          const vals = [];
+          list.querySelectorAll('input.summary-opt:checked').forEach((cb) => {
+            vals.push(String(cb.value || '').trim());
+          });
+          return vals;
+        }
+      }));
+      if (rs.isConfirmed) {
+        summaryFilterMultiState[key] = Array.isArray(rs.value) ? rs.value : [];
+        updateSummaryFilterHeaderState();
+        renderSummaryTop(summaryRowsState);
+        renderSummaryRows(summaryRowsState, summaryAllSubconsState);
+      }
+    }
+    async function exportSummaryReportExcel() {
+      if (!summaryRowsState.length) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'No summary data to export' }));
+      }
+      const month = String(document.getElementById('summaryMonthInput')?.value || document.getElementById('monthInput')?.value || '').trim();
+      const detailRows = getSummaryDetailRowsForExport(summaryRowsState);
+      const topRows = getSummaryTopRowsForExport(summaryRowsState);
+      if (!detailRows.length && !topRows.length) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'No filtered data to export' }));
+      }
+      const wb = XLSX.utils.book_new();
+      const wsTop = XLSX.utils.json_to_sheet(topRows);
+      const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+      XLSX.utils.book_append_sheet(wb, wsTop, 'Summary Top');
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'Summary Detail');
+      const stamp = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const ts = `${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}_${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}`;
+      const fileMonth = (month || 'all').replace('-', '');
+      XLSX.writeFile(wb, `SummaryReport_${fileMonth}_${ts}.xlsx`);
+    }
 
     function getD365DistinctValues(key) {
       const s = new Set();
@@ -836,6 +1386,16 @@
         });
       });
     }
+    function bindSummaryFilterInputs() {
+      document.querySelectorAll('.summary-filter-head').forEach((th) => {
+        th.addEventListener('click', () => {
+          const key = th.getAttribute('data-filter-key') || '';
+          const label = (th.textContent || '').trim() || key;
+          if (!key) return;
+          openSummaryFilterSwal(key, label);
+        });
+      });
+    }
 
     async function loadD365Substock(month) {
       const targetMonth = String(month || '').trim();
@@ -921,7 +1481,8 @@
     function renderSummaryTop(rows = []) {
       const body = document.getElementById('summaryTopBody');
       if (!body) return;
-      if (!rows.length) {
+      const filteredRows = applySummaryFilter(rows || []);
+      if (!filteredRows.length) {
         body.innerHTML = '<tr><td colspan="9">No data</td></tr>';
         return;
       }
@@ -931,46 +1492,53 @@
       let grandSubc = 0;
       let grandItems = 0;
       let grandOk = 0;
+      let grandDiff = 0;
 
-      rows.forEach((r) => {
-        const fileNo = String(r.fileNo || '').trim();
-        const m = fileNoMapState[fileNo] || {};
+      filteredRows.forEach((r) => {
+        const m = getFileNoMapEntry(r.fileNo);
         const plant = String(m.plant || '-').toUpperCase() || '-';
         if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0 };
 
-        const d365Qty = getRowD365Qty(r, m);
+        const d365Qty = normalizeSummaryQtyValue(r.__d365Qty);
         const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
-        const hasD365Qty = d365Qty > 0;
-        const diffQty = hasD365Qty ? (d365Qty - safeNum(r.total)) : null;
-        const isOk = diffQty === 0;
+        const hasComparableD365 = normalizeSummaryQtyValue(r.__d365QtySource) > 0
+          || d365Qty > 0
+          || d365Qty !== normalizeSummaryQtyValue(r.__d365QtyDefault);
+        const diffQty = hasComparableD365 ? getSummaryDisplayDiff(d365Qty, r) : null;
+        const isOk = diffQty === null || diffQty === 0;
 
         byPlant[plant].d365 += d365Qty;
         byPlant[plant].subc += subcQty;
         byPlant[plant].totalItem += 1;
         if (isOk) byPlant[plant].okItem += 1;
+        if (diffQty !== null && diffQty !== 0) {
+          byPlant[plant].diffItem = (byPlant[plant].diffItem || 0) + 1;
+        }
 
         grandD365 += d365Qty;
         grandSubc += subcQty;
         grandItems += 1;
         if (isOk) grandOk += 1;
+        if (diffQty !== null && diffQty !== 0) grandDiff += 1;
       });
 
       const plants = ['CHP', 'G1P'];
+      if (byPlant['-']) plants.push('-');
       let html = '';
 
       plants.forEach((plant) => {
-        const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0 };
-        const diffItem = Math.max(0, p.totalItem - p.okItem);
+        const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+        const plantLabel = plant === '-' ? 'Unmapped Plant' : plant;
         html += `
           <tr>
-            <td class="label"></td>
+            <td class="label">${plantLabel}</td>
             <td>${formatNumOrDash(p.d365)}</td>
             <td>${formatNumOrDash(p.subc)}</td>
             <td>${safePct(p.subc, p.d365)}</td>
-            <td>${plant || '-'}</td>
+            <td>${plantLabel}</td>
             <td>${formatNumOrDash(p.totalItem)}</td>
             <td>${formatNumOrDash(p.okItem)}</td>
-            <td>${formatNumOrDash(diffItem)}</td>
+            <td>${formatNumOrDash(p.diffItem || 0)}</td>
             <td>${safePct(p.okItem, p.totalItem)}</td>
           </tr>
         `;
@@ -985,7 +1553,7 @@
           <td>-</td>
           <td>${formatNumOrDash(grandItems)}</td>
           <td>${formatNumOrDash(grandOk)}</td>
-          <td>${formatNumOrDash(Math.max(0, grandItems - grandOk))}</td>
+          <td>${formatNumOrDash(grandDiff)}</td>
           <td>${safePct(grandOk, grandItems)}</td>
         </tr>
       `;
@@ -998,10 +1566,12 @@
       if (!month) return;
       Swal.fire(swalLoading('Loading summary report...'));
       try {
-        const [res, mapRes, dashRes] = await Promise.all([
+        const [res, mapRes, dashRes, d365Res, overrideRes] = await Promise.all([
           api('getReport', { month, subcon: 'ALL', role: currentUser.role, username: currentUser.username }),
           api('listFileNoMap', { username: currentUser.username }),
-          api('getDashboard', { month, username: currentUser.username })
+          api('getDashboard', { month, username: currentUser.username }),
+          api('getD365Substock', { month, username: currentUser.username }),
+          api('getSummaryD365QtyOverrides', { month, username: currentUser.username })
         ]);
         Swal.close();
         if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load summary report' }));
@@ -1013,14 +1583,99 @@
             fileNoMapState[k] = { plant: x.plant || '' };
           });
         }
+        summaryQtyOverrideState = {};
+        summaryDirtyGroupsState = {};
+        if (overrideRes && overrideRes.ok) {
+          (overrideRes.rows || []).forEach((x) => {
+            if (!isSummaryQtyEditable(x.fileNo)) return;
+            const key = [
+              String(x.subcon || '').trim().toUpperCase(),
+              String(x.item || '').trim(),
+              String(x.fileNo || '').trim().toUpperCase()
+            ].join('||');
+            if (!key) return;
+            summaryQtyOverrideState[key] = normalizeSummaryQtyValue(x.d365Qty);
+          });
+        }
+        d365SubstockRowsState = (d365Res && d365Res.ok && Array.isArray(d365Res.rows)) ? d365Res.rows : [];
+        buildD365SubstockSummaryMap(d365SubstockRowsState);
         const allSubcons = (dashRes && dashRes.ok)
           ? Array.from(new Set((dashRes.statusRows || []).map(x => String(x.subcon || '').trim()).filter(Boolean)))
           : Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
-        renderSummaryTop(res.rows || []);
-        renderSummaryRows(res.rows || [], allSubcons);
+        summaryAllSubconsState = allSubcons;
+        summaryRowsState = buildSummaryRows(res.rows || [], allSubcons);
+        setSummaryDirtyState(false);
+        updateSummaryFilterHeaderState();
+        renderSummaryTop(summaryRowsState);
+        renderSummaryRows(summaryRowsState, allSubcons);
       } catch (e) {
         Swal.close();
         Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load summary report', text: e.message }));
+      }
+    }
+    function handleSummaryD365QtyChange(input) {
+      const key = String(input?.dataset?.summaryKey || '').trim();
+      if (!key) return;
+      const row = (summaryRowsState || []).find((x) => x.__summaryKey === key);
+      if (!row) return;
+      row.__d365Qty = normalizeSummaryQtyValue(input.value);
+      const dirtyGroupKey = getSummaryGroupKey(row);
+      if (dirtyGroupKey) summaryDirtyGroupsState[dirtyGroupKey] = true;
+      setSummaryDirtyState(summaryRowsState.some((x) => normalizeSummaryQtyValue(x.__d365Qty) !== normalizeSummaryQtyValue(x.__d365QtyDefault)));
+      renderSummaryTop(summaryRowsState);
+      renderSummaryRows(summaryRowsState, summaryAllSubconsState);
+    }
+    async function saveSummaryD365QtyOverrides() {
+      if (!summaryDirty) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'No changes to save' }));
+      }
+      if (!summaryRowsState.length) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: 'No summary data to save' }));
+      }
+      const month = String(document.getElementById('summaryMonthInput')?.value || document.getElementById('monthInput')?.value || '').trim();
+      if (!month) return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select a month' }));
+      const validation = validateSummaryDirtyGroups(summaryRowsState);
+      if (!validation.ok) {
+        return Swal.fire(swalTheme({ icon: 'warning', title: validation.message }));
+      }
+      const rows = summaryRowsState
+        .filter((r) => isSummaryQtyEditable(r.fileNo))
+        .filter((r) => normalizeSummaryQtyValue(r.__d365Qty) !== normalizeSummaryQtyValue(r.__d365QtyDefault))
+        .map((r) => ({
+          subcon: String(r.subcon || '').trim(),
+          item: String(r.item || '').trim(),
+          fileNo: String(r.fileNo || '').trim(),
+          d365Qty: normalizeSummaryQtyValue(r.__d365Qty)
+        }));
+      const cf = await Swal.fire(swalTheme({
+        icon: 'question',
+        title: 'Save D365 Q\'ty overrides?',
+        text: `Month: ${monthLabel(month) || month}`,
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel'
+      }));
+      if (!cf.isConfirmed) return;
+      Swal.fire(swalLoading('Saving D365 Q\'ty overrides...'));
+      try {
+        const res = await api('saveSummaryD365QtyOverrides', {
+          month,
+          username: currentUser.username,
+          rows
+        });
+        Swal.close();
+        if (!res.ok) {
+          return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to save D365 Q\'ty overrides' }));
+        }
+        await Swal.fire(swalTheme({
+          icon: 'success',
+          title: 'D365 Q\'ty overrides saved successfully',
+          text: `Saved ${Number(res.count || 0).toLocaleString('en-US')} override row(s)`
+        }));
+        await loadSummaryReport();
+      } catch (e) {
+        Swal.close();
+        Swal.fire(swalTheme({ icon: 'error', title: 'Failed to save D365 Q\'ty overrides', text: e.message }));
       }
     }
 
@@ -1301,6 +1956,7 @@
         loadUsers();
       }
       if (isSummary) {
+        syncSummaryMonthInput();
         refreshSubconOptions();
         loadSummaryReport();
       }
@@ -1513,6 +2169,7 @@
       sel.disabled = true;
       document.getElementById('monthInput').addEventListener('change', async () => {
         syncDashboardMonthInput();
+        syncSummaryMonthInput();
         initSubstockMonth();
         if (document.getElementById('menuD365Substock').classList.contains('active')) {
           const m = (document.getElementById('substockMonthInput')?.value || '').trim();
@@ -1520,17 +2177,19 @@
         }
         updateDashboardTitle();
         const dashPromise = loadDashboard(true);
-        await refreshSubconOptions();
+        const refreshPromise = refreshSubconOptions();
         if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
           loadReport();
           loadSummaryReport();
         }
+        await refreshPromise;
         await dashPromise;
       });
       document.getElementById('dashboardMonthInput').addEventListener('change', async (e) => {
         const v = (e.target.value || '').trim();
         if (!v) return;
         document.getElementById('monthInput').value = v;
+        syncSummaryMonthInput();
         initSubstockMonth();
         if (document.getElementById('menuD365Substock').classList.contains('active')) {
           const m = (document.getElementById('substockMonthInput')?.value || '').trim();
@@ -1538,11 +2197,12 @@
         }
         updateDashboardTitle();
         const dashPromise = loadDashboard(true);
-        await refreshSubconOptions();
+        const refreshPromise = refreshSubconOptions();
         if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
           loadReport();
           loadSummaryReport();
         }
+        await refreshPromise;
         await dashPromise;
       });
       document.getElementById('deadlineYearInput').addEventListener('change', () => {
@@ -1554,25 +2214,44 @@
           loadSummaryReport();
         } else {
           renderRows([]);
+          setSummaryDirtyState(false);
           renderSummaryRows([]);
         }
       });
       document.getElementById('substockMonthInput').addEventListener('change', async () => {
         const m = (document.getElementById('substockMonthInput')?.value || '').trim();
         if (!m) return renderD365SubstockRows([]);
+        document.getElementById('monthInput').value = m;
+        syncDashboardMonthInput();
+        syncSummaryMonthInput();
+        updateDashboardTitle();
         await loadD365Substock(m);
       });
 
       setMenu('dashboard');
       updateDashboardTitle();
       syncDashboardMonthInput();
+      syncSummaryMonthInput();
       initSubstockMonth();
       refreshSubconOptions();
       bindSummaryDragScroll();
       bindD365FilterInputs();
+      bindSummaryFilterInputs();
       updateD365FilterHeaderState();
+      updateSummaryFilterHeaderState();
     }
 
     boot();
   
 
+      document.getElementById('summaryMonthInput').addEventListener('change', async (e) => {
+        const v = (e.target.value || '').trim();
+        if (!v) return;
+        document.getElementById('monthInput').value = v;
+        syncDashboardMonthInput();
+        initSubstockMonth();
+        updateDashboardTitle();
+        const refreshPromise = refreshSubconOptions();
+        await loadSummaryReport();
+        await refreshPromise;
+      });
