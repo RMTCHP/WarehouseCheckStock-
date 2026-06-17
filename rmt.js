@@ -104,6 +104,27 @@
       const dt = new Date(y, m - 1, 1);
       return dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
+    function getCurrentMonthValue() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    function resetMenuMonthState(menu) {
+      const currentMonth = getCurrentMonthValue();
+      const base = document.getElementById('monthInput');
+      const dash = document.getElementById('dashboardMonthInput');
+      const summary = document.getElementById('summaryMonthInput');
+      const substock = document.getElementById('substockMonthInput');
+      if (base) base.value = currentMonth;
+      if (menu === 'dashboard' && dash) dash.value = currentMonth;
+      if (menu === 'summary' && summary) summary.value = currentMonth;
+      if (menu === 'd365substock' && substock) substock.value = currentMonth;
+      if (menu === 'dashboard' || menu === 'summary' || menu === 'd365substock') {
+        if (dash && menu !== 'dashboard') dash.value = currentMonth;
+        if (summary && menu !== 'summary') summary.value = currentMonth;
+        if (substock && menu !== 'd365substock') substock.value = currentMonth;
+      }
+      updateDashboardTitle();
+    }
 
     function formatDashboardDate(v) {
       const s = String(v || '').trim();
@@ -1941,6 +1962,10 @@
       const isSetting = menu === 'setting';
       const isD365Substock = menu === 'd365substock';
 
+      if (isDashboard || isSummary || isD365Substock) {
+        resetMenuMonthState(menu);
+      }
+
       document.getElementById('dashboardView').classList.toggle('hidden', !isDashboard);
       document.getElementById('searchView').classList.add('hidden');
       document.getElementById('summaryView').classList.toggle('hidden', !isSummary);
@@ -1956,12 +1981,10 @@
         loadUsers();
       }
       if (isSummary) {
-        syncSummaryMonthInput();
         refreshSubconOptions();
         loadSummaryReport();
       }
       if (isD365Substock) {
-        initSubstockMonth();
         const m = (document.getElementById('substockMonthInput')?.value || '').trim();
         loadD365Substock(m);
       }
@@ -2160,8 +2183,7 @@
         return;
       }
 
-      const month = new Date();
-      document.getElementById('monthInput').value = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('monthInput').value = getCurrentMonthValue();
       syncDashboardMonthInput();
 
       const sel = document.getElementById('subconSelect');
