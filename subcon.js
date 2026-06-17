@@ -212,9 +212,21 @@
       dashboardTrendCache[cacheKey] = result;
       return result;
     }
+    function getAccuracyScoreText(accuracyValue, hasData = true) {
+      if (!hasData) return '-';
+      const accuracy = Number(accuracyValue || 0) * 100;
+      if (Math.abs(accuracy - 100) < 0.000001) return 'No deduction';
+      if (accuracy >= 80) return '-2';
+      if (accuracy >= 50) return '-5';
+      if (accuracy >= 20) return '-6';
+      return '-10';
+    }
+    function isNegativeScoreText(scoreText) {
+      return /^-\d+/.test(String(scoreText || '').trim());
+    }
     function buildMonthlyMetricsRowsHtml(months = []) {
       const list = Array.isArray(months) ? months : [];
-      if (!list.length) return '<tr><td colspan="6">No data</td></tr>';
+      if (!list.length) return '<tr><td colspan="7">No data</td></tr>';
       return list.map((m) => {
         const totalItem = Number(m.totalItem || 0);
         const okItem = Number(m.okItem || 0);
@@ -222,6 +234,8 @@
         const monthText = monthLabel(m.month);
         const accuracyText = `${((Number(m.accuracy || 0)) * 100).toFixed(2)}%`;
         const accuracyClass = Number(m.accuracy || 0) >= 1 ? 'high' : 'low';
+        const scoreText = getAccuracyScoreText(m.accuracy, totalItem > 0);
+        const scoreClass = isNegativeScoreText(scoreText) ? 'negative' : '';
         const detailDisabled = !String(m.month || '').trim();
         return `
           <tr>
@@ -230,6 +244,7 @@
             <td>${okItem ? okItem.toLocaleString('en-US') : '-'}</td>
             <td>${diffItem ? diffItem.toLocaleString('en-US') : '-'}</td>
             <td class="accuracy-cell ${totalItem ? accuracyClass : ''}">${totalItem ? accuracyText : '-'}</td>
+            <td class="score-cell ${scoreClass}">${scoreText}</td>
             <td>
               <button
                 type="button"
@@ -301,6 +316,7 @@
                     <th>OK Item</th>
                     <th>Diff Item</th>
                     <th>%Accuracy</th>
+                    <th>Score</th>
                     <th style="width:72px;">Detail</th>
                   </tr>
                 </thead>
@@ -332,7 +348,7 @@
               const data = await fetchDashboardTrendData(pickedYear);
               body.innerHTML = buildMonthlyMetricsRowsHtml(data.months);
             } catch (_) {
-              body.innerHTML = '<tr><td colspan="6">No data</td></tr>';
+              body.innerHTML = '<tr><td colspan="7">No data</td></tr>';
             } finally {
               setLoading(false);
             }
@@ -384,6 +400,8 @@
       const diffItem = Number(summary.diffItem || 0);
       const accuracy = totalItem ? `${((Number(summary.accuracy || 0)) * 100).toFixed(2)}%` : '-';
       const accuracyClass = totalItem && Number(summary.accuracy || 0) >= 1 ? 'high' : 'low';
+      const scoreText = getAccuracyScoreText(summary.accuracy, totalItem > 0);
+      const scoreCardClass = isNegativeScoreText(scoreText) ? 'score-negative' : '';
       return `
         <div class="accuracy-detail-summary">
           <div class="accuracy-detail-summary-card">
@@ -409,6 +427,10 @@
           <div class="accuracy-detail-summary-card ${accuracyClass}">
             <span class="label">%Accuracy</span>
             <strong>${accuracy}</strong>
+          </div>
+          <div class="accuracy-detail-summary-card ${scoreCardClass}">
+            <span class="label">Score</span>
+            <strong>${scoreText}</strong>
           </div>
         </div>
       `;

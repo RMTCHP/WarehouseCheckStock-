@@ -546,6 +546,12 @@
     .monthly-metrics-table td.accuracy-cell.low {
       color: #b91c1c;
     }
+    .monthly-metrics-table td.score-cell {
+      font-weight: 800;
+    }
+    .monthly-metrics-table td.score-cell.negative {
+      color: #b91c1c;
+    }
     .monthly-metrics-table tr.total-row td {
       background: #dbeafe;
       font-weight: 800;
@@ -576,15 +582,16 @@
     }
     .accuracy-detail-summary {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
       margin-bottom: 14px;
     }
     .accuracy-detail-summary-card {
       border: 1px solid #dbe3ee;
       border-radius: 12px;
       background: #f8fafc;
-      padding: 10px 12px;
+      padding: 10px 10px;
+      min-width: 0;
     }
     .accuracy-detail-summary-card .label {
       display: block;
@@ -596,14 +603,18 @@
       margin-bottom: 4px;
     }
     .accuracy-detail-summary-card strong {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 900;
       color: #0f172a;
+      white-space: nowrap;
     }
     .accuracy-detail-summary-card.high strong {
       color: #15803d;
     }
     .accuracy-detail-summary-card.low strong {
+      color: #dc2626;
+    }
+    .accuracy-detail-summary-card.score-negative strong {
       color: #dc2626;
     }
     .accuracy-detail-table-wrap {
