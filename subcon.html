@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="subcon.css">
 </head>
 <body>
@@ -20,8 +22,8 @@
   </nav>
 
   <div class="sidebar">
-    <button class="menu-btn" id="menuDashboard" onclick="setMenu('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
-    <button class="menu-btn active" id="menuAddData" onclick="setMenu('addData')"><i class="fa-solid fa-table-cells-large"></i><span>Add Data</span></button>
+    <button class="menu-btn active" id="menuDashboard" onclick="setMenu('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
+    <button class="menu-btn" id="menuAddData" onclick="setMenu('addData')"><i class="fa-solid fa-table-cells-large"></i><span>Add Data</span></button>
   </div>
 
   <main class="content">
@@ -30,7 +32,7 @@
       <div class="section-sub" id="userLabel"></div>
     </div>
 
-    <div id="dashboardView" class="hidden">
+    <div id="dashboardView">
       <div class="status-wrap">
         <div class="monthly-metrics-wrap">
           <div class="monthly-metrics-head">
@@ -118,7 +120,7 @@
       </div>
     </div>
 
-    <div id="addDataView">
+    <div id="addDataView" class="hidden">
       <div class="search-toolbar">
         <div class="search-panel">
           <div class="report-head-row">
@@ -188,6 +190,7 @@
       <div class="actions">
         <button class="btn btn-secondary" title="Add row" onclick="addRow()"><i class="fa-solid fa-plus"></i></button>
         <button class="btn btn-danger" title="Delete last row" onclick="deleteLastRow()"><i class="fa-regular fa-trash-can"></i></button>
+        <button class="btn btn-success action-export-pdf" title="Export PDF" onclick="exportReportPdf()"><i class="fa-regular fa-file-pdf"></i></button>
         <button class="btn btn-primary btn-save" title="Save data" onclick="saveReport()"><i class="fa-regular fa-floppy-disk"></i></button>
       </div>
     </div>
