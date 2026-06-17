@@ -1,4 +1,4 @@
-﻿const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOwh_Br1B_jHv-q3H4x2zWQ7j4-zb_5ITO6bBvEGeeZ5CdTTxqQca6zDrAc9x9bGM/exec';
+﻿const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIEu3rNzRAlmHTaYUiK0RzLo6PML5c3IbXLdoO2FOmtzyMdQbxMOfDeS1WE1Tt28U/exec';
     const SESSION_KEY = 'subcon_auth';
     let currentUser = null;
     let editAllowed = true;
@@ -57,6 +57,16 @@
       const ss = String(now.getSeconds()).padStart(2, '0');
       return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
     }
+    function getCurrentMonthKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    function getDashboardMonthKey() {
+      return getCurrentMonthKey();
+    }
+    function getDashboardYear() {
+      return Number(String(getDashboardMonthKey()).split('-')[0] || new Date().getFullYear());
+    }
 
     function renderDashboardSubmissionStatus() {
       const card = document.querySelector('.status-card');
@@ -109,7 +119,7 @@
     }
 
     function renderDashboardKpiFromRows(rows = []) {
-      const mm = document.getElementById('monthInput')?.value || '';
+      const mm = getDashboardMonthKey();
       const monthText = monthLabel(mm);
       const monthEl = document.getElementById('kpiMonthLabel');
       if (monthEl) monthEl.textContent = monthText || '-';
@@ -204,14 +214,15 @@
     }
     function buildMonthlyMetricsRowsHtml(months = []) {
       const list = Array.isArray(months) ? months : [];
-      if (!list.length) return '<tr><td colspan="5">No data</td></tr>';
+      if (!list.length) return '<tr><td colspan="6">No data</td></tr>';
       return list.map((m) => {
         const totalItem = Number(m.totalItem || 0);
         const okItem = Number(m.okItem || 0);
         const diffItem = Number(m.diffItem || 0);
         const monthText = monthLabel(m.month);
         const accuracyText = `${((Number(m.accuracy || 0)) * 100).toFixed(2)}%`;
-        const accuracyClass = Number(m.accuracy || 0) > 0.5 ? 'high' : 'low';
+        const accuracyClass = Number(m.accuracy || 0) >= 1 ? 'high' : 'low';
+        const detailDisabled = !String(m.month || '').trim();
         return `
           <tr>
             <td class="month-label">${monthText || m.month || '-'}</td>
@@ -219,6 +230,17 @@
             <td>${okItem ? okItem.toLocaleString('en-US') : '-'}</td>
             <td>${diffItem ? diffItem.toLocaleString('en-US') : '-'}</td>
             <td class="accuracy-cell ${totalItem ? accuracyClass : ''}">${totalItem ? accuracyText : '-'}</td>
+            <td>
+              <button
+                type="button"
+                class="summary-detail-btn"
+                title="View Subcon accuracy detail vs D365"
+                onclick="openAccuracyDetailSwal('${String(m.month || '')}')"
+                ${detailDisabled ? 'disabled' : ''}
+              >
+                <i class="fa-solid fa-circle-info"></i>
+              </button>
+            </td>
           </tr>
         `;
       }).join('');
@@ -228,7 +250,7 @@
       if (!body) return;
       const list = Array.isArray(months) ? months : [];
       dashboardMonthlyMetricsState = list.slice();
-      const currentMonth = document.getElementById('monthInput')?.value || '';
+      const currentMonth = getDashboardMonthKey();
       const previousMonthKey = getPreviousMonthKey(currentMonth);
       const previousMonthRow = list.find((m) => String(m.month || '').trim() === previousMonthKey);
       const displayRows = previousMonthRow ? [previousMonthRow] : [];
@@ -241,8 +263,8 @@
       }
     }
     function openMonthlyMetricsSwal() {
-      const selectedMonth = document.getElementById('monthInput')?.value || `${getSelectedMonthYear()}-01`;
-      const selectedYear = Number(String(selectedMonth).split('-')[0] || getSelectedMonthYear());
+      const selectedMonth = getDashboardMonthKey();
+      const selectedYear = Number(String(selectedMonth).split('-')[0] || getDashboardYear());
       const rowsHtml = buildMonthlyMetricsRowsHtml(dashboardMonthlyMetricsState);
       Swal.fire(swalTheme({
         width: 920,
@@ -250,7 +272,7 @@
         html: `
           <div style="text-align:left;">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 12px 2px;">
-              <div style="font-size:26px; font-weight:800; color:#0f172a; line-height:1.1;">Accuracy Summary</div>
+              <div style="font-size:26px; font-weight:800; color:#0f172a; line-height:1.1;">Accuracy Summary VS D365</div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <button type="button" id="metricsSwalPrevYearBtn" style="width:34px; height:34px; border:1px solid #dbe3ee; background:#fff; color:#334155; border-radius:9px; font-size:12px; font-weight:800; display:inline-flex; align-items:center; justify-content:center;">
                   <i class="fa-solid fa-chevron-left"></i>
@@ -279,6 +301,7 @@
                     <th>OK Item</th>
                     <th>Diff Item</th>
                     <th>%Accuracy</th>
+                    <th style="width:72px;">Detail</th>
                   </tr>
                 </thead>
                 <tbody>${rowsHtml}</tbody>
@@ -293,7 +316,7 @@
           const body = Swal.getHtmlContainer()?.querySelector('tbody');
           const overlay = document.getElementById('metricsSwalLoadingOverlay');
           if (!yearLabel || !prevBtn || !nextBtn || !body || !overlay) return;
-          let modalYear = Number(selectedYear || getSelectedMonthYear());
+          let modalYear = Number(selectedYear || getDashboardYear());
           const setLoading = (loading) => {
             overlay.style.display = loading ? 'flex' : 'none';
             prevBtn.disabled = !!loading;
@@ -309,7 +332,7 @@
               const data = await fetchDashboardTrendData(pickedYear);
               body.innerHTML = buildMonthlyMetricsRowsHtml(data.months);
             } catch (_) {
-              body.innerHTML = '<tr><td colspan="5">No data</td></tr>';
+              body.innerHTML = '<tr><td colspan="6">No data</td></tr>';
             } finally {
               setLoading(false);
             }
@@ -318,6 +341,142 @@
           nextBtn.addEventListener('click', () => updateYear(1));
         }
       }));
+    }
+
+    function buildAccuracyDetailRowsHtml(rows = []) {
+      const list = Array.isArray(rows) ? rows : [];
+      if (!list.length) return '<tr><td colspan="16">No detail data</td></tr>';
+      return list.map((row) => {
+        const d365Code = row.d365Found === false
+          ? '<span style="color:#dc2626; font-weight:800;">Not found in D365</span>'
+          : (row.d365Code || '-');
+        const d365DiffNum = Number(row.d365Diff || 0);
+        const d365DiffText = row.d365Diff === '' || row.d365Diff === null || row.d365Diff === undefined
+          ? '-'
+          : d365DiffNum.toLocaleString('en-US');
+        const rowClass = row.isMissingInSubcon ? ' class="summary-missing-row"' : '';
+        return `
+          <tr${rowClass}>
+            <td>${row.item || '-'}</td>
+            <td>${row.fileNo || '-'}</td>
+            <td>${d365Code}</td>
+            <td>${formatNumOrDash(Number(row.d365Qty || 0))}</td>
+            <td class="${d365DiffNum !== 0 ? 'detail-diff-cell' : ''}">${d365DiffText}</td>
+            <td>${formatNumOrDash(Number(row.boh || 0))}</td>
+            <td>${formatNumOrDash(Number(row.supply || 0))}</td>
+            <td>${formatNumOrDash(Number(row.delivery || 0))}</td>
+            <td>${formatNumOrDash(Number(row.ng || 0))}</td>
+            <td>${formatNumOrDash(Number(row.eoh || 0))}</td>
+            <td>${formatNumOrDash(Number(row.confirmOk || 0))}</td>
+            <td>${formatNumOrDash(Number(row.confirmHold || 0))}</td>
+            <td>${formatNumOrDash(Number(row.total || 0))}</td>
+            <td>${row.diff === '' || row.diff === null || row.diff === undefined ? '-' : Number(row.diff || 0).toLocaleString('en-US')}</td>
+            <td class="detail-remark-cell">${row.remark || '-'}</td>
+            <td>${row.plant || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function buildAccuracyDetailSummaryHtml(summary = {}) {
+      const totalItem = Number(summary.totalItem || 0);
+      const okItem = Number(summary.okItem || 0);
+      const diffItem = Number(summary.diffItem || 0);
+      const accuracy = totalItem ? `${((Number(summary.accuracy || 0)) * 100).toFixed(2)}%` : '-';
+      const accuracyClass = totalItem && Number(summary.accuracy || 0) >= 1 ? 'high' : 'low';
+      return `
+        <div class="accuracy-detail-summary">
+          <div class="accuracy-detail-summary-card">
+            <span class="label">Total D365</span>
+            <strong>${formatNumOrDash(Number(summary.totalD365 || 0))}</strong>
+          </div>
+          <div class="accuracy-detail-summary-card">
+            <span class="label">Total Subcon</span>
+            <strong>${formatNumOrDash(Number(summary.totalSubc || 0))}</strong>
+          </div>
+          <div class="accuracy-detail-summary-card">
+            <span class="label">Total Item</span>
+            <strong>${totalItem ? totalItem.toLocaleString('en-US') : '-'}</strong>
+          </div>
+          <div class="accuracy-detail-summary-card">
+            <span class="label">OK Item</span>
+            <strong>${okItem ? okItem.toLocaleString('en-US') : '-'}</strong>
+          </div>
+          <div class="accuracy-detail-summary-card">
+            <span class="label">Diff Item</span>
+            <strong>${diffItem ? diffItem.toLocaleString('en-US') : '-'}</strong>
+          </div>
+          <div class="accuracy-detail-summary-card ${accuracyClass}">
+            <span class="label">%Accuracy</span>
+            <strong>${accuracy}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    async function openAccuracyDetailSwal(monthKey) {
+      const normalizedMonth = String(monthKey || '').trim();
+      if (!normalizedMonth || !currentUser?.username) return;
+      Swal.fire(swalTheme({
+        title: 'Loading detail...',
+        text: 'Please wait while the month detail is loading.',
+        showCloseButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      }));
+      try {
+        const res = await api('getSubconMonthSummaryDetail', { month: normalizedMonth, username: currentUser.username });
+        if (!res || !res.ok) throw new Error(res?.message || 'Unable to load summary detail');
+        const rowsHtml = buildAccuracyDetailRowsHtml(res.rows);
+        const summaryHtml = buildAccuracyDetailSummaryHtml(res.summary);
+        Swal.fire(swalTheme({
+          width: 1440,
+          showConfirmButton: false,
+          html: `
+            <div class="accuracy-detail-wrap">
+              <div class="accuracy-detail-head">
+                <div>
+                  <div class="accuracy-detail-title">Subcon Accuracy Detail vs D365</div>
+                  <div class="accuracy-detail-sub">${String(res.subcon || '').toUpperCase()} | ${monthLabel(res.month) || res.month || '-'}</div>
+                </div>
+              </div>
+              ${summaryHtml}
+              <div class="accuracy-detail-table-wrap">
+                <table class="accuracy-detail-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>File No.</th>
+                      <th>D365 code</th>
+                      <th>D365 Q'ty</th>
+                      <th>Diff</th>
+                      <th>BOH</th>
+                      <th>Supply</th>
+                      <th>Delivery</th>
+                      <th>NG</th>
+                      <th>EOH</th>
+                      <th>OK</th>
+                      <th>Hold</th>
+                      <th>Total</th>
+                      <th>Diff Qty</th>
+                      <th>Remark</th>
+                      <th>Plant</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rowsHtml}</tbody>
+                </table>
+              </div>
+            </div>
+          `
+        }));
+      } catch (err) {
+        Swal.fire(swalTheme({
+          icon: 'error',
+          title: 'Load failed',
+          text: err?.message || 'Unable to load detail'
+        }));
+      }
     }
 
     function renderYearTrendChart(year, monthlyTotals) {
@@ -503,14 +662,14 @@
       }
     }
     async function loadAccuracySummary(force = false) {
-      const year = getSelectedMonthYear();
+      const year = getDashboardYear();
       const data = await fetchDashboardTrendData(year, force);
       renderMonthlyMetrics(year, data.months);
     }
     async function loadDashboardPanels(showLoading = false, force = false) {
-      const accuracyYear = getSelectedMonthYear();
+      const accuracyYear = getDashboardYear();
       const currentTrendYear = Number(trendYear || accuracyYear || new Date().getFullYear());
-      const month = document.getElementById('monthInput')?.value || '';
+      const month = getDashboardMonthKey();
       if (showLoading) {
         Swal.fire(swalTheme({ title: 'Loading trend data...', showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() }));
       }
@@ -1185,4 +1344,5 @@
     }
 
     boot();
+
 

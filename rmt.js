@@ -1,5 +1,5 @@
 ﻿
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOwh_Br1B_jHv-q3H4x2zWQ7j4-zb_5ITO6bBvEGeeZ5CdTTxqQca6zDrAc9x9bGM/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIEu3rNzRAlmHTaYUiK0RzLo6PML5c3IbXLdoO2FOmtzyMdQbxMOfDeS1WE1Tt28U/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     let currentUser = null;
