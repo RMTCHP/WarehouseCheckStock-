@@ -216,9 +216,12 @@
       if (!hasData) return '-';
       const accuracy = Number(accuracyValue || 0) * 100;
       if (Math.abs(accuracy - 100) < 0.000001) return 'No deduction';
+      if (accuracy >= 90) return '-1';
       if (accuracy >= 80) return '-2';
+      if (accuracy >= 70) return '-3';
+      if (accuracy >= 60) return '-4';
       if (accuracy >= 50) return '-5';
-      if (accuracy >= 20) return '-6';
+      if (accuracy >= 21) return '-6';
       return '-10';
     }
     function isNegativeScoreText(scoreText) {
