@@ -1308,6 +1308,7 @@
         },
         {
           title: 'Accuracy Summary',
+          iconHtml: '<span class="manual-swal-icon-badge" style="background:#ffffff; border:1px solid #bfdbfe; box-shadow:0 10px 18px rgba(37,99,235,.12);"><i class="fa-solid fa-up-right-and-down-left-from-center" style="color:#2563eb;"></i></span>',
           image: 'assets/accuracysubcon.jpg',
           body: `
             <ol class="manual-swal-list">
