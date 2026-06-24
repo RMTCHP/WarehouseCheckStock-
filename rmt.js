@@ -1,5 +1,5 @@
-﻿
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIEu3rNzRAlmHTaYUiK0RzLo6PML5c3IbXLdoO2FOmtzyMdQbxMOfDeS1WE1Tt28U/exec';
+
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTqEeKPHFxHX6YNwCC7RJFE86U8phom7hrl_gMphNFKt2T5sk/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     let currentUser = null;
@@ -2058,13 +2058,13 @@
         }
         subcons = Array.from(new Set(subcons)).sort((a, b) => a.localeCompare(b));
         sel.innerHTML = '<option value="__SELECT__" selected>Select Subcon</option>' + subcons.map(s => {
-          const mark = statusMap[s] === 'submitted' ? 'ðŸŸ¢' : 'âšª';
+          const mark = statusMap[s] === 'submitted' ? 'Ã°Å¸Å¸Â¢' : 'Ã¢Å¡Âª';
           return `<option value="${s}">${s} ${mark}</option>`;
         }).join('');
         if (prev && prev !== '__SELECT__' && subcons.includes(prev)) sel.value = prev;
       } catch (_) {
         const fallback = Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
-        sel.innerHTML = '<option value="__SELECT__" selected>Select Subcon</option>' + fallback.map(s => `<option value="${s}">${s} âšª</option>`).join('');
+        sel.innerHTML = '<option value="__SELECT__" selected>Select Subcon</option>' + fallback.map(s => `<option value="${s}">${s} Ã¢Å¡Âª</option>`).join('');
       } finally {
         sel.disabled = false;
       }

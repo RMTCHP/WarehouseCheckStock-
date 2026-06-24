@@ -1,4 +1,4 @@
-﻿const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIEu3rNzRAlmHTaYUiK0RzLo6PML5c3IbXLdoO2FOmtzyMdQbxMOfDeS1WE1Tt28U/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTqEeKPHFxHX6YNwCC7RJFE86U8phom7hrl_gMphNFKt2T5sk/exec';
     const SESSION_KEY = 'subcon_auth';
     let currentUser = null;
     let editAllowed = true;
@@ -8,6 +8,7 @@
     let trendYear = new Date().getFullYear();
     let dashboardMonthlyMetricsState = [];
     let dashboardTrendCache = {};
+    let monthDataCache = {};
     let isDirty = false;
     let isLoadingReport = false;
     let lastLoadedMonth = '';
@@ -29,6 +30,24 @@
         theme.customClass = Object.assign({}, theme.customClass, base.customClass);
       }
       return Object.assign(theme, base, { customClass: theme.customClass });
+    }
+    function waitForNextPaint() {
+      return new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 0);
+        });
+      });
+    }
+    async function showLoadingSwal(title, text = '') {
+      Swal.fire(swalTheme({
+        title,
+        text,
+        showCloseButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      }));
+      await waitForNextPaint();
     }
     async function api(action, payload = {}) {
       const res = await fetch(SCRIPT_URL + '?action=' + encodeURIComponent(action), {
@@ -229,14 +248,34 @@
     async function fetchDashboardTrendData(year, force = false) {
       const cacheKey = String(year || '');
       if (!force && dashboardTrendCache[cacheKey]) return dashboardTrendCache[cacheKey];
-      let totals = Array(12).fill(0);
-      let months = [];
-      const res = await api('getSubconYearTrend', { year, username: currentUser.username });
-      if (res && res.ok && Array.isArray(res.totals)) totals = res.totals;
-      if (res && res.ok && Array.isArray(res.months)) months = res.months;
-      const result = { totals, months };
-      dashboardTrendCache[cacheKey] = result;
-      return result;
+      dashboardTrendCache[cacheKey] = (async () => {
+        let totals = Array(12).fill(0);
+        let months = [];
+        const res = await api('getSubconYearTrend', { year, username: currentUser.username, force: !!force });
+        if (res && res.ok && Array.isArray(res.totals)) totals = res.totals;
+        if (res && res.ok && Array.isArray(res.months)) months = res.months;
+        return { totals, months };
+      })();
+      try {
+        return await dashboardTrendCache[cacheKey];
+      } catch (error) {
+        delete dashboardTrendCache[cacheKey];
+        throw error;
+      }
+    }
+    async function fetchMonthData(month, force = false) {
+      const cacheKey = String(month || '').trim();
+      if (!cacheKey) return null;
+      if (!force && monthDataCache[cacheKey]) return monthDataCache[cacheKey];
+      monthDataCache[cacheKey] = (async () => {
+        return await api('getSubconMonthData', { month: cacheKey, username: currentUser.username });
+      })();
+      try {
+        return await monthDataCache[cacheKey];
+      } catch (error) {
+        delete monthDataCache[cacheKey];
+        throw error;
+      }
     }
     function getAccuracyScoreText(accuracyValue, hasData = true) {
       if (!hasData) return '-';
@@ -702,7 +741,7 @@
       const year = Number(trendYear || 0);
       if (!year) return;
       if (showLoading) {
-        Swal.fire(swalTheme({ title: 'Loading trend data...', showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() }));
+        await showLoadingSwal('Loading trend data...');
       }
       try {
         const data = await fetchDashboardTrendData(year, force);
@@ -723,11 +762,11 @@
       const currentTrendYear = Number(trendYear || accuracyYear || new Date().getFullYear());
       const month = getDashboardMonthKey();
       if (showLoading) {
-        Swal.fire(swalTheme({ title: 'Loading trend data...', showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() }));
+        await showLoadingSwal('Loading dashboard...', 'Please wait while the latest data is loading.');
       }
       try {
         const monthSnapshotPromise = month
-          ? api('getSubconMonthData', { month, username: currentUser.username })
+          ? fetchMonthData(month, force)
           : Promise.resolve(null);
         const promises = currentTrendYear === accuracyYear
           ? [
@@ -1192,16 +1231,16 @@
       });
     }
 
-    async function loadReport(showLoading = true) {
+    async function loadReport(showLoading = true, force = false) {
       const month = document.getElementById('monthInput').value;
       updateMonthlyTitle();
       if (!month) return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select a month' }));
       isLoadingReport = true;
       if (showLoading) {
-        Swal.fire(swalTheme({ title: 'Loading data...', showCloseButton: false, allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() }));
+        await showLoadingSwal('Loading data...');
       }
       try {
-        const res = await api('getSubconMonthData', { month, username: currentUser.username });
+        const res = await fetchMonthData(month, force);
         if (showLoading) Swal.close();
         if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load data' }));
         setEditMode(!!res.allowed, res.deadlineDate || '');
@@ -1244,8 +1283,9 @@
         await Swal.fire(swalTheme({ icon: 'success', title: rows.length ? 'Data saved successfully' : 'All data cleared successfully' }));
         clearDirty();
         dashboardTrendCache = {};
+        monthDataCache = {};
         lastUpdatedText = rows.length ? new Date().toLocaleString('en-GB') : '-';
-        loadReport();
+        loadReport(true, true);
       } catch (e) {
         Swal.close();
         Swal.fire(swalTheme({ icon: 'error', title: 'Save failed', text: e.message }));
@@ -1254,6 +1294,7 @@
 
     async function setMenu(menu, options = {}) {
       const showLoading = options.showLoading !== false;
+      const force = options.force === true;
       const isDashboard = menu === 'dashboard';
       const isAddData = menu === 'addData';
       if (isDashboard) {
@@ -1268,11 +1309,11 @@
       if (isDashboard) {
         renderDashboardSubmissionStatus();
         renderDashboardKpiFromRows(collectRows());
-        await loadDashboardPanels(showLoading);
+        await loadDashboardPanels(showLoading, force);
       } else if (isAddData) {
         const currentMonth = document.getElementById('monthInput').value || '';
         if (!lastLoadedMonth || lastLoadedMonth !== currentMonth) {
-          await loadReport(showLoading);
+          await loadReport(showLoading, force);
         }
       }
     }
@@ -1299,10 +1340,10 @@
           image: 'assets/dashboardsubcon.jpg',
           body: `
             <ol class="manual-swal-list" type="A">
-              <li>ประวัติการเช็คสต๊อกและค่า % Accuracy Actual</li>
-              <li>กำหนดวันสุดท้ายของการทำรายงานการตรวจนับสต๊อกประจำเดือน</li>
-              <li>กราฟแสดงประวัติรายงานย้อนหลัง</li>
-              <li>รายงานการตรวจนับเทียบกับข้อมูล D365</li>
+              <li>à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¹€à¸Šà¹‡à¸„à¸ªà¸•à¹Šà¸­à¸à¹à¸¥à¸°à¸„à¹ˆà¸² % Accuracy Actual</li>
+              <li>à¸à¸³à¸«à¸™à¸”à¸§à¸±à¸™à¸ªà¸¸à¸”à¸—à¹‰à¸²à¸¢à¸‚à¸­à¸‡à¸à¸²à¸£à¸—à¸³à¸£à¸²à¸¢à¸‡à¸²à¸™à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸™à¸±à¸šà¸ªà¸•à¹Šà¸­à¸à¸›à¸£à¸°à¸ˆà¸³à¹€à¸”à¸·à¸­à¸™</li>
+              <li>à¸à¸£à¸²à¸Ÿà¹à¸ªà¸”à¸‡à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸£à¸²à¸¢à¸‡à¸²à¸™à¸¢à¹‰à¸­à¸™à¸«à¸¥à¸±à¸‡</li>
+              <li>à¸£à¸²à¸¢à¸‡à¸²à¸™à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸™à¸±à¸šà¹€à¸—à¸µà¸¢à¸šà¸à¸±à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥ D365</li>
             </ol>
           `
         },
@@ -1312,10 +1353,10 @@
           image: 'assets/accuracysubcon.jpg',
           body: `
             <ol class="manual-swal-list">
-              <li>สามารถเข้าไปดูผลการนับสต๊อกประจำเดือน ภายใน 3 วันทำการ</li>
-              <li>รายงานจะแสดงรายละเอียดจำนวนรายการและความถูกต้องเมื่อเทียบกับระบบ D365</li>
+              <li>à¸ªà¸²à¸¡à¸²à¸£à¸–à¹€à¸‚à¹‰à¸²à¹„à¸›à¸”à¸¹à¸œà¸¥à¸à¸²à¸£à¸™à¸±à¸šà¸ªà¸•à¹Šà¸­à¸à¸›à¸£à¸°à¸ˆà¸³à¹€à¸”à¸·à¸­à¸™ à¸ à¸²à¸¢à¹ƒà¸™ 3 à¸§à¸±à¸™à¸—à¸³à¸à¸²à¸£</li>
+              <li>à¸£à¸²à¸¢à¸‡à¸²à¸™à¸ˆà¸°à¹à¸ªà¸”à¸‡à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¸ˆà¸³à¸™à¸§à¸™à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸¥à¸°à¸„à¸§à¸²à¸¡à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡à¹€à¸¡à¸·à¹ˆà¸­à¹€à¸—à¸µà¸¢à¸šà¸à¸±à¸šà¸£à¸°à¸šà¸š D365</li>
             </ol>
-            <p class="manual-swal-plain" style="margin-top:12px;">แต่ละ Sub-con ต้องทำการ improve ให้ได้ตาม Target 100%</p>
+            <p class="manual-swal-plain" style="margin-top:12px;">à¹à¸•à¹ˆà¸¥à¸° Sub-con à¸•à¹‰à¸­à¸‡à¸—à¸³à¸à¸²à¸£ improve à¹ƒà¸«à¹‰à¹„à¸”à¹‰à¸•à¸²à¸¡ Target 100%</p>
           `
         },
         {
@@ -1323,11 +1364,11 @@
           image: 'assets/adddata.jpg',
           body: `
             <ul class="manual-swal-list plain-list">
-              <li>A. รายการที่ต้องทำการบันทึกข้อมูล</li>
-              <li>B. กด + เพื่อเริ่มการทำรายงาน และบันทึกข้อมูลต่าง ๆ ตามรายการ A เข้าระบบ</li>
-              <li>C. ลบข้อมูล</li>
-              <li>D. Import PDF file เพื่อทำการ sign และส่งรายงาน PDF ให้ทาง RMT</li>
-              <li>E. Save / บันทึกข้อมูลที่ทำ</li>
+              <li>A. à¸£à¸²à¸¢à¸à¸²à¸£à¸—à¸µà¹ˆà¸•à¹‰à¸­à¸‡à¸—à¸³à¸à¸²à¸£à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥</li>
+              <li>B. à¸à¸” + à¹€à¸žà¸·à¹ˆà¸­à¹€à¸£à¸´à¹ˆà¸¡à¸à¸²à¸£à¸—à¸³à¸£à¸²à¸¢à¸‡à¸²à¸™ à¹à¸¥à¸°à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸•à¹ˆà¸²à¸‡ à¹† à¸•à¸²à¸¡à¸£à¸²à¸¢à¸à¸²à¸£ A à¹€à¸‚à¹‰à¸²à¸£à¸°à¸šà¸š</li>
+              <li>C. à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥</li>
+              <li>D. Import PDF file à¹€à¸žà¸·à¹ˆà¸­à¸—à¸³à¸à¸²à¸£ sign à¹à¸¥à¸°à¸ªà¹ˆà¸‡à¸£à¸²à¸¢à¸‡à¸²à¸™ PDF à¹ƒà¸«à¹‰à¸—à¸²à¸‡ RMT</li>
+              <li>E. Save / à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¸—à¸³</li>
             </ul>
           `
         },
@@ -1337,8 +1378,8 @@
           image: 'assets/report.jpg',
           body: `
             <p class="manual-swal-plain">
-              จะแสดงข้อมูลการตรวจนับให้ทุก Sub-con ทำการตรวจเช็คและยืนยันความถูกต้อง
-              พร้อมลงชื่อผู้รับผิดชอบและผู้มีอำนาจสูงสุด sign และส่งเมลล์ให้ทาง RMT
+              à¸ˆà¸°à¹à¸ªà¸”à¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸™à¸±à¸šà¹ƒà¸«à¹‰à¸—à¸¸à¸ Sub-con à¸—à¸³à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¹€à¸Šà¹‡à¸„à¹à¸¥à¸°à¸¢à¸·à¸™à¸¢à¸±à¸™à¸„à¸§à¸²à¸¡à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡
+              à¸žà¸£à¹‰à¸­à¸¡à¸¥à¸‡à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¸£à¸±à¸šà¸œà¸´à¸”à¸Šà¸­à¸šà¹à¸¥à¸°à¸œà¸¹à¹‰à¸¡à¸µà¸­à¸³à¸™à¸²à¸ˆà¸ªà¸¹à¸‡à¸ªà¸¸à¸” sign à¹à¸¥à¸°à¸ªà¹ˆà¸‡à¹€à¸¡à¸¥à¸¥à¹Œà¹ƒà¸«à¹‰à¸—à¸²à¸‡ RMT
             </p>
           `
         },
@@ -1353,7 +1394,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr><td>100%</td><td>No deduction (ไม่หักคะแนน)</td></tr>
+                <tr><td>100%</td><td>No deduction (à¹„à¸¡à¹ˆà¸«à¸±à¸à¸„à¸°à¹à¸™à¸™)</td></tr>
                 <tr><td>90 - 99.99%</td><td>-1</td></tr>
                 <tr><td>80 - 89.99%</td><td>-2</td></tr>
                 <tr><td>70 - 79.99%</td><td>-3</td></tr>
@@ -1467,17 +1508,10 @@
       });
       updateMonthlyTitle();
       bindExcelKeys();
-      Swal.fire(swalTheme({
-        title: 'Loading dashboard...',
-        text: 'Please wait while the latest data is loading.',
-        showCloseButton: false,
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => Swal.showLoading()
-      }));
+      await showLoadingSwal('Loading dashboard...', 'Please wait while the latest data is loading.');
       try {
-        await loadReport(false);
-        await setMenu('dashboard', { showLoading: false });
+        await loadReport(false, true);
+        await setMenu('dashboard', { showLoading: false, force: true });
       } finally {
         if (Swal.isVisible()) Swal.close();
       }
