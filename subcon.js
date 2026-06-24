@@ -1340,10 +1340,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
           image: 'assets/dashboardsubcon.jpg',
           body: `
             <ol class="manual-swal-list" type="A">
-              <li>à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¹€à¸Šà¹‡à¸„à¸ªà¸•à¹Šà¸­à¸à¹à¸¥à¸°à¸„à¹ˆà¸² % Accuracy Actual</li>
-              <li>à¸à¸³à¸«à¸™à¸”à¸§à¸±à¸™à¸ªà¸¸à¸”à¸—à¹‰à¸²à¸¢à¸‚à¸­à¸‡à¸à¸²à¸£à¸—à¸³à¸£à¸²à¸¢à¸‡à¸²à¸™à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸™à¸±à¸šà¸ªà¸•à¹Šà¸­à¸à¸›à¸£à¸°à¸ˆà¸³à¹€à¸”à¸·à¸­à¸™</li>
-              <li>à¸à¸£à¸²à¸Ÿà¹à¸ªà¸”à¸‡à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸£à¸²à¸¢à¸‡à¸²à¸™à¸¢à¹‰à¸­à¸™à¸«à¸¥à¸±à¸‡</li>
-              <li>à¸£à¸²à¸¢à¸‡à¸²à¸™à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸™à¸±à¸šà¹€à¸—à¸µà¸¢à¸šà¸à¸±à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥ D365</li>
+              <li>Stock check history and actual % accuracy overview.</li>
+              <li>Monthly stock report final submission date setup.</li>
+              <li>Historical reporting trend chart.</li>
+              <li>Stock count comparison against D365 data.</li>
             </ol>
           `
         },
@@ -1353,10 +1353,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
           image: 'assets/accuracysubcon.jpg',
           body: `
             <ol class="manual-swal-list">
-              <li>à¸ªà¸²à¸¡à¸²à¸£à¸–à¹€à¸‚à¹‰à¸²à¹„à¸›à¸”à¸¹à¸œà¸¥à¸à¸²à¸£à¸™à¸±à¸šà¸ªà¸•à¹Šà¸­à¸à¸›à¸£à¸°à¸ˆà¸³à¹€à¸”à¸·à¸­à¸™ à¸ à¸²à¸¢à¹ƒà¸™ 3 à¸§à¸±à¸™à¸—à¸³à¸à¸²à¸£</li>
-              <li>à¸£à¸²à¸¢à¸‡à¸²à¸™à¸ˆà¸°à¹à¸ªà¸”à¸‡à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¸ˆà¸³à¸™à¸§à¸™à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸¥à¸°à¸„à¸§à¸²à¸¡à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡à¹€à¸¡à¸·à¹ˆà¸­à¹€à¸—à¸µà¸¢à¸šà¸à¸±à¸šà¸£à¸°à¸šà¸š D365</li>
+              <li>You can review the monthly stock count result within 3 working days.</li>
+              <li>The report shows item count details and accuracy compared with D365.</li>
             </ol>
-            <p class="manual-swal-plain" style="margin-top:12px;">à¹à¸•à¹ˆà¸¥à¸° Sub-con à¸•à¹‰à¸­à¸‡à¸—à¸³à¸à¸²à¸£ improve à¹ƒà¸«à¹‰à¹„à¸”à¹‰à¸•à¸²à¸¡ Target 100%</p>
+            <p class="manual-swal-plain" style="margin-top:12px;">Each Sub-con should improve performance to reach the 100% target.</p>
           `
         },
         {
@@ -1364,11 +1364,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
           image: 'assets/adddata.jpg',
           body: `
             <ul class="manual-swal-list plain-list">
-              <li>A. à¸£à¸²à¸¢à¸à¸²à¸£à¸—à¸µà¹ˆà¸•à¹‰à¸­à¸‡à¸—à¸³à¸à¸²à¸£à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥</li>
-              <li>B. à¸à¸” + à¹€à¸žà¸·à¹ˆà¸­à¹€à¸£à¸´à¹ˆà¸¡à¸à¸²à¸£à¸—à¸³à¸£à¸²à¸¢à¸‡à¸²à¸™ à¹à¸¥à¸°à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸•à¹ˆà¸²à¸‡ à¹† à¸•à¸²à¸¡à¸£à¸²à¸¢à¸à¸²à¸£ A à¹€à¸‚à¹‰à¸²à¸£à¸°à¸šà¸š</li>
-              <li>C. à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥</li>
-              <li>D. Import PDF file à¹€à¸žà¸·à¹ˆà¸­à¸—à¸³à¸à¸²à¸£ sign à¹à¸¥à¸°à¸ªà¹ˆà¸‡à¸£à¸²à¸¢à¸‡à¸²à¸™ PDF à¹ƒà¸«à¹‰à¸—à¸²à¸‡ RMT</li>
-              <li>E. Save / à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¸—à¸³</li>
+              <li>A. Items that must be recorded in the monthly report.</li>
+              <li>B. Click + to start a report and enter data for each item in section A.</li>
+              <li>C. Delete data rows.</li>
+              <li>D. Import a PDF file for signing and send the PDF report to RMT.</li>
+              <li>E. Save the completed data.</li>
             </ul>
           `
         },
@@ -1378,8 +1378,8 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
           image: 'assets/report.jpg',
           body: `
             <p class="manual-swal-plain">
-              à¸ˆà¸°à¹à¸ªà¸”à¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸™à¸±à¸šà¹ƒà¸«à¹‰à¸—à¸¸à¸ Sub-con à¸—à¸³à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¹€à¸Šà¹‡à¸„à¹à¸¥à¸°à¸¢à¸·à¸™à¸¢à¸±à¸™à¸„à¸§à¸²à¸¡à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡
-              à¸žà¸£à¹‰à¸­à¸¡à¸¥à¸‡à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¸£à¸±à¸šà¸œà¸´à¸”à¸Šà¸­à¸šà¹à¸¥à¸°à¸œà¸¹à¹‰à¸¡à¸µà¸­à¸³à¸™à¸²à¸ˆà¸ªà¸¹à¸‡à¸ªà¸¸à¸” sign à¹à¸¥à¸°à¸ªà¹ˆà¸‡à¹€à¸¡à¸¥à¸¥à¹Œà¹ƒà¸«à¹‰à¸—à¸²à¸‡ RMT
+              Review and confirm the stock count result, then add the responsible signatures
+              and send the signed report to RMT.
             </p>
           `
         },
@@ -1394,7 +1394,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
                 </tr>
               </thead>
               <tbody>
-                <tr><td>100%</td><td>No deduction (à¹„à¸¡à¹ˆà¸«à¸±à¸à¸„à¸°à¹à¸™à¸™)</td></tr>
+                <tr><td>100%</td><td>No deduction</td></tr>
                 <tr><td>90 - 99.99%</td><td>-1</td></tr>
                 <tr><td>80 - 89.99%</td><td>-2</td></tr>
                 <tr><td>70 - 79.99%</td><td>-3</td></tr>
