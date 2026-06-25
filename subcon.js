@@ -1336,72 +1336,72 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
     function openManualSwal() {
       const pages = [
         {
-          title: 'Dashboard',
+          title: 'แดชบอร์ด',
           image: 'assets/dashboardsubcon.jpg',
           body: `
             <ol class="manual-swal-list" type="A">
-              <li>Stock check history and actual % accuracy overview.</li>
-              <li>Monthly stock report final submission date setup.</li>
-              <li>Historical reporting trend chart.</li>
-              <li>Stock count comparison against D365 data.</li>
+              <li>ประวัติการเช็คสต๊อกและค่า % Accuracy Actual</li>
+              <li>กำหนดวันสุดท้ายของการทำรายงานการตรวจนับสต๊อกประจำเดือน</li>
+              <li>กราฟแสดงประวัติรายงานย้อนหลัง</li>
+              <li>รายงานการตรวจนับเทียบกับข้อมูล D365</li>
             </ol>
           `
         },
         {
-          title: 'Accuracy Summary',
+          title: 'สรุป Accuracy',
           iconHtml: '<span class="manual-swal-icon-badge" style="background:#ffffff; border:1px solid #bfdbfe; box-shadow:0 10px 18px rgba(37,99,235,.12);"><i class="fa-solid fa-up-right-and-down-left-from-center" style="color:#2563eb;"></i></span>',
           image: 'assets/accuracysubcon.jpg',
           body: `
             <ol class="manual-swal-list">
-              <li>You can review the monthly stock count result within 3 working days.</li>
-              <li>The report shows item count details and accuracy compared with D365.</li>
+              <li>สามารถเข้าไปดูผลการนับสต๊อกประจำเดือน ภายใน 3 วันทำการ</li>
+              <li>รายงานจะแสดงรายละเอียดจำนวนรายการและความถูกต้องเมื่อเทียบกับระบบ D365</li>
             </ol>
-            <p class="manual-swal-plain" style="margin-top:12px;">Each Sub-con should improve performance to reach the 100% target.</p>
+            <p class="manual-swal-plain" style="margin-top:12px;">แต่ละ Sub-con ต้องทำการ improve ให้ได้ตาม Target 100%</p>
           `
         },
         {
-          title: 'Add Data',
+          title: 'บันทึกข้อมูล',
           image: 'assets/adddata.jpg',
           body: `
             <ul class="manual-swal-list plain-list">
-              <li>A. Items that must be recorded in the monthly report.</li>
-              <li>B. Click + to start a report and enter data for each item in section A.</li>
-              <li>C. Delete data rows.</li>
-              <li>D. Import a PDF file for signing and send the PDF report to RMT.</li>
-              <li>E. Save the completed data.</li>
+              <li>A. รายการที่ต้องทำการบันทึกข้อมูล</li>
+              <li>B. กด + เพื่อเริ่มการทำรายงาน และบันทึกข้อมูลต่าง ๆ ตามรายการ A เข้าระบบ</li>
+              <li>C. ลบข้อมูล</li>
+              <li>D. Export เป็น PDF file เพื่อทำการ sign และส่งรายงาน PDF ให้ทาง RMT</li>
+              <li>E. Save / บันทึกข้อมูลที่ทำ</li>
             </ul>
           `
         },
         {
-          title: 'Final Confirmation',
+          title: 'ยืนยันขั้นสุดท้าย',
           iconHtml: '<span class="manual-swal-icon-badge"><i class="fa-solid fa-file-pdf"></i></span>',
           image: 'assets/report.jpg',
           body: `
             <p class="manual-swal-plain">
-              Review and confirm the stock count result, then add the responsible signatures
-              and send the signed report to RMT.
+              จะแสดงข้อมูลการตรวจนับให้ทุก Sub-con ทำการตรวจเช็คและยืนยันความถูกต้อง
+              พร้อมลงชื่อผู้รับผิดชอบและผู้มีอำนาจสูงสุด sign และส่งเมลล์ให้ทาง RMT
             </p>
           `
         },
         {
-          title: 'Accuracy Summary Score',
+          title: 'เกณฑ์คะแนน Accuracy Summary',
           body: `
             <table class="manual-swal-score-table">
               <thead>
                 <tr>
-                  <th>Accuracy Range</th>
-                  <th>Score</th>
+                  <th>ช่วง Accuracy</th>
+                  <th>คะแนน</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>100%</td><td>No deduction</td></tr>
+                <tr><td>100%</td><td>No deduction (ไม่หักคะแนน)</td></tr>
                 <tr><td>90 - 99.99%</td><td>-1</td></tr>
                 <tr><td>80 - 89.99%</td><td>-2</td></tr>
                 <tr><td>70 - 79.99%</td><td>-3</td></tr>
                 <tr><td>60 - 69.99%</td><td>-4</td></tr>
                 <tr><td>50 - 59.99%</td><td>-5</td></tr>
                 <tr><td>20 - 49.99%</td><td>-6</td></tr>
-                <tr><td>Less than 20%</td><td>-10</td></tr>
+                <tr><td>น้อยกว่า 20%</td><td>-10</td></tr>
               </tbody>
             </table>
           `
