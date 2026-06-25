@@ -1475,6 +1475,27 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
       }));
     }
 
+    function openManualD365Swal() {
+      Swal.fire(swalTheme({
+        width: 1180,
+        showConfirmButton: false,
+        html: `
+          <div class="swal-safe-wrap" style="text-align:left;">
+            <div class="swal-safe-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 12px 2px;">
+              <div style="font-size:26px; font-weight:800; color:#0f172a; line-height:1.1;">Manual D365</div>
+            </div>
+            <div style="border:1px solid #dbe3ee; border-radius:14px; overflow:hidden; background:#f8fafc; height:78vh; min-height:620px;">
+              <iframe
+                src="assets/manuald365.pdf#toolbar=1&navpanes=0&scrollbar=1"
+                title="Manual D365 PDF"
+                style="width:100%; height:100%; border:0; background:#ffffff;"
+              ></iframe>
+            </div>
+          </div>
+        `
+      }));
+    }
+
     async function boot() {
       const raw = sessionStorage.getItem(SESSION_KEY);
       if (!raw) { window.location.href = 'login.html'; return; }
