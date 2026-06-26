@@ -8,6 +8,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
     let trendYear = new Date().getFullYear();
     let dashboardMonthlyMetricsState = [];
     let dashboardTrendCache = {};
+    let dashboardDetailCache = {};
     let monthDataCache = {};
     let isDirty = false;
     let isLoadingReport = false;
@@ -263,6 +264,20 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         throw error;
       }
     }
+    async function fetchDashboardMonthSummaryDetail(monthKey, force = false) {
+      const cacheKey = String(monthKey || '').trim();
+      if (!cacheKey) return null;
+      if (!force && dashboardDetailCache[cacheKey]) return dashboardDetailCache[cacheKey];
+      dashboardDetailCache[cacheKey] = (async () => {
+        return await api('getSubconMonthSummaryDetail', { month: cacheKey, username: currentUser.username });
+      })();
+      try {
+        return await dashboardDetailCache[cacheKey];
+      } catch (error) {
+        delete dashboardDetailCache[cacheKey];
+        throw error;
+      }
+    }
     async function fetchMonthData(month, force = false) {
       const cacheKey = String(month || '').trim();
       if (!cacheKey) return null;
@@ -276,6 +291,57 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         delete monthDataCache[cacheKey];
         throw error;
       }
+    }
+    function hasMeaningfulTrendPayload(data) {
+      if (!data) return false;
+      const totals = Array.isArray(data.totals) ? data.totals : [];
+      const months = Array.isArray(data.months) ? data.months : [];
+      return totals.some((v) => Number(v || 0) !== 0) || months.some((m) =>
+        Number(m.total || 0) !== 0 ||
+        Number(m.totalItem || 0) !== 0 ||
+        Number(m.okItem || 0) !== 0 ||
+        Number(m.diffItem || 0) !== 0
+      );
+    }
+    async function buildDashboardTrendFallback(year, force = false) {
+      const months = buildYearMonths(year);
+      const detailResults = await Promise.all(months.map(async (monthKey) => {
+        try {
+          const res = await fetchDashboardMonthSummaryDetail(monthKey, force);
+          if (!res || !res.ok || !res.summary) {
+            return {
+              month: monthKey,
+              total: 0,
+              totalItem: 0,
+              okItem: 0,
+              diffItem: 0,
+              accuracy: 0
+            };
+          }
+          const summary = res.summary || {};
+          return {
+            month: monthKey,
+            total: Number(summary.totalSubc || 0),
+            totalItem: Number(summary.totalItem || 0),
+            okItem: Number(summary.okItem || 0),
+            diffItem: Number(summary.diffItem || 0),
+            accuracy: Number(summary.accuracy || 0)
+          };
+        } catch (_) {
+          return {
+            month: monthKey,
+            total: 0,
+            totalItem: 0,
+            okItem: 0,
+            diffItem: 0,
+            accuracy: 0
+          };
+        }
+      }));
+      return {
+        totals: detailResults.map((m) => Number(m.total || 0)),
+        months: detailResults
+      };
     }
     function getAccuracyScoreText(accuracyValue, hasData = true) {
       if (!hasData) return '-';
@@ -336,12 +402,27 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
       const currentMonth = getDashboardMonthKey();
       const previousMonthKey = getPreviousMonthKey(currentMonth);
       const previousMonthRow = list.find((m) => String(m.month || '').trim() === previousMonthKey);
-      const displayRows = previousMonthRow ? [previousMonthRow] : [];
+      const fallbackMonthRow = list
+        .filter((m) => String(m.month || '').trim() <= currentMonth)
+        .filter((m) =>
+          Number(m.total || 0) !== 0 ||
+          Number(m.totalItem || 0) !== 0 ||
+          Number(m.okItem || 0) !== 0 ||
+          Number(m.diffItem || 0) !== 0
+        )
+        .sort((a, b) => String(b.month || '').localeCompare(String(a.month || '')))[0];
+      const selectedRow = previousMonthRow && (
+        Number(previousMonthRow.total || 0) !== 0 ||
+        Number(previousMonthRow.totalItem || 0) !== 0 ||
+        Number(previousMonthRow.okItem || 0) !== 0 ||
+        Number(previousMonthRow.diffItem || 0) !== 0
+      ) ? previousMonthRow : fallbackMonthRow;
+      const displayRows = selectedRow ? [selectedRow] : [];
       body.innerHTML = buildMonthlyMetricsRowsHtml(displayRows);
       const yearLabel = document.getElementById('monthlyMetricsYearLabel');
       if (yearLabel) {
-        yearLabel.textContent = previousMonthRow
-          ? `Last month: ${monthLabel(previousMonthRow.month)}`
+        yearLabel.textContent = selectedRow
+          ? `Last month: ${monthLabel(selectedRow.month)}`
           : `Last month: ${monthLabel(previousMonthKey) || previousMonthKey}`;
       }
       syncDashboardTopRowHeights();
@@ -783,6 +864,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         let trendData = null;
         let accuracyData = null;
         let monthSnapshot = null;
+        let hasSavedRows = false;
 
         if (currentTrendYear === accuracyYear) {
           trendData = settled[0].status === 'fulfilled' ? settled[0].value : null;
@@ -797,7 +879,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         if (monthSnapshot && monthSnapshot.ok) {
           setEditMode(!!monthSnapshot.allowed, monthSnapshot.deadlineDate || '');
           const dataRows = Array.isArray(monthSnapshot.rows) ? monthSnapshot.rows : [];
-          const hasSavedRows = dataRows.some((r) =>
+          hasSavedRows = dataRows.some((r) =>
             String(r.fileNo || '').trim() ||
             String(r.boh || '').trim() ||
             String(r.supply || '').trim() ||
@@ -814,6 +896,21 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
           setEditMode(true, '');
           lastUpdatedText = '-';
           renderDashboardKpiFromRows([]);
+        }
+
+        const trendMissing = !hasMeaningfulTrendPayload(trendData);
+        const accuracyMissing = !hasMeaningfulTrendPayload(accuracyData);
+        if (trendMissing || accuracyMissing) {
+          const fallback = await buildDashboardTrendFallback(accuracyYear, force);
+          if (currentTrendYear === accuracyYear) {
+            trendData = fallback;
+            accuracyData = fallback;
+          } else {
+            accuracyData = fallback;
+            if (trendMissing) {
+              trendData = await buildDashboardTrendFallback(currentTrendYear, force);
+            }
+          }
         }
 
         renderYearTrendChart(currentTrendYear, Array.isArray(trendData?.totals) ? trendData.totals : Array(12).fill(0));
@@ -1283,6 +1380,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         await Swal.fire(swalTheme({ icon: 'success', title: rows.length ? 'Data saved successfully' : 'All data cleared successfully' }));
         clearDirty();
         dashboardTrendCache = {};
+        dashboardDetailCache = {};
         monthDataCache = {};
         lastUpdatedText = rows.length ? new Date().toLocaleString('en-GB') : '-';
         loadReport(true, true);
