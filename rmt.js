@@ -84,6 +84,12 @@
     function getSummaryDisplayDiff(qty, row = {}) {
       return normalizeSummaryQtyValue(qty) - safeNum(row.total);
     }
+    function hasComparableSummaryD365(row = {}, totalD365 = normalizeSummaryQtyValue(row.__d365Qty)) {
+      return normalizeSummaryQtyValue(row.__d365QtySource) > 0
+        || totalD365 > 0
+        || totalD365 !== normalizeSummaryQtyValue(row.__d365QtyDefault)
+        || safeNum(row.total) > 0;
+    }
     function formatSummaryQtyInputValue(n) {
       return normalizeSummaryQtyValue(n) > 0 ? String(normalizeSummaryQtyValue(n)) : '';
     }
@@ -734,9 +740,7 @@
           const m = getFileNoMapEntry(r.fileNo);
           const totalD365 = normalizeSummaryQtyValue(r.__d365Qty);
           const totalSubc = safeNum(r.confirmOk) + safeNum(r.confirmHold);
-          const hasComparableD365 = normalizeSummaryQtyValue(r.__d365QtySource) > 0
-            || totalD365 > 0
-            || totalD365 !== normalizeSummaryQtyValue(r.__d365QtyDefault);
+          const hasComparableD365 = hasComparableSummaryD365(r, totalD365);
           const diffQty = hasComparableD365 ? getSummaryDisplayDiff(totalD365, r) : null;
           const d365Code = resolveDisplayD365Code(r.fileNo);
           const isEditable = isSummaryQtyEditable(r.fileNo);
@@ -1034,9 +1038,7 @@
     }
     function getSummaryRowD365Diff(row = {}) {
       const totalD365 = getSummaryRowD365Qty(row);
-      const hasComparableD365 = normalizeSummaryQtyValue(row.__d365QtySource) > 0
-        || totalD365 > 0
-        || totalD365 !== normalizeSummaryQtyValue(row.__d365QtyDefault);
+      const hasComparableD365 = hasComparableSummaryD365(row, totalD365);
       return hasComparableD365 ? getSummaryDisplayDiff(totalD365, row) : null;
     }
     function getSummaryCellValue(row = {}, key) {
@@ -1522,9 +1524,7 @@
 
         const d365Qty = normalizeSummaryQtyValue(r.__d365Qty);
         const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
-        const hasComparableD365 = normalizeSummaryQtyValue(r.__d365QtySource) > 0
-          || d365Qty > 0
-          || d365Qty !== normalizeSummaryQtyValue(r.__d365QtyDefault);
+        const hasComparableD365 = hasComparableSummaryD365(r, d365Qty);
         const diffQty = hasComparableD365 ? getSummaryDisplayDiff(d365Qty, r) : null;
         const isOk = diffQty === null || diffQty === 0;
 
