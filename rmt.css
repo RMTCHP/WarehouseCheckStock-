@@ -172,6 +172,27 @@
       color: #0f172a;
       background: #f8fafc;
     }
+    .summary-top-table tr.summary-top-group td {
+      background: #dbe7f5;
+      color: #0f172a;
+      font-weight: 900;
+      text-align: left;
+      cursor: pointer;
+      user-select: none;
+    }
+    .summary-top-toggle {
+      display: inline-block;
+      width: 18px;
+      margin-right: 6px;
+      text-align: center;
+      font-weight: 900;
+    }
+    .summary-top-table tr.subcon-row td {
+      background: #f8fbff;
+    }
+    .summary-top-table tr.plant-row td {
+      background: #fbfdff;
+    }
     .summary-top-table tr.grand td {
       background: #eef6ff;
       font-weight: 800;

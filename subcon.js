@@ -1,4 +1,4 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTqEeKPHFxHX6YNwCC7RJFE86U8phom7hrl_gMphNFKt2T5sk/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEys6M6Dvk6Yd-qbTlDax75ZsGgnB5c321MAvgL-dP-PHWh7k/exec';
     const SESSION_KEY = 'subcon_auth';
     let currentUser = null;
     let editAllowed = true;
@@ -343,6 +343,18 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         months: detailResults
       };
     }
+    async function resolveDashboardTrendPayload(year, force = false) {
+      let trendData = null;
+      try {
+        trendData = await fetchDashboardTrendData(year, force);
+      } catch (_) {
+        trendData = null;
+      }
+      if (!hasMeaningfulTrendPayload(trendData)) {
+        return await buildDashboardTrendFallback(year, force);
+      }
+      return trendData;
+    }
     function getAccuracyScoreText(accuracyValue, hasData = true) {
       if (!hasData) return '-';
       const accuracy = Number(accuracyValue || 0) * 100;
@@ -651,36 +663,61 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
       }
     }
 
-    function renderYearTrendChart(year, monthlyTotals) {
+    function buildTrendAccuracySeries(monthlyMetrics = []) {
+      const source = Array.isArray(monthlyMetrics) ? monthlyMetrics : [];
+      return Array.from({ length: 12 }, (_, idx) => {
+        const row = source[idx] || {};
+        return Number((Number(row.accuracy || 0) * 100).toFixed(2));
+      });
+    }
+
+    function renderYearTrendChart(year, monthlyTotals, monthlyMetrics = []) {
       const ctx = document.getElementById('yearTrendChart');
       if (!ctx) return;
       setTrendYear(year);
       const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const accuracySeries = buildTrendAccuracySeries(monthlyMetrics);
       if (yearTrendChart) yearTrendChart.destroy();
       yearTrendChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels,
           datasets: [{
             label: 'Total',
             data: monthlyTotals,
+            backgroundColor: 'rgba(37, 99, 235, .75)',
             borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, .14)',
+            borderWidth: 1,
+            borderRadius: 8,
+            maxBarThickness: 28,
+            yAxisID: 'y'
+          }, {
+            type: 'line',
+            label: '%Accuracy',
+            data: accuracySeries,
+            borderColor: '#f97316',
+            backgroundColor: '#f97316',
             borderWidth: 2,
             pointRadius: 3,
-            pointHoverRadius: 4,
-            fill: true,
-            tension: 0.25
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#f97316',
+            pointBorderWidth: 2,
+            tension: 0.25,
+            yAxisID: 'y1'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
+            legend: { display: true, position: 'top' },
             tooltip: {
               callbacks: {
-                label: (ctx) => `Total: ${Number(ctx.raw || 0).toLocaleString('en-US')}`
+                label: (ctx) => {
+                  if (ctx.dataset.yAxisID === 'y1') return `%Accuracy: ${Number(ctx.raw || 0).toFixed(2)}%`;
+                  return `Total: ${Number(ctx.raw || 0).toLocaleString('en-US')}`;
+                }
               }
             }
           },
@@ -689,6 +726,17 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
               beginAtZero: true,
               ticks: {
                 callback: (v) => Number(v).toLocaleString('en-US')
+              }
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              suggestedMax: 100,
+              grid: {
+                drawOnChartArea: false
+              },
+              ticks: {
+                callback: (v) => `${Number(v).toFixed(0)}%`
               }
             }
           }
@@ -696,35 +744,54 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
       });
     }
 
-    function renderTrendSwalChart(year, monthlyTotals) {
+    function renderTrendSwalChart(year, monthlyTotals, monthlyMetrics = []) {
       const canvas = document.getElementById('trendSwalChart');
       if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
       const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const accuracySeries = buildTrendAccuracySeries(monthlyMetrics);
       if (trendSwalChart) trendSwalChart.destroy();
-      trendSwalChart = new Chart(canvas, {
-        type: 'line',
+      trendSwalChart = new Chart(ctx, {
+        type: 'bar',
         data: {
           labels,
           datasets: [{
             label: 'Total',
             data: monthlyTotals,
+            backgroundColor: 'rgba(37, 99, 235, .75)',
             borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, .12)',
+            borderWidth: 1,
+            borderRadius: 8,
+            maxBarThickness: 30,
+            yAxisID: 'y'
+          }, {
+            type: 'line',
+            label: '%Accuracy',
+            data: accuracySeries,
+            borderColor: '#f97316',
+            backgroundColor: '#f97316',
             borderWidth: 3,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            fill: true,
-            tension: 0.25
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#f97316',
+            pointBorderWidth: 2,
+            tension: 0.25,
+            yAxisID: 'y1'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
+            legend: { display: true, position: 'top' },
             tooltip: {
               callbacks: {
-                label: (ctx) => `Total: ${Number(ctx.raw || 0).toLocaleString('en-US')}`
+                label: (ctx) => {
+                  if (ctx.dataset.yAxisID === 'y1') return `%Accuracy: ${Number(ctx.raw || 0).toFixed(2)}%`;
+                  return `Total: ${Number(ctx.raw || 0).toLocaleString('en-US')}`;
+                }
               }
             }
           },
@@ -733,6 +800,17 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
               beginAtZero: true,
               ticks: {
                 callback: (v) => Number(v).toLocaleString('en-US')
+              }
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              suggestedMax: 100,
+              grid: {
+                drawOnChartArea: false
+              },
+              ticks: {
+                callback: (v) => `${Number(v).toFixed(0)}%`
               }
             }
           }
@@ -791,10 +869,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
             yearLabel.textContent = `Year ${year}`;
             setLoading(true);
             try {
-              const data = await fetchDashboardTrendData(year, force);
-              renderTrendSwalChart(year, data.totals);
+              const data = await resolveDashboardTrendPayload(year, force);
+              await waitForNextPaint();
+              renderTrendSwalChart(year, data.totals, data.months);
             } catch (_) {
-              renderTrendSwalChart(year, Array(12).fill(0));
+              await waitForNextPaint();
+              renderTrendSwalChart(year, Array(12).fill(0), []);
             } finally {
               setLoading(false);
             }
@@ -825,10 +905,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
         await showLoadingSwal('Loading trend data...');
       }
       try {
-        const data = await fetchDashboardTrendData(year, force);
-        renderYearTrendChart(year, data.totals);
+        const data = await resolveDashboardTrendPayload(year, force);
+        renderYearTrendChart(year, data.totals, data.months);
       } catch (_) {
-        renderYearTrendChart(year, Array(12).fill(0));
+        renderYearTrendChart(year, Array(12).fill(0), []);
       } finally {
         if (showLoading) Swal.close();
       }
@@ -913,13 +993,17 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTq
           }
         }
 
-        renderYearTrendChart(currentTrendYear, Array.isArray(trendData?.totals) ? trendData.totals : Array(12).fill(0));
+        renderYearTrendChart(
+          currentTrendYear,
+          Array.isArray(trendData?.totals) ? trendData.totals : Array(12).fill(0),
+          Array.isArray(trendData?.months) ? trendData.months : []
+        );
         renderMonthlyMetrics(accuracyYear, Array.isArray(accuracyData?.months) ? accuracyData.months : []);
       } catch (_) {
         setEditMode(true, '');
         lastUpdatedText = '-';
         renderDashboardKpiFromRows([]);
-        renderYearTrendChart(currentTrendYear, Array(12).fill(0));
+        renderYearTrendChart(currentTrendYear, Array(12).fill(0), []);
         renderMonthlyMetrics(accuracyYear, []);
       } finally {
         if (showLoading) Swal.close();

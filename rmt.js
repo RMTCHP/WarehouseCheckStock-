@@ -1,5 +1,5 @@
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeoI2KVjTYcWqrjDQTqEeKPHFxHX6YNwCC7RJFE86U8phom7hrl_gMphNFKt2T5sk/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEys6M6Dvk6Yd-qbTlDax75ZsGgnB5c321MAvgL-dP-PHWh7k/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     let currentUser = null;
@@ -13,6 +13,7 @@
     let d365SubstockSummaryMap = {};
     let summaryRowsState = [];
     let summaryAllSubconsState = [];
+    let summaryTopCollapsedState = { subcon: true, plant: true };
     let summaryQtyOverrideState = {};
     let summaryDirtyGroupsState = {};
     let summaryFilterMultiState = {
@@ -1505,12 +1506,14 @@
       const body = document.getElementById('summaryTopBody');
       if (!body) return;
       const filteredRows = applySummaryFilter(rows || []);
-      if (!filteredRows.length) {
+      const allSubcons = Array.isArray(summaryAllSubconsState) ? summaryAllSubconsState : [];
+      if (!filteredRows.length && !allSubcons.length) {
         body.innerHTML = '<tr><td colspan="9">No data</td></tr>';
         return;
       }
 
       const byPlant = {};
+      const bySubcon = {};
       let grandD365 = 0;
       let grandSubc = 0;
       let grandItems = 0;
@@ -1520,7 +1523,9 @@
       filteredRows.forEach((r) => {
         const m = getFileNoMapEntry(r.fileNo);
         const plant = String(m.plant || '-').toUpperCase() || '-';
-        if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0 };
+        const subcon = String(r.subcon || '').trim().toUpperCase() || '-';
+        if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+        if (!bySubcon[subcon]) bySubcon[subcon] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
 
         const d365Qty = normalizeSummaryQtyValue(r.__d365Qty);
         const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
@@ -1531,9 +1536,14 @@
         byPlant[plant].d365 += d365Qty;
         byPlant[plant].subc += subcQty;
         byPlant[plant].totalItem += 1;
+        bySubcon[subcon].d365 += d365Qty;
+        bySubcon[subcon].subc += subcQty;
+        bySubcon[subcon].totalItem += 1;
         if (isOk) byPlant[plant].okItem += 1;
+        if (isOk) bySubcon[subcon].okItem += 1;
         if (diffQty !== null && diffQty !== 0) {
           byPlant[plant].diffItem = (byPlant[plant].diffItem || 0) + 1;
+          bySubcon[subcon].diffItem = (bySubcon[subcon].diffItem || 0) + 1;
         }
 
         grandD365 += d365Qty;
@@ -1546,24 +1556,64 @@
       const plants = ['CHP', 'G1P'];
       if (byPlant['-']) plants.push('-');
       let html = '';
+      const subconOrder = allSubcons.length
+        ? allSubcons.map((x) => String(x || '').trim().toUpperCase()).filter(Boolean)
+        : Object.keys(bySubcon).sort();
 
-      plants.forEach((plant) => {
-        const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
-        const plantLabel = plant === '-' ? 'Unmapped Plant' : plant;
+      if (subconOrder.length) {
         html += `
-          <tr>
-            <td class="label">${plantLabel}</td>
-            <td>${formatNumOrDash(p.d365)}</td>
-            <td>${formatNumOrDash(p.subc)}</td>
-            <td>${safePct(p.subc, p.d365)}</td>
-            <td>${plantLabel}</td>
-            <td>${formatNumOrDash(p.totalItem)}</td>
-            <td>${formatNumOrDash(p.okItem)}</td>
-            <td>${formatNumOrDash(p.diffItem || 0)}</td>
-            <td>${safePct(p.okItem, p.totalItem)}</td>
+          <tr class="summary-top-group" onclick="toggleSummaryTopSection('subcon')">
+            <td colspan="9">
+              <span id="summaryTopToggle_subcon" class="summary-top-toggle">${summaryTopCollapsedState.subcon ? '+' : '-'}</span>
+              Subcon Summary
+            </td>
           </tr>
         `;
-      });
+        subconOrder.forEach((subcon) => {
+          const s = bySubcon[subcon] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+          html += `
+            <tr class="subcon-row" data-summary-top-section="subcon" style="${summaryTopCollapsedState.subcon ? 'display:none;' : ''}">
+              <td class="label">SUBCON: ${subcon}</td>
+              <td>${formatNumOrDash(s.d365)}</td>
+              <td>${formatNumOrDash(s.subc)}</td>
+              <td>${safePct(s.subc, s.d365)}</td>
+              <td>-</td>
+              <td>${formatNumOrDash(s.totalItem)}</td>
+              <td>${formatNumOrDash(s.okItem)}</td>
+              <td>${formatNumOrDash(s.diffItem || 0)}</td>
+              <td>${safePct(s.okItem, s.totalItem)}</td>
+            </tr>
+          `;
+        });
+      }
+
+      if (plants.length) {
+        html += `
+          <tr class="summary-top-group" onclick="toggleSummaryTopSection('plant')">
+            <td colspan="9">
+              <span id="summaryTopToggle_plant" class="summary-top-toggle">${summaryTopCollapsedState.plant ? '+' : '-'}</span>
+              Plant Summary
+            </td>
+          </tr>
+        `;
+        plants.forEach((plant) => {
+          const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+          const plantLabel = plant === '-' ? 'Unmapped Plant' : plant;
+          html += `
+            <tr class="plant-row" data-summary-top-section="plant" style="${summaryTopCollapsedState.plant ? 'display:none;' : ''}">
+              <td class="label">${plantLabel}</td>
+              <td>${formatNumOrDash(p.d365)}</td>
+              <td>${formatNumOrDash(p.subc)}</td>
+              <td>${safePct(p.subc, p.d365)}</td>
+              <td>${plantLabel}</td>
+              <td>${formatNumOrDash(p.totalItem)}</td>
+              <td>${formatNumOrDash(p.okItem)}</td>
+              <td>${formatNumOrDash(p.diffItem || 0)}</td>
+              <td>${safePct(p.okItem, p.totalItem)}</td>
+            </tr>
+          `;
+        });
+      }
 
       html += `
         <tr class="grand">
@@ -1580,6 +1630,16 @@
       `;
 
       body.innerHTML = html;
+    }
+
+    function toggleSummaryTopSection(section) {
+      if (!section) return;
+      summaryTopCollapsedState[section] = !summaryTopCollapsedState[section];
+      document.querySelectorAll(`tr[data-summary-top-section="${section}"]`).forEach((tr) => {
+        tr.style.display = summaryTopCollapsedState[section] ? 'none' : '';
+      });
+      const icon = document.getElementById(`summaryTopToggle_${section}`);
+      if (icon) icon.textContent = summaryTopCollapsedState[section] ? '+' : '-';
     }
 
     async function loadSummaryReport() {
