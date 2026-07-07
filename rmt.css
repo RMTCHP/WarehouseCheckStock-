@@ -190,6 +190,27 @@
     .summary-top-table tr.subcon-row td {
       background: #f8fbff;
     }
+    .summary-accuracy-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 78px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .summary-accuracy-badge.ok {
+      color: #166534;
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .summary-accuracy-badge.diff {
+      color: #b91c1c;
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
     .summary-top-table tr.plant-row td {
       background: #fbfdff;
     }

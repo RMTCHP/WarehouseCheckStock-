@@ -1083,7 +1083,9 @@
     }
     function getSummaryTopRowsForExport(rows = []) {
       const filteredRows = applySummaryFilter(rows || []);
+      const allSubcons = Array.isArray(summaryAllSubconsState) ? summaryAllSubconsState : [];
       const byPlant = {};
+      const bySubcon = {};
       let grandD365 = 0;
       let grandSubc = 0;
       let grandItems = 0;
@@ -1092,7 +1094,9 @@
 
       filteredRows.forEach((r) => {
         const plant = getSummaryRowPlant(r);
+        const subcon = String(r.subcon || '').trim().toUpperCase() || '-';
         if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+        if (!bySubcon[subcon]) bySubcon[subcon] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
         const d365Qty = getSummaryRowD365Qty(r);
         const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
         const diffQty = getSummaryRowD365Diff(r);
@@ -1101,8 +1105,13 @@
         byPlant[plant].d365 += d365Qty;
         byPlant[plant].subc += subcQty;
         byPlant[plant].totalItem += 1;
+        bySubcon[subcon].d365 += d365Qty;
+        bySubcon[subcon].subc += subcQty;
+        bySubcon[subcon].totalItem += 1;
         if (isOk) byPlant[plant].okItem += 1;
+        if (isOk) bySubcon[subcon].okItem += 1;
         if (diffQty !== null && diffQty !== 0) byPlant[plant].diffItem = (byPlant[plant].diffItem || 0) + 1;
+        if (diffQty !== null && diffQty !== 0) bySubcon[subcon].diffItem = (bySubcon[subcon].diffItem || 0) + 1;
 
         grandD365 += d365Qty;
         grandSubc += subcQty;
@@ -1113,10 +1122,47 @@
 
       const plants = ['CHP', 'G1P'];
       if (byPlant['-']) plants.push('-');
-      const out = plants.map((plant) => {
+      const subconOrder = allSubcons.length
+        ? allSubcons.map((x) => String(x || '').trim().toUpperCase()).filter(Boolean)
+        : Object.keys(bySubcon).sort();
+      const blankRow = (group) => ({
+        Group: group,
+        'Total D365': '',
+        'Total Subc': '',
+        "%Q'ty": '',
+        Plant: '',
+        'Total Item': '',
+        'OK Item': '',
+        'Diff Item': '',
+        '%Accuracy': ''
+      });
+      const out = [];
+
+      if (subconOrder.length) {
+        out.push(blankRow('Subcon Summary'));
+        subconOrder.forEach((subcon) => {
+          const s = bySubcon[subcon] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+          out.push({
+            Group: `SUBCON: ${subcon}`,
+            'Total D365': s.d365,
+            'Total Subc': s.subc,
+            "%Q'ty": safePct(s.subc, s.d365),
+            Plant: '-',
+            'Total Item': s.totalItem,
+            'OK Item': s.okItem,
+            'Diff Item': s.diffItem || 0,
+            '%Accuracy': safePct(s.okItem, s.totalItem)
+          });
+        });
+      }
+
+      if (plants.length) {
+        out.push(blankRow('Plant Summary'));
+      }
+      plants.forEach((plant) => {
         const p = byPlant[plant] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
         const plantLabel = plant === '-' ? 'Unmapped Plant' : plant;
-        return {
+        out.push({
           Group: plantLabel,
           'Total D365': p.d365,
           'Total Subc': p.subc,
@@ -1126,7 +1172,7 @@
           'OK Item': p.okItem,
           'Diff Item': p.diffItem || 0,
           '%Accuracy': safePct(p.okItem, p.totalItem)
-        };
+        });
       });
       out.push({
         Group: 'Total',
@@ -1571,6 +1617,8 @@
         `;
         subconOrder.forEach((subcon) => {
           const s = bySubcon[subcon] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
+          const subconAccuracyOk = s.totalItem > 0 && s.okItem === s.totalItem;
+          const subconAccuracyText = safePct(s.okItem, s.totalItem);
           html += `
             <tr class="subcon-row" data-summary-top-section="subcon" style="${summaryTopCollapsedState.subcon ? 'display:none;' : ''}">
               <td class="label">SUBCON: ${subcon}</td>
@@ -1581,7 +1629,7 @@
               <td>${formatNumOrDash(s.totalItem)}</td>
               <td>${formatNumOrDash(s.okItem)}</td>
               <td>${formatNumOrDash(s.diffItem || 0)}</td>
-              <td>${safePct(s.okItem, s.totalItem)}</td>
+              <td><span class="summary-accuracy-badge ${subconAccuracyOk ? 'ok' : 'diff'}">${subconAccuracyText}</span></td>
             </tr>
           `;
         });
