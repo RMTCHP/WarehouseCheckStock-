@@ -250,12 +250,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEy
       const cacheKey = String(year || '');
       if (!force && dashboardTrendCache[cacheKey]) return dashboardTrendCache[cacheKey];
       dashboardTrendCache[cacheKey] = (async () => {
-        let totals = Array(12).fill(0);
-        let months = [];
         const res = await api('getSubconYearTrend', { year, username: currentUser.username, force: !!force });
-        if (res && res.ok && Array.isArray(res.totals)) totals = res.totals;
-        if (res && res.ok && Array.isArray(res.months)) months = res.months;
-        return { totals, months };
+        if (!res || !res.ok) throw new Error((res && res.message) || 'Unable to load trend data');
+        return {
+          totals: Array.isArray(res.totals) ? res.totals : [],
+          months: Array.isArray(res.months) ? res.months : []
+        };
       })();
       try {
         return await dashboardTrendCache[cacheKey];
@@ -350,15 +350,19 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEy
       } catch (_) {
         trendData = null;
       }
+      // Some deployed Apps Script versions can return an empty annual trend
+      // while month detail data exists. Fall back once, then retain it locally.
       if (!hasMeaningfulTrendPayload(trendData)) {
-        return await buildDashboardTrendFallback(year, force);
+        const fallback = await buildDashboardTrendFallback(year, force);
+        dashboardTrendCache[String(year || '')] = Promise.resolve(fallback);
+        return fallback;
       }
       return trendData;
     }
     function getAccuracyScoreText(accuracyValue, hasData = true) {
       if (!hasData) return '-';
       const accuracy = Number(accuracyValue || 0) * 100;
-      if (Math.abs(accuracy - 100) < 0.000001) return 'No deduction';
+      if (Math.abs(accuracy - 100) < 0.000001) return '-';
       if (accuracy >= 90) return '-1';
       if (accuracy >= 80) return '-2';
       if (accuracy >= 70) return '-3';
@@ -982,6 +986,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEy
         const accuracyMissing = !hasMeaningfulTrendPayload(accuracyData);
         if (trendMissing || accuracyMissing) {
           const fallback = await buildDashboardTrendFallback(accuracyYear, force);
+          dashboardTrendCache[String(accuracyYear || '')] = Promise.resolve(fallback);
           if (currentTrendYear === accuracyYear) {
             trendData = fallback;
             accuracyData = fallback;
@@ -1576,7 +1581,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEy
                 </tr>
               </thead>
               <tbody>
-                <tr><td>100%</td><td>No deduction (ไม่หักคะแนน)</td></tr>
+                <tr><td>100%</td><td>-</td></tr>
                 <tr><td>90 - 99.99%</td><td>-1</td></tr>
                 <tr><td>80 - 89.99%</td><td>-2</td></tr>
                 <tr><td>70 - 79.99%</td><td>-3</td></tr>
@@ -1713,8 +1718,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEy
       bindExcelKeys();
       await showLoadingSwal('Loading dashboard...', 'Please wait while the latest data is loading.');
       try {
-        await loadReport(false, true);
-        await setMenu('dashboard', { showLoading: false, force: true });
+        // Prime the current-month model before rendering Dashboard. Some
+        // dashboard cards share the deadline and report state from this model.
+        // The local request cache prevents the dashboard from fetching it again.
+        await loadReport(false, false);
+        await setMenu('dashboard', { showLoading: false, force: false });
       } finally {
         if (Swal.isVisible()) Swal.close();
       }

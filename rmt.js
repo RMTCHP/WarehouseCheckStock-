@@ -1118,6 +1118,7 @@
         grandItems += 1;
         if (isOk) grandOk += 1;
         if (diffQty !== null && diffQty !== 0) grandDiff += 1;
+
       });
 
       const plants = ['CHP', 'G1P'];
@@ -1134,7 +1135,8 @@
         'Total Item': '',
         'OK Item': '',
         'Diff Item': '',
-        '%Accuracy': ''
+        '%Accuracy': '',
+        Score: ''
       });
       const out = [];
 
@@ -1151,7 +1153,8 @@
             'Total Item': s.totalItem,
             'OK Item': s.okItem,
             'Diff Item': s.diffItem || 0,
-            '%Accuracy': safePct(s.okItem, s.totalItem)
+            '%Accuracy': safePct(s.okItem, s.totalItem),
+            Score: getAccuracyScoreText(s.okItem, s.totalItem).text
           });
         });
       }
@@ -1171,7 +1174,8 @@
           'Total Item': p.totalItem,
           'OK Item': p.okItem,
           'Diff Item': p.diffItem || 0,
-          '%Accuracy': safePct(p.okItem, p.totalItem)
+          '%Accuracy': safePct(p.okItem, p.totalItem),
+          Score: '-'
         });
       });
       out.push({
@@ -1183,7 +1187,8 @@
         'Total Item': grandItems,
         'OK Item': grandOk,
         'Diff Item': grandDiff,
-        '%Accuracy': safePct(grandOk, grandItems)
+        '%Accuracy': safePct(grandOk, grandItems),
+        Score: '-'
       });
       return out;
     }
@@ -1548,23 +1553,35 @@
       }
     }
 
+    function getAccuracyScoreText(okItem, totalItem) {
+      const total = Number(totalItem || 0);
+      const ok = Number(okItem || 0);
+      if (total <= 0) return { text: '-', negative: false };
+
+      const accuracy = (ok / total) * 100;
+      if (accuracy >= 100) return { text: '-', negative: false };
+      if (accuracy >= 90) return { text: '-1', negative: true };
+      if (accuracy >= 80) return { text: '-2', negative: true };
+      if (accuracy >= 70) return { text: '-3', negative: true };
+      if (accuracy >= 60) return { text: '-4', negative: true };
+      if (accuracy >= 50) return { text: '-5', negative: true };
+      if (accuracy >= 20) return { text: '-6', negative: true };
+      return { text: '-10', negative: true };
+    }
+
     function renderSummaryTop(rows = []) {
       const body = document.getElementById('summaryTopBody');
       if (!body) return;
       const filteredRows = applySummaryFilter(rows || []);
       const allSubcons = Array.isArray(summaryAllSubconsState) ? summaryAllSubconsState : [];
       if (!filteredRows.length && !allSubcons.length) {
-        body.innerHTML = '<tr><td colspan="9">No data</td></tr>';
+        body.innerHTML = '<tr><td colspan="10">No data</td></tr>';
         return;
       }
 
       const byPlant = {};
       const bySubcon = {};
-      let grandD365 = 0;
-      let grandSubc = 0;
-      let grandItems = 0;
-      let grandOk = 0;
-      let grandDiff = 0;
+      const grand = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
 
       filteredRows.forEach((r) => {
         const m = getFileNoMapEntry(r.fileNo);
@@ -1585,18 +1602,18 @@
         bySubcon[subcon].d365 += d365Qty;
         bySubcon[subcon].subc += subcQty;
         bySubcon[subcon].totalItem += 1;
+        grand.d365 += d365Qty;
+        grand.subc += subcQty;
+        grand.totalItem += 1;
         if (isOk) byPlant[plant].okItem += 1;
         if (isOk) bySubcon[subcon].okItem += 1;
+        if (isOk) grand.okItem += 1;
         if (diffQty !== null && diffQty !== 0) {
           byPlant[plant].diffItem = (byPlant[plant].diffItem || 0) + 1;
           bySubcon[subcon].diffItem = (bySubcon[subcon].diffItem || 0) + 1;
+          grand.diffItem += 1;
         }
 
-        grandD365 += d365Qty;
-        grandSubc += subcQty;
-        grandItems += 1;
-        if (isOk) grandOk += 1;
-        if (diffQty !== null && diffQty !== 0) grandDiff += 1;
       });
 
       const plants = ['CHP', 'G1P'];
@@ -1609,7 +1626,7 @@
       if (subconOrder.length) {
         html += `
           <tr class="summary-top-group" onclick="toggleSummaryTopSection('subcon')">
-            <td colspan="9">
+            <td colspan="10">
               <span id="summaryTopToggle_subcon" class="summary-top-toggle">${summaryTopCollapsedState.subcon ? '+' : '-'}</span>
               Subcon Summary
             </td>
@@ -1619,6 +1636,7 @@
           const s = bySubcon[subcon] || { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
           const subconAccuracyOk = s.totalItem > 0 && s.okItem === s.totalItem;
           const subconAccuracyText = safePct(s.okItem, s.totalItem);
+          const subconScore = getAccuracyScoreText(s.okItem, s.totalItem);
           html += `
             <tr class="subcon-row" data-summary-top-section="subcon" style="${summaryTopCollapsedState.subcon ? 'display:none;' : ''}">
               <td class="label">SUBCON: ${subcon}</td>
@@ -1630,6 +1648,7 @@
               <td>${formatNumOrDash(s.okItem)}</td>
               <td>${formatNumOrDash(s.diffItem || 0)}</td>
               <td><span class="summary-accuracy-badge ${subconAccuracyOk ? 'ok' : 'diff'}">${subconAccuracyText}</span></td>
+              <td class="summary-score ${subconScore.negative ? 'negative' : ''}">${subconScore.text}</td>
             </tr>
           `;
         });
@@ -1638,7 +1657,7 @@
       if (plants.length) {
         html += `
           <tr class="summary-top-group" onclick="toggleSummaryTopSection('plant')">
-            <td colspan="9">
+            <td colspan="10">
               <span id="summaryTopToggle_plant" class="summary-top-toggle">${summaryTopCollapsedState.plant ? '+' : '-'}</span>
               Plant Summary
             </td>
@@ -1658,24 +1677,25 @@
               <td>${formatNumOrDash(p.okItem)}</td>
               <td>${formatNumOrDash(p.diffItem || 0)}</td>
               <td>${safePct(p.okItem, p.totalItem)}</td>
+              <td class="summary-score">-</td>
             </tr>
           `;
         });
+        html += `
+          <tr class="grand" data-summary-top-section="plant" style="${summaryTopCollapsedState.plant ? 'display:none;' : ''}">
+            <td class="label">Total</td>
+            <td>${formatNumOrDash(grand.d365)}</td>
+            <td>${formatNumOrDash(grand.subc)}</td>
+            <td>${safePct(grand.subc, grand.d365)}</td>
+            <td>-</td>
+            <td>${formatNumOrDash(grand.totalItem)}</td>
+            <td>${formatNumOrDash(grand.okItem)}</td>
+            <td>${formatNumOrDash(grand.diffItem || 0)}</td>
+            <td>${safePct(grand.okItem, grand.totalItem)}</td>
+            <td class="summary-score">-</td>
+          </tr>
+        `;
       }
-
-      html += `
-        <tr class="grand">
-          <td class="label">Total</td>
-          <td>${formatNumOrDash(grandD365)}</td>
-          <td>${formatNumOrDash(grandSubc)}</td>
-          <td>${safePct(grandSubc, grandD365)}</td>
-          <td>-</td>
-          <td>${formatNumOrDash(grandItems)}</td>
-          <td>${formatNumOrDash(grandOk)}</td>
-          <td>${formatNumOrDash(grandDiff)}</td>
-          <td>${safePct(grandOk, grandItems)}</td>
-        </tr>
-      `;
 
       body.innerHTML = html;
     }

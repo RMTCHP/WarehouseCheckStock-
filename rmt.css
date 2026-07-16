@@ -211,6 +211,16 @@
       background: #fee2e2;
       border-color: #fca5a5;
     }
+    .summary-top-table tbody td.summary-score {
+      font-weight: 800;
+      color: #166534;
+      text-align: center !important;
+      vertical-align: middle;
+    }
+    .summary-top-table tbody td.summary-score.negative {
+      color: #b91c1c;
+      font-weight: 900;
+    }
     .summary-top-table tr.plant-row td {
       background: #fbfdff;
     }
