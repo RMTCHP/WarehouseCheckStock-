@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G1P Data Check Center</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+
+    :root {
+      --bg-1: #3d1c25;
+      --bg-2: #6a3035;
+      --panel: #fffaf1;
+      --line: #eadcc8;
+      --text-main: #2e2020;
+      --text-sub: #765d51;
+      --tag: #b8423d;
+      --tag-deep: #7f2830;
+      --compare: #d18322;
+      --compare-deep: #a95517;
+      --subcon: #16746d;
+      --subcon-deep: #0d4d4b;
+      --shadow-md: 0 14px 28px rgba(68, 37, 29, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      min-width: 1280px;
+      margin: 0;
+      font-family: "Manrope", sans-serif;
+      color: var(--text-main);
+    }
+
+    body {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.09), transparent 32%),
+        radial-gradient(circle at 78% 84%, rgba(255, 255, 255, 0.06), transparent 36%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    }
+
+    .shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-height: 760px;
+      background:
+        radial-gradient(circle at 72% 36%, rgba(255, 236, 205, .72), transparent 33%),
+        linear-gradient(116deg, #fffdf8 0%, var(--panel) 46%, #fff6e8 100%);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      padding: 0 32px;
+      border-bottom: 1px solid #4b1e2b;
+      background: linear-gradient(135deg, #6c3038, #4a202b);
+    }
+
+    .status {
+      padding: 7px 12px;
+      border: 1px solid #d5dbe3;
+      border-radius: 999px;
+      background: #fff;
+      color: #63313a;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .logo-inline { width: 158px; height: auto; object-fit: contain; }
+    .content {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      padding: 24px 32px 44px;
+    }
+    .headline {
+      margin: 0 0 20px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 38px;
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+
+    .content-row {
+      display: grid;
+      flex: 1;
+      min-height: 0;
+      grid-template-columns: minmax(450px, 37%) minmax(0, 63%);
+      align-items: stretch;
+      gap: 28px;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: auto;
+      min-width: 0;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+      min-height: 0;
+      padding: 24px 26px;
+      border: 1px solid rgba(255, 255, 255, .22);
+      border-radius: 14px;
+      box-shadow: var(--shadow-md);
+      color: #fff;
+      text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+
+    .card:not(.is-pending):hover {
+      transform: translateX(7px);
+      box-shadow: 0 20px 38px rgba(68, 29, 30, .28);
+      filter: saturate(1.08);
+    }
+
+    .card.is-pending { cursor: default; }
+    .card .label {
+      display: inline-block;
+      width: fit-content;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .18);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .card h2 {
+      max-width: 440px;
+      margin: 16px 0 9px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 23px;
+      line-height: 1.16;
+      letter-spacing: -.02em;
+    }
+    .card p { max-width: 440px; margin: 0; font-size: 13px; line-height: 1.5; opacity: .94; }
+    .card .go { margin-top: 16px; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .tag-report { background: linear-gradient(136deg, var(--tag), var(--tag-deep)); }
+    .file-compare { background: linear-gradient(136deg, var(--compare), var(--compare-deep)); }
+    .subcon-data { background: linear-gradient(136deg, var(--subcon), var(--subcon-deep)); }
+
+    .warehouse-side {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .warehouse-side img {
+      width: 100%;
+      max-width: none;
+      max-height: none;
+      height: 100%;
+      transform: none;
+      object-fit: contain;
+    }
+
+    .page-copy {
+      position: fixed;
+      right: 0;
+      bottom: 11px;
+      left: 0;
+      z-index: 10;
+      margin: 0;
+      color: rgba(15, 34, 56, .78);
+      font-size: 12px;
+      letter-spacing: .01em;
+      pointer-events: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <span class="status">G1P Data Check Center</span>
+      <img class="logo-inline" src="assets/logo.png" alt="Resonac Materials logo" />
+    </header>
+
+    <section class="content">
+      <h1 class="headline">G1P Data Check Center</h1>
+      <div class="content-row">
+        <div class="cards">
+          <!-- Replace each data-link value with the final destination URL. -->
+          <a id="g1p-tag-report" class="card tag-report" data-link="https://rmtchp.github.io/D365InventoryCheck/reportfg.html" target="_blank" rel="noopener noreferrer">
+            <div>
+              <span class="label">FG Tag Report</span>
+              <h2>RMT Inventory TAG Report for FG</h2>
+              <p>Open the finished goods inventory tag reporting module for G1P operations.</p>
+            </div>
+            <span class="go">Link pending</span>
+          </a>
+
+          <a id="g1p-file-compare" class="card file-compare" data-link="https://rmtchp.github.io/D365InventoryCheck/fg-compare.html" target="_blank" rel="noopener noreferrer">
+            <div>
+              <span class="label">FG File Compare</span>
+              <h2>FG File Compare</h2>
+              <p>Compare G1P finished goods files and review data differences.</p>
+            </div>
+            <span class="go">Link pending</span>
+          </a>
+
+          <a id="g1p-subcon-data" class="card subcon-data" data-link="https://rmtchp.github.io/WarehouseCheckStock-/g1p-subcon.html" target="_blank" rel="noopener noreferrer">
+            <div>
+              <span class="label">Subcon Data</span>
+              <h2>Subcon Data</h2>
+              <p>Open the G1P subcontractor dashboard, summary report, and D365 substock data.</p>
+            </div>
+            <span class="go">Link pending</span>
+          </a>
+        </div>
+
+        <div class="warehouse-side">
+          <img src="assets/G1PDataCheckCenter.png" alt="G1P Data Check Center illustration" />
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <p class="page-copy">© 2026 Resonac Materials (Thailand) Co., Ltd. - Developed by IT Department</p>
+
+  <script>
+    document.querySelectorAll('.card[data-link]').forEach((card) => {
+      const link = card.dataset.link.trim();
+      if (link) {
+        card.href = link;
+        card.classList.remove('is-pending');
+        card.querySelector('.go').textContent = 'Open Module ->';
+      } else {
+        card.addEventListener('click', (event) => event.preventDefault());
+      }
+    });
+  </script>
+</body>
+</html>
