@@ -2,6 +2,8 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEys6M6Dvk6Yd-qbTlDax75ZsGgnB5c321MAvgL-dP-PHWh7k/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const RMT_PAGE_CONFIG = window.RMT_PAGE_CONFIG || {};
+    const ACTIVE_PLANT_FILTER = String(RMT_PAGE_CONFIG.plantFilter || '').trim().toUpperCase();
     let currentUser = null;
     let deadlineState = {};
     let dashboardDeadlineState = {};
@@ -26,6 +28,48 @@
     let d365FilterMultiState = {
       itemNumber: [], processNo: [], cmt: [], kdt: [], kkft: [], mdi: [], snt: [], ssp: [], skc: [], tpk: [], tisco: [], tyn: [], grandTotal: []
     };
+
+    function isPlantScopedPage() {
+      return ACTIVE_PLANT_FILTER === 'CHP' || ACTIVE_PLANT_FILTER === 'G1P';
+    }
+
+    function hydrateFileNoMap(rows = []) {
+      fileNoMapState = {};
+      (rows || []).forEach((row) => {
+        const fileNo = String(row.fileNo || '').trim().toUpperCase();
+        if (!fileNo) return;
+        fileNoMapState[fileNo] = {
+          fileNo,
+          plant: String(row.plant || '').trim().toUpperCase()
+        };
+      });
+    }
+
+    async function ensureFileNoMapState() {
+      if (Object.keys(fileNoMapState).length) return;
+      const res = await api('listFileNoMap', { username: currentUser.username });
+      if (res && res.ok) hydrateFileNoMap(res.rows || []);
+    }
+
+    function rowMatchesActivePlant(row = {}) {
+      if (!isPlantScopedPage()) return true;
+      const mapping = getFileNoMapEntry(row.fileNo);
+      return String(mapping.plant || '').trim().toUpperCase() === ACTIVE_PLANT_FILTER;
+    }
+
+    function filterRowsByActivePlant(rows = []) {
+      return isPlantScopedPage() ? (rows || []).filter(rowMatchesActivePlant) : (rows || []);
+    }
+
+    function d365RowMatchesActivePlant(row = {}) {
+      if (!isPlantScopedPage()) return true;
+      const d365Tail = getD365Tail(row.itemNumber);
+      if (!d365Tail) return false;
+      return Object.values(fileNoMapState).some((mapping) =>
+        String(mapping.plant || '').trim().toUpperCase() === ACTIVE_PLANT_FILTER
+        && getFileNoTail(mapping.fileNo) === d365Tail
+      );
+    }
 
     function swalTheme(base = {}) { return Object.assign({ showCloseButton: true, confirmButtonColor: '#4C6272', background: '#ffffff', color: '#102027' }, base); }
     function swalLoading(title) {
@@ -102,6 +146,7 @@
       btn.classList.toggle('btn-warning', summaryDirty);
     }
     function isSummaryQtyEditable(fileNo) {
+      if (RMT_PAGE_CONFIG.allowD365QtyEdit === false) return false;
       return /[AB]$/i.test(String(fileNo || '').trim());
     }
 
@@ -165,9 +210,10 @@
     function updateDashboardTitle() {
       const month = document.getElementById('monthInput').value;
       const label = monthLabel(month);
+      const baseTitle = RMT_PAGE_CONFIG.dashboardTitle || 'RMT Dashboard (Monthly Inventory)';
       document.getElementById('dashboardTitle').textContent = label
-        ? `RMT Dashboard (Monthly Inventory) - ${label}`
-        : 'RMT Dashboard (Monthly Inventory)';
+        ? `${baseTitle} - ${label}`
+        : baseTitle;
     }
 
     function syncDashboardMonthInput() {
@@ -245,10 +291,13 @@
 
       Swal.fire(swalLoading('Loading data...'));
       try {
-        const res = await api('getReport', { month, subcon, role: currentUser.role, username: currentUser.username });
+        const [res] = await Promise.all([
+          api('getReport', { month, subcon, role: currentUser.role, username: currentUser.username }),
+          isPlantScopedPage() ? ensureFileNoMapState() : Promise.resolve()
+        ]);
         Swal.close();
         if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load data' }));
-        const rows = res.rows || [];
+        const rows = filterRowsByActivePlant(res.rows || []);
         renderRows(rows);
       } catch (e) {
         Swal.close();
@@ -265,10 +314,13 @@
       }
       cards.innerHTML = '<div class="subcon-card">Loading data...</div>';
       try {
-        const [dataRes, dlRes] = await Promise.all([
+        const [dataRes, dlRes, mapRes, reportRes] = await Promise.all([
           api('getDashboard', { month, username: currentUser.username }),
-          api('listDeadlines', { username: currentUser.username })
+          api('listDeadlines', { username: currentUser.username }),
+          isPlantScopedPage() ? api('listFileNoMap', { username: currentUser.username }) : Promise.resolve(null),
+          isPlantScopedPage() ? api('getReport', { month, subcon: 'ALL', role: currentUser.role, username: currentUser.username }) : Promise.resolve(null)
         ]);
+        if (mapRes && mapRes.ok) hydrateFileNoMap(mapRes.rows || []);
         dashboardDeadlineState = (dlRes && dlRes.ok && dlRes.deadlines) ? dlRes.deadlines : {};
         renderDashboardDeadline(month);
         if (!dataRes || !dataRes.ok) {
@@ -280,8 +332,34 @@
           return;
         }
 
-        const summary = dataRes.summary || {};
-        const statusRows = dataRes.statusRows || [];
+        let summary = dataRes.summary || {};
+        let statusRows = dataRes.statusRows || [];
+        if (isPlantScopedPage() && reportRes && reportRes.ok) {
+          const scopedRows = filterRowsByActivePlant(reportRes.rows || []);
+          const totalsBySubcon = scopedRows.reduce((acc, row) => {
+            const subcon = String(row.subcon || '').trim().toUpperCase();
+            if (!subcon) return acc;
+            if (!acc[subcon]) acc[subcon] = { count: 0, totalValue: 0 };
+            acc[subcon].count += 1;
+            acc[subcon].totalValue += safeNum(row.total);
+            return acc;
+          }, {});
+          statusRows = (statusRows || []).map((row) => {
+            const subcon = String(row.subcon || '').trim().toUpperCase();
+            const scoped = totalsBySubcon[subcon] || { count: 0, totalValue: 0 };
+            return Object.assign({}, row, {
+              status: scoped.count ? 'submitted' : 'pending',
+              totalValue: scoped.totalValue
+            });
+          });
+          const submitted = statusRows.filter((row) => row.status === 'submitted').length;
+          summary = {
+            totalSub: statusRows.length,
+            submitted,
+            pending: Math.max(0, statusRows.length - submitted),
+            grandTotal: scopedRows.reduce((sum, row) => sum + safeNum(row.total), 0)
+          };
+        }
         document.getElementById('dashTotalSub').textContent = String(summary.totalSub || 0);
         document.getElementById('dashSubmitted').textContent = String(summary.submitted || 0);
         document.getElementById('dashPending').textContent = String(summary.pending || 0);
@@ -329,12 +407,15 @@
       if (!subcon || !month) return;
       Swal.fire(swalLoading(`Loading ${String(subcon).toUpperCase()}...`));
       try {
-        const res = await api('getReport', { month, subcon, role: currentUser.role, username: currentUser.username });
+        const [res] = await Promise.all([
+          api('getReport', { month, subcon, role: currentUser.role, username: currentUser.username }),
+          isPlantScopedPage() ? ensureFileNoMapState() : Promise.resolve()
+        ]);
         if (!res || !res.ok) {
           Swal.close();
           return Swal.fire(swalTheme({ icon: 'error', title: (res && res.message) || 'Failed to load data' }));
         }
-        const rows = res.rows || [];
+        const rows = filterRowsByActivePlant(res.rows || []);
         let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
         rows.forEach((r) => {
           boh += safeNum(r.boh);
@@ -1480,13 +1561,16 @@
       }
       Swal.fire(swalLoading('Loading D365 Substock data...'));
       try {
-        const res = await api('getD365Substock', { username: currentUser.username, month: targetMonth });
+        const [res] = await Promise.all([
+          api('getD365Substock', { username: currentUser.username, month: targetMonth }),
+          isPlantScopedPage() ? ensureFileNoMapState() : Promise.resolve()
+        ]);
         Swal.close();
         if (!res || !res.ok) {
           renderD365SubstockRows([]);
           return Swal.fire(swalTheme({ icon: 'error', title: (res && res.message) || 'Failed to load D365 Substock data' }));
         }
-        d365SubstockRowsState = res.rows || [];
+        d365SubstockRowsState = (res.rows || []).filter(d365RowMatchesActivePlant);
         renderD365SubstockRows(d365SubstockRowsState);
       } catch (e) {
         Swal.close();
@@ -1538,8 +1622,8 @@
           Swal.close();
           return Swal.fire(swalTheme({ icon: 'error', title: (saveRes && saveRes.message) || 'Failed to save D365 Substock data' }));
         }
-        d365SubstockRowsState = normalized;
-        renderD365SubstockRows(normalized);
+        d365SubstockRowsState = normalized.filter(d365RowMatchesActivePlant);
+        renderD365SubstockRows(d365SubstockRowsState);
         Swal.close();
         await Swal.fire(swalTheme({
           icon: 'success',
@@ -1724,14 +1808,7 @@
         ]);
         Swal.close();
         if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load summary report' }));
-        fileNoMapState = {};
-        if (mapRes && mapRes.ok) {
-          (mapRes.rows || []).forEach((x) => {
-            const k = String(x.fileNo || '').trim();
-            if (!k) return;
-            fileNoMapState[k] = { plant: x.plant || '' };
-          });
-        }
+        if (mapRes && mapRes.ok) hydrateFileNoMap(mapRes.rows || []);
         summaryQtyOverrideState = {};
         summaryDirtyGroupsState = {};
         if (overrideRes && overrideRes.ok) {
@@ -1746,17 +1823,21 @@
             summaryQtyOverrideState[key] = normalizeSummaryQtyValue(x.d365Qty);
           });
         }
-        d365SubstockRowsState = (d365Res && d365Res.ok && Array.isArray(d365Res.rows)) ? d365Res.rows : [];
+        d365SubstockRowsState = (d365Res && d365Res.ok && Array.isArray(d365Res.rows))
+          ? d365Res.rows.filter(d365RowMatchesActivePlant)
+          : [];
         buildD365SubstockSummaryMap(d365SubstockRowsState);
         const allSubcons = (dashRes && dashRes.ok)
           ? Array.from(new Set((dashRes.statusRows || []).map(x => String(x.subcon || '').trim()).filter(Boolean)))
           : Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
-        summaryAllSubconsState = allSubcons;
-        summaryRowsState = buildSummaryRows(res.rows || [], allSubcons);
+        summaryRowsState = filterRowsByActivePlant(buildSummaryRows(res.rows || [], allSubcons));
+        summaryAllSubconsState = isPlantScopedPage()
+          ? Array.from(new Set(summaryRowsState.map((row) => String(row.subcon || '').trim()).filter(Boolean)))
+          : allSubcons;
         setSummaryDirtyState(false);
         updateSummaryFilterHeaderState();
         renderSummaryTop(summaryRowsState);
-        renderSummaryRows(summaryRowsState, allSubcons);
+        renderSummaryRows(summaryRowsState, summaryAllSubconsState);
       } catch (e) {
         Swal.close();
         Swal.fire(swalTheme({ icon: 'error', title: 'Failed to load summary report', text: e.message }));
@@ -1861,7 +1942,10 @@
         const res = await api('listFileNoMap', { username: currentUser.username });
         Swal.close();
         if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load File No mapping' }));
-        fileNoRowsState = res.rows || [];
+        hydrateFileNoMap(res.rows || []);
+        fileNoRowsState = isPlantScopedPage()
+          ? (res.rows || []).filter((row) => String(row.plant || '').trim().toUpperCase() === ACTIVE_PLANT_FILTER)
+          : (res.rows || []);
         applyFileNoFilter();
       } catch (e) {
         Swal.close();
@@ -1871,7 +1955,8 @@
 
     async function openFileNoSwal(fileNo = '', plant = '') {
       const isEdit = !!fileNo;
-      const plantVal = String(plant || '').trim().toUpperCase();
+      const fixedPlant = isPlantScopedPage() ? ACTIVE_PLANT_FILTER : '';
+      const plantVal = fixedPlant || String(plant || '').trim().toUpperCase();
       const rs = await Swal.fire(swalTheme({
         title: isEdit ? 'Edit File No.' : 'Add File No.',
         html: `
@@ -1879,7 +1964,7 @@
             <label class="form-label fw-semibold mb-1">File No</label>
             <input id="swFileNo" class="form-control mb-2" value="${fileNo || ''}" ${isEdit ? 'disabled' : ''}>
             <label class="form-label fw-semibold mb-1">Plant</label>
-            <select id="swPlant" class="form-select mb-2">
+            <select id="swPlant" class="form-select mb-2" ${fixedPlant ? 'disabled' : ''}>
               <option value="">Select Plant</option>
               <option value="CHP" ${plantVal === 'CHP' ? 'selected' : ''}>CHP</option>
               <option value="G1P" ${plantVal === 'G1P' ? 'selected' : ''}>G1P</option>
@@ -1891,7 +1976,7 @@
         cancelButtonText: 'Cancel',
         preConfirm: () => {
           const vFileNo = (document.getElementById('swFileNo').value || '').trim();
-          const vPlant = (document.getElementById('swPlant').value || '').trim().toUpperCase();
+          const vPlant = fixedPlant || (document.getElementById('swPlant').value || '').trim().toUpperCase();
           if (!vFileNo) {
             Swal.showValidationMessage('Please enter File No');
             return false;
@@ -2099,10 +2184,14 @@
       document.getElementById('summaryView').classList.toggle('hidden', !isSummary);
       document.getElementById('settingView').classList.toggle('hidden', !isSetting);
       document.getElementById('d365SubstockView').classList.toggle('hidden', !isD365Substock);
-      document.getElementById('menuDashboard').classList.toggle('active', isDashboard);
-      document.getElementById('menuSummary').classList.toggle('active', isSummary);
-      document.getElementById('menuSetting').classList.toggle('active', isSetting);
-      document.getElementById('menuD365Substock').classList.toggle('active', isD365Substock);
+      const menuDashboard = document.getElementById('menuDashboard');
+      const menuSummary = document.getElementById('menuSummary');
+      const menuSetting = document.getElementById('menuSetting');
+      const menuD365Substock = document.getElementById('menuD365Substock');
+      if (menuDashboard) menuDashboard.classList.toggle('active', isDashboard);
+      if (menuSummary) menuSummary.classList.toggle('active', isSummary);
+      if (menuSetting) menuSetting.classList.toggle('active', isSetting);
+      if (menuD365Substock) menuD365Substock.classList.toggle('active', isD365Substock);
       document.getElementById('pageHeader').classList.toggle('hidden', !isDashboard);
       if (isSetting) {
         setSettingTab('user');
@@ -2298,13 +2387,23 @@
 
     function boot() {
       const raw = sessionStorage.getItem(SESSION_KEY);
-      if (!raw) { window.location.href = 'login.html'; return; }
-      try {
-        currentUser = JSON.parse(raw);
-      } catch (_) {
-        sessionStorage.removeItem(SESSION_KEY);
-        window.location.href = 'login.html';
-        return;
+      if (RMT_PAGE_CONFIG.directAccess) {
+        currentUser = {
+          username: String(RMT_PAGE_CONFIG.directAccessUsername || 'G1P_PUBLIC'),
+          role: 'RMT',
+          subcon: ''
+        };
+        const logoutButton = document.getElementById('logoutButton');
+        if (logoutButton) logoutButton.style.display = 'none';
+      } else {
+        if (!raw) { window.location.href = 'login.html'; return; }
+        try {
+          currentUser = JSON.parse(raw);
+        } catch (_) {
+          sessionStorage.removeItem(SESSION_KEY);
+          window.location.href = 'login.html';
+          return;
+        }
       }
       if (!currentUser || currentUser.role !== 'RMT') {
         window.location.href = currentUser && currentUser.role === 'SUBCON' ? 'subcon.html' : 'login.html';
@@ -2321,7 +2420,7 @@
         syncDashboardMonthInput();
         syncSummaryMonthInput();
         initSubstockMonth();
-        if (document.getElementById('menuD365Substock').classList.contains('active')) {
+        if (document.getElementById('menuD365Substock')?.classList.contains('active')) {
           const m = (document.getElementById('substockMonthInput')?.value || '').trim();
           if (m) await loadD365Substock(m);
         }
@@ -2341,7 +2440,7 @@
         document.getElementById('monthInput').value = v;
         syncSummaryMonthInput();
         initSubstockMonth();
-        if (document.getElementById('menuD365Substock').classList.contains('active')) {
+        if (document.getElementById('menuD365Substock')?.classList.contains('active')) {
           const m = (document.getElementById('substockMonthInput')?.value || '').trim();
           if (m) await loadD365Substock(m);
         }
