@@ -1,5 +1,5 @@
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBc0zzM9HTLu3acBFEkHifAMD7BLL8vXwbiS_as_N8NPSHSpHHVrjt9jQVbRSDC3c/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvFbJKcfHfCbZ6ECA6twYpcNpD7S6YW5sDhZLEDgYH3kuh3Nf9NAjb0gJHKjpePl8/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const RMT_PAGE_CONFIG = window.RMT_PAGE_CONFIG || {};
@@ -253,7 +253,7 @@
       document.getElementById('dashboardTrendPanel')?.classList.toggle('hidden', !isTrend);
       document.getElementById('dashboardTabStatus')?.classList.toggle('active', !isTrend);
       document.getElementById('dashboardTabTrend')?.classList.toggle('active', isTrend);
-      if (isTrend) loadRmtTotalTrend();
+      if (isTrend) loadRmtTotalTrend(true);
     }
 
     async function loadRmtTotalTrend(force = false) {
@@ -262,13 +262,13 @@
       const label = document.getElementById('rmtTrendYearLabel');
       if (!canvas || !loading || !label || typeof Chart === 'undefined') return;
       const year = getDashboardTrendYear();
-      label.textContent = `Year ${year} | Total by Subcon`;
+      label.textContent = `Year ${year} | Total and %Accuracy by Subcon`;
       loading.classList.remove('hidden');
       canvas.parentElement.classList.add('hidden');
       try {
         let result = !force ? rmtTrendCache[year] : null;
         if (!result) {
-          result = await api('getRmtYearTrend', { year, username: currentUser.username });
+          result = await api('getRmtYearTrend', { year, username: currentUser.username, force: !!force });
           if (result?.ok) rmtTrendCache[year] = result;
         }
         if (!result?.ok) throw new Error(result?.message || 'Unable to load total trend');
@@ -278,15 +278,33 @@
           type: 'bar',
           data: {
             labels: MONTH_SHORT.map((m) => m.charAt(0) + m.slice(1).toLowerCase()),
-            datasets: series.map((entry, index) => ({
-              label: String(entry.subcon || '').toUpperCase(),
-              data: Array.isArray(entry.totals) ? entry.totals : Array(12).fill(0),
-              backgroundColor: `${getTrendSeriesColor(index)}cc`,
-              borderColor: getTrendSeriesColor(index),
-              borderWidth: 1,
-              borderRadius: 4,
-              maxBarThickness: 22
-            }))
+            datasets: series.flatMap((entry, index) => {
+              const subcon = String(entry.subcon || '').toUpperCase();
+              const color = getTrendSeriesColor(index);
+              return [{
+                type: 'bar',
+                label: `${subcon} Total`,
+                data: Array.isArray(entry.totals) ? entry.totals : Array(12).fill(0),
+                backgroundColor: `${color}cc`,
+                borderColor: color,
+                borderWidth: 1,
+                borderRadius: 4,
+                maxBarThickness: 22,
+                yAxisID: 'y'
+              }, {
+                type: 'line',
+                label: `${subcon} %Accuracy`,
+                data: Array.isArray(entry.accuracies) ? entry.accuracies.map((value) => Number(value || 0) * 100) : Array(12).fill(0),
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                tension: 0.25,
+                fill: false,
+                yAxisID: 'yAccuracy'
+              }];
+            })
           },
           options: {
             responsive: true,
@@ -294,11 +312,24 @@
             interaction: { mode: 'index', intersect: false },
             plugins: {
               legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true, font: { size: 11, weight: '700' } } },
-              tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString('en-US')}` } }
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ctx.dataset.yAxisID === 'yAccuracy'
+                    ? `${ctx.dataset.label}: ${Number(ctx.raw || 0).toFixed(2)}%`
+                    : `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString('en-US')}`
+                }
+              }
             },
             scales: {
               x: { grid: { display: false }, ticks: { font: { weight: '700' } } },
-              y: { beginAtZero: true, ticks: { callback: (v) => Number(v).toLocaleString('en-US') } }
+              y: { beginAtZero: true, position: 'left', ticks: { callback: (v) => Number(v).toLocaleString('en-US') } },
+              yAccuracy: {
+                beginAtZero: true,
+                max: 100,
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                ticks: { callback: (v) => `${v}%` }
+              }
             }
           }
         });
