@@ -1,4 +1,4 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEys6M6Dvk6Yd-qbTlDax75ZsGgnB5c321MAvgL-dP-PHWh7k/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBc0zzM9HTLu3acBFEkHifAMD7BLL8vXwbiS_as_N8NPSHSpHHVrjt9jQVbRSDC3c/exec';
     const SESSION_KEY = 'subcon_auth';
     let currentUser = null;
     let editAllowed = true;

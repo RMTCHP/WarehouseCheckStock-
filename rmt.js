@@ -1,9 +1,11 @@
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_U-79LipyDQwFtWKEys6M6Dvk6Yd-qbTlDax75ZsGgnB5c321MAvgL-dP-PHWh7k/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBc0zzM9HTLu3acBFEkHifAMD7BLL8vXwbiS_as_N8NPSHSpHHVrjt9jQVbRSDC3c/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const RMT_PAGE_CONFIG = window.RMT_PAGE_CONFIG || {};
     const ACTIVE_PLANT_FILTER = String(RMT_PAGE_CONFIG.plantFilter || '').trim().toUpperCase();
+    // CMT is retired: retain historical reports, but hide it unless the selected summary month has records.
+    const RETIRED_SUBCONS = new Set(['CMT']);
     let currentUser = null;
     let deadlineState = {};
     let dashboardDeadlineState = {};
@@ -15,6 +17,9 @@
     let d365SubstockSummaryMap = {};
     let summaryRowsState = [];
     let summaryAllSubconsState = [];
+    let rmtTotalTrendChart = null;
+    let rmtTrendCache = {};
+    let dashboardDisplayPanel = 'status';
     let summaryTopCollapsedState = { subcon: true, plant: true };
     let summaryQtyOverrideState = {};
     let summaryDirtyGroupsState = {};
@@ -31,6 +36,10 @@
 
     function isPlantScopedPage() {
       return ACTIVE_PLANT_FILTER === 'CHP' || ACTIVE_PLANT_FILTER === 'G1P';
+    }
+
+    function isRetiredSubcon(subcon) {
+      return RETIRED_SUBCONS.has(String(subcon || '').trim().toUpperCase());
     }
 
     function hydrateFileNoMap(rows = []) {
@@ -227,6 +236,80 @@
       if (base && summary && summary.value !== base.value) summary.value = base.value || '';
     }
 
+    function getDashboardTrendYear() {
+      const month = String(document.getElementById('dashboardMonthInput')?.value || document.getElementById('monthInput')?.value || '');
+      return Number(month.slice(0, 4)) || new Date().getFullYear();
+    }
+
+    function getTrendSeriesColor(index) {
+      const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#4f46e5', '#65a30d', '#c2410c', '#be123c'];
+      return colors[index % colors.length];
+    }
+
+    function switchDashboardPanel(panel) {
+      dashboardDisplayPanel = panel === 'trend' ? 'trend' : 'status';
+      const isTrend = dashboardDisplayPanel === 'trend';
+      document.getElementById('dashboardStatusPanel')?.classList.toggle('hidden', isTrend);
+      document.getElementById('dashboardTrendPanel')?.classList.toggle('hidden', !isTrend);
+      document.getElementById('dashboardTabStatus')?.classList.toggle('active', !isTrend);
+      document.getElementById('dashboardTabTrend')?.classList.toggle('active', isTrend);
+      if (isTrend) loadRmtTotalTrend();
+    }
+
+    async function loadRmtTotalTrend(force = false) {
+      const canvas = document.getElementById('rmtTotalTrendChart');
+      const loading = document.getElementById('rmtTrendLoading');
+      const label = document.getElementById('rmtTrendYearLabel');
+      if (!canvas || !loading || !label || typeof Chart === 'undefined') return;
+      const year = getDashboardTrendYear();
+      label.textContent = `Year ${year} | Total by Subcon`;
+      loading.classList.remove('hidden');
+      canvas.parentElement.classList.add('hidden');
+      try {
+        let result = !force ? rmtTrendCache[year] : null;
+        if (!result) {
+          result = await api('getRmtYearTrend', { year, username: currentUser.username });
+          if (result?.ok) rmtTrendCache[year] = result;
+        }
+        if (!result?.ok) throw new Error(result?.message || 'Unable to load total trend');
+        const series = (result.series || []).filter((entry) => !isRetiredSubcon(entry.subcon));
+        if (rmtTotalTrendChart) rmtTotalTrendChart.destroy();
+        rmtTotalTrendChart = new Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels: MONTH_SHORT.map((m) => m.charAt(0) + m.slice(1).toLowerCase()),
+            datasets: series.map((entry, index) => ({
+              label: String(entry.subcon || '').toUpperCase(),
+              data: Array.isArray(entry.totals) ? entry.totals : Array(12).fill(0),
+              backgroundColor: `${getTrendSeriesColor(index)}cc`,
+              borderColor: getTrendSeriesColor(index),
+              borderWidth: 1,
+              borderRadius: 4,
+              maxBarThickness: 22
+            }))
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true, font: { size: 11, weight: '700' } } },
+              tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString('en-US')}` } }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { weight: '700' } } },
+              y: { beginAtZero: true, ticks: { callback: (v) => Number(v).toLocaleString('en-US') } }
+            }
+          }
+        });
+      } catch (e) {
+        loading.textContent = e.message || 'Unable to load total trend';
+        return;
+      }
+      loading.classList.add('hidden');
+      canvas.parentElement.classList.remove('hidden');
+    }
+
     function renderRows(rows = []) {
       const body = document.getElementById('reportBody');
       if (!rows.length) {
@@ -360,6 +443,14 @@
             grandTotal: scopedRows.reduce((sum, row) => sum + safeNum(row.total), 0)
           };
         }
+        // CMT is no longer active, so it must not appear as a pending/current Dashboard card.
+        statusRows = statusRows.filter((row) => !isRetiredSubcon(row.subcon));
+        summary = {
+          totalSub: statusRows.length,
+          submitted: statusRows.filter((row) => row.status === 'submitted').length,
+          pending: statusRows.filter((row) => row.status !== 'submitted').length,
+          grandTotal: statusRows.reduce((sum, row) => sum + safeNum(row.totalValue), 0)
+        };
         document.getElementById('dashTotalSub').textContent = String(summary.totalSub || 0);
         document.getElementById('dashSubmitted').textContent = String(summary.submitted || 0);
         document.getElementById('dashPending').textContent = String(summary.pending || 0);
@@ -400,6 +491,7 @@
 
     async function refreshDashboard() {
       await loadDashboard(true);
+      if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend(true);
     }
 
     async function openSubconDashboardSwal(subcon) {
@@ -458,7 +550,7 @@
                   <th>Supplier confirm OK</th>
                   <th>Supplier confirm Hold</th>
                   <th>Total</th>
-                  <th>Diff</th>
+                  <th>Delta +/-</th>
                   <th>Remark</th>
                 </tr>
               </thead>
@@ -814,7 +906,7 @@
         let diffItem = 0;
 
         html += `<tr>
-          <td colspan="24" style="background:#e2e8f0; font-weight:800; text-align:left; cursor:pointer;" onclick="toggleSummaryGroup('${groupId}')">
+          <td colspan="25" style="background:#e2e8f0; font-weight:800; text-align:left; cursor:pointer;" onclick="toggleSummaryGroup('${groupId}')">
             <span id="sumToggle_${groupId}" style="display:inline-block; width:20px;">${summaryCollapsedState[groupId] ? '+' : '-'}</span>SUBCON: ${subUpper}
           </td>
         </tr>`;
@@ -852,6 +944,7 @@
                   >
                 ` : `<span>${formatNumOrDash(totalD365)}</span>`}
               </td>
+              <td>${r.total || '-'}</td>
               <td>${diffQty === null ? '-' : formatNumOrDash(diffQty)}</td>
               <td>${r.boh || '-'}</td>
               <td>${r.supply || '-'}</td>
@@ -879,7 +972,7 @@
         if (!gRows.length) {
           html += `
             <tr data-summary-group="${groupId}" style="${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
-              <td colspan="24" class="text-center" style="color:#64748b;">No data submitted</td>
+              <td colspan="25" class="text-center" style="color:#64748b;">No data submitted</td>
             </tr>
           `;
         }
@@ -888,7 +981,7 @@
         const accPct = safePct(okItem, totalItem);
         html += `
           <tr data-summary-group="${groupId}" style="background:#f8fafc; font-weight:700; ${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
-            <td colspan="16" style="text-align:right;">Total (${subUpper})</td>
+            <td colspan="17" style="text-align:right;">Total (${subUpper})</td>
             <td>${formatNumOrDash(sumTotalD365)}</td>
             <td>${formatNumOrDash(sumTotalSubc)}</td>
             <td>${qtyPct}</td>
@@ -1284,6 +1377,7 @@
           'File No.': textOrDash(r.fileNo),
           'D365 code': d365Code.text,
           "D365 Q'ty": d365Qty || '',
+          Actual: textOrDash(r.total),
           Diff: d365Diff === null ? '' : d365Diff,
           BOH: textOrDash(r.boh),
           Supply: textOrDash(r.supply),
@@ -1293,7 +1387,7 @@
           OK: textOrDash(r.confirmOk),
           Hold: textOrDash(r.confirmHold),
           Total: textOrDash(r.total),
-          'Diff (Subcon)': textOrDash(r.diff),
+          'Delta +/-': textOrDash(r.diff),
           Remark: textOrDash(r.remark),
           SUBC: textOrDash(String(r.subcon || '').toUpperCase()),
           Plant: getSummaryRowPlant(r),
@@ -1830,10 +1924,15 @@
         const allSubcons = (dashRes && dashRes.ok)
           ? Array.from(new Set((dashRes.statusRows || []).map(x => String(x.subcon || '').trim()).filter(Boolean)))
           : Array.from(new Set((currentUser.subconList || []).map(s => String(s || '').trim()).filter(Boolean)));
-        summaryRowsState = filterRowsByActivePlant(buildSummaryRows(res.rows || [], allSubcons));
+        const reportRows = res.rows || [];
+        const subconsWithDataThisMonth = new Set(reportRows.map((row) => String(row.subcon || '').trim().toUpperCase()).filter(Boolean));
+        const visibleSummarySubcons = allSubcons.filter((subcon) =>
+          !isRetiredSubcon(subcon) || subconsWithDataThisMonth.has(String(subcon || '').trim().toUpperCase())
+        );
+        summaryRowsState = filterRowsByActivePlant(buildSummaryRows(reportRows, visibleSummarySubcons));
         summaryAllSubconsState = isPlantScopedPage()
           ? Array.from(new Set(summaryRowsState.map((row) => String(row.subcon || '').trim()).filter(Boolean)))
-          : allSubcons;
+          : visibleSummarySubcons;
         setSummaryDirtyState(false);
         updateSummaryFilterHeaderState();
         renderSummaryTop(summaryRowsState);
@@ -2433,6 +2532,7 @@
         }
         await refreshPromise;
         await dashPromise;
+        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend(true);
       });
       document.getElementById('dashboardMonthInput').addEventListener('change', async (e) => {
         const v = (e.target.value || '').trim();
@@ -2453,6 +2553,7 @@
         }
         await refreshPromise;
         await dashPromise;
+        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend(true);
       });
       document.getElementById('deadlineYearInput').addEventListener('change', () => {
         renderDeadlineGrid();
