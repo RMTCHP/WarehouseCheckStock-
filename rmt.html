@@ -33,9 +33,15 @@
   <main class="content">
     <div id="pageHeader">
       <div class="section-title" id="dashboardTitle">RMT Dashboard (Monthly Inventory)</div>
-      <div class="dashboard-month-box">
-        <label for="dashboardMonthInput">Month</label>
-        <input id="dashboardMonthInput" type="month" class="form-control" />
+      <div class="dashboard-header-actions">
+        <div class="dashboard-month-box">
+          <label for="dashboardMonthInput">Month</label>
+          <input id="dashboardMonthInput" type="month" class="form-control" />
+        </div>
+        <div id="dashboardDeadlineStatus" class="dashboard-deadline">Deadline: -</div>
+        <button class="btn btn-secondary btn-sm dashboard-refresh-btn" title="Refresh Dashboard" onclick="refreshDashboard()">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
       </div>
     </div>
 
@@ -74,13 +80,6 @@
       <div id="dashLoading" class="dash-loading">
         <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
         <span>Loading Dashboard...</span>
-      </div>
-
-      <div class="quick-actions">
-        <div id="dashboardDeadlineStatus" class="dashboard-deadline">Deadline: -</div>
-        <button class="btn btn-secondary btn-sm" title="Refresh Dashboard" onclick="refreshDashboard()">
-          <i class="fa-solid fa-rotate-right"></i>
-        </button>
       </div>
 
       <div class="card dashboard-display-card">

@@ -311,7 +311,34 @@
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-              legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true, font: { size: 11, weight: '700' } } },
+              legend: {
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  font: { size: 11, weight: '700' },
+                  generateLabels: (chart) => series.map((entry, index) => {
+                    const datasetIndex = index * 2;
+                    const color = getTrendSeriesColor(index);
+                    return {
+                      text: String(entry.subcon || '').toUpperCase(),
+                      fillStyle: color,
+                      strokeStyle: color,
+                      lineWidth: 1,
+                      hidden: !chart.isDatasetVisible(datasetIndex),
+                      datasetIndex
+                    };
+                  })
+                },
+                onClick: (_, legendItem, legend) => {
+                  const chart = legend.chart;
+                  const totalIndex = legendItem.datasetIndex;
+                  const nextVisible = !chart.isDatasetVisible(totalIndex);
+                  chart.setDatasetVisibility(totalIndex, nextVisible);
+                  chart.setDatasetVisibility(totalIndex + 1, nextVisible);
+                  chart.update();
+                }
+              },
               tooltip: {
                 callbacks: {
                   label: (ctx) => ctx.dataset.yAxisID === 'yAccuracy'
