@@ -1,5 +1,5 @@
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvFbJKcfHfCbZ6ECA6twYpcNpD7S6YW5sDhZLEDgYH3kuh3Nf9NAjb0gJHKjpePl8/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9eoC9pV-OphIJDUI00KWNYTSm1DFTuj3ox8lZ-QSGXVefEA/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const RMT_PAGE_CONFIG = window.RMT_PAGE_CONFIG || {};
@@ -97,7 +97,13 @@
       const res = await fetch(SCRIPT_URL + '?action=' + encodeURIComponent(action), {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
       });
-      return res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        // Apps Script can return an HTML error page after a server-side timeout.
+        throw new Error(`The data service returned an invalid response (${res.status}).`);
+      }
     }
 
     function safeNum(v) {
@@ -307,7 +313,7 @@
       document.getElementById('dashboardTrendPanel')?.classList.toggle('hidden', !isTrend);
       document.getElementById('dashboardTabStatus')?.classList.toggle('active', !isTrend);
       document.getElementById('dashboardTabTrend')?.classList.toggle('active', isTrend);
-      if (isTrend) loadRmtTotalTrend(true);
+      if (isTrend) loadRmtTotalTrend();
     }
 
     async function loadRmtTotalTrend(force = false) {
@@ -2626,7 +2632,7 @@
         }
         await refreshPromise;
         await dashPromise;
-        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend(true);
+        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend();
       });
       document.getElementById('dashboardMonthInput').addEventListener('change', async (e) => {
         const v = (e.target.value || '').trim();
@@ -2647,10 +2653,10 @@
         }
         await refreshPromise;
         await dashPromise;
-        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend(true);
+        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend();
       });
       document.getElementById('rmtTrendYearSelect').addEventListener('change', () => {
-        if (dashboardDisplayPanel === 'trend') loadRmtTotalTrend(true);
+        if (dashboardDisplayPanel === 'trend') loadRmtTotalTrend();
       });
       document.getElementById('deadlineYearInput').addEventListener('change', () => {
         renderDeadlineGrid();
