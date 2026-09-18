@@ -19,6 +19,9 @@
     let summaryAllSubconsState = [];
     let rmtTotalTrendChart = null;
     let rmtTrendCache = {};
+    let rmtTrendSeriesState = [];
+    let rmtTrendSubconVisibility = {};
+    let rmtTrendMetricVisibility = { total: true, accuracy: true };
     let dashboardDisplayPanel = 'status';
     let summaryTopCollapsedState = { subcon: true, plant: true };
     let summaryQtyOverrideState = {};
@@ -237,13 +240,64 @@
     }
 
     function getDashboardTrendYear() {
+      const selectedYear = Number(document.getElementById('rmtTrendYearSelect')?.value || 0);
+      if (selectedYear) return selectedYear;
       const month = String(document.getElementById('dashboardMonthInput')?.value || document.getElementById('monthInput')?.value || '');
       return Number(month.slice(0, 4)) || new Date().getFullYear();
+    }
+
+    function initRmtTrendYearSelect() {
+      const select = document.getElementById('rmtTrendYearSelect');
+      if (!select) return;
+      const currentYear = new Date().getFullYear();
+      const startYear = Math.min(2020, currentYear);
+      const years = Array.from({ length: currentYear - startYear + 2 }, (_, index) => currentYear + 1 - index);
+      select.innerHTML = years.map((year) => `<option value="${year}">${year}</option>`).join('');
+      select.value = String(currentYear);
     }
 
     function getTrendSeriesColor(index) {
       const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#4f46e5', '#65a30d', '#c2410c', '#be123c'];
       return colors[index % colors.length];
+    }
+
+    function renderRmtTrendControls() {
+      const legend = document.getElementById('rmtTrendSubconLegend');
+      if (legend) {
+        legend.innerHTML = rmtTrendSeriesState.map((entry, index) => {
+          const subcon = String(entry.subcon || '').toUpperCase();
+          const active = rmtTrendSubconVisibility[subcon] !== false;
+          return `<button class="rmt-trend-subcon-toggle ${active ? '' : 'inactive'}" type="button" onclick='toggleRmtTrendSubcon(${JSON.stringify(subcon)})'>
+            <span class="rmt-trend-subcon-dot" style="background:${getTrendSeriesColor(index)};"></span>${subcon}
+          </button>`;
+        }).join('');
+      }
+      document.getElementById('rmtTrendTotalToggle')?.classList.toggle('active', rmtTrendMetricVisibility.total);
+      document.getElementById('rmtTrendAccuracyToggle')?.classList.toggle('active', rmtTrendMetricVisibility.accuracy);
+    }
+
+    function applyRmtTrendVisibility() {
+      if (!rmtTotalTrendChart) return;
+      rmtTrendSeriesState.forEach((entry, index) => {
+        const subcon = String(entry.subcon || '').toUpperCase();
+        const isSubconVisible = rmtTrendSubconVisibility[subcon] !== false;
+        rmtTotalTrendChart.setDatasetVisibility(index * 2, isSubconVisible && rmtTrendMetricVisibility.total);
+        rmtTotalTrendChart.setDatasetVisibility(index * 2 + 1, isSubconVisible && rmtTrendMetricVisibility.accuracy);
+      });
+      rmtTotalTrendChart.update();
+      renderRmtTrendControls();
+    }
+
+    function toggleRmtTrendSubcon(subcon) {
+      const key = String(subcon || '').toUpperCase();
+      rmtTrendSubconVisibility[key] = rmtTrendSubconVisibility[key] === false;
+      applyRmtTrendVisibility();
+    }
+
+    function toggleRmtTrendMetric(metric) {
+      if (metric !== 'total' && metric !== 'accuracy') return;
+      rmtTrendMetricVisibility[metric] = !rmtTrendMetricVisibility[metric];
+      applyRmtTrendVisibility();
     }
 
     function switchDashboardPanel(panel) {
@@ -273,6 +327,11 @@
         }
         if (!result?.ok) throw new Error(result?.message || 'Unable to load total trend');
         const series = (result.series || []).filter((entry) => !isRetiredSubcon(entry.subcon));
+        rmtTrendSeriesState = series;
+        series.forEach((entry) => {
+          const subcon = String(entry.subcon || '').toUpperCase();
+          if (typeof rmtTrendSubconVisibility[subcon] === 'undefined') rmtTrendSubconVisibility[subcon] = true;
+        });
         if (rmtTotalTrendChart) rmtTotalTrendChart.destroy();
         rmtTotalTrendChart = new Chart(canvas, {
           type: 'bar',
@@ -300,6 +359,8 @@
                 borderWidth: 2,
                 pointRadius: 3,
                 pointHoverRadius: 5,
+                // Keep 100% markers fully visible above the chart boundary.
+                clip: 6,
                 tension: 0.25,
                 fill: false,
                 yAxisID: 'yAccuracy'
@@ -311,34 +372,7 @@
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  boxWidth: 12,
-                  usePointStyle: true,
-                  font: { size: 11, weight: '700' },
-                  generateLabels: (chart) => series.map((entry, index) => {
-                    const datasetIndex = index * 2;
-                    const color = getTrendSeriesColor(index);
-                    return {
-                      text: String(entry.subcon || '').toUpperCase(),
-                      fillStyle: color,
-                      strokeStyle: color,
-                      lineWidth: 1,
-                      hidden: !chart.isDatasetVisible(datasetIndex),
-                      datasetIndex
-                    };
-                  })
-                },
-                onClick: (_, legendItem, legend) => {
-                  const chart = legend.chart;
-                  const totalIndex = legendItem.datasetIndex;
-                  const nextVisible = !chart.isDatasetVisible(totalIndex);
-                  chart.setDatasetVisibility(totalIndex, nextVisible);
-                  chart.setDatasetVisibility(totalIndex + 1, nextVisible);
-                  chart.update();
-                }
-              },
+              legend: { display: false },
               tooltip: {
                 callbacks: {
                   label: (ctx) => ctx.dataset.yAxisID === 'yAccuracy'
@@ -360,6 +394,7 @@
             }
           }
         });
+        applyRmtTrendVisibility();
       } catch (e) {
         loading.textContent = e.message || 'Unable to load total trend';
         return;
@@ -2569,6 +2604,7 @@
 
       document.getElementById('monthInput').value = getCurrentMonthValue();
       syncDashboardMonthInput();
+      initRmtTrendYearSelect();
 
       const sel = document.getElementById('subconSelect');
       sel.innerHTML = '<option value="__LOADING__" selected>Loading subcons...</option>';
@@ -2612,6 +2648,9 @@
         await refreshPromise;
         await dashPromise;
         if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend(true);
+      });
+      document.getElementById('rmtTrendYearSelect').addEventListener('change', () => {
+        if (dashboardDisplayPanel === 'trend') loadRmtTotalTrend(true);
       });
       document.getElementById('deadlineYearInput').addEventListener('change', () => {
         renderDeadlineGrid();

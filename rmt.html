@@ -103,6 +103,15 @@
               <div class="card-title mb-0">Total Trend</div>
               <div id="rmtTrendYearLabel" class="dashboard-trend-sub">-</div>
             </div>
+            <div class="trend-year-picker">
+              <label for="rmtTrendYearSelect">Year</label>
+              <select id="rmtTrendYearSelect" class="form-select form-select-sm" aria-label="Total trend year"></select>
+            </div>
+          </div>
+          <div id="rmtTrendSubconLegend" class="rmt-trend-subcon-legend" aria-label="Subcon visibility"></div>
+          <div class="rmt-trend-metric-controls" aria-label="Metric visibility">
+            <button id="rmtTrendTotalToggle" class="trend-metric-toggle active" type="button" onclick="toggleRmtTrendMetric('total')">Total</button>
+            <button id="rmtTrendAccuracyToggle" class="trend-metric-toggle active" type="button" onclick="toggleRmtTrendMetric('accuracy')">%Accuracy</button>
           </div>
           <div id="rmtTrendLoading" class="dashboard-trend-loading hidden">Loading total trend...</div>
           <div class="dashboard-trend-chart-wrap">
