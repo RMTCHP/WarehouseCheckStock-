@@ -130,6 +130,32 @@
       const s = String(v ?? '').trim();
       return s ? s : '-';
     }
+
+    // Keep spreadsheet calculations usable: visible numeric values must remain
+    // numeric cells in the XLSX export, not formatted text such as "16,547".
+    function excelNumberOrBlank(v) {
+      const raw = String(v ?? '').trim();
+      if (!raw || raw === '-') return '';
+      const n = Number(raw.replace(/,/g, ''));
+      return Number.isFinite(n) ? n : '';
+    }
+
+    function formatSummaryExportNumbers(ws) {
+      if (!ws || !ws['!ref']) return;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const numericHeaders = new Set([
+        'Item', "D365 Q'ty", 'Actual', 'Diff', 'BOH', 'Supply', 'Delivery',
+        'NG', 'EOH', 'OK', 'Hold', 'Total', 'Delta +/-'
+      ]);
+      for (let col = range.s.c; col <= range.e.c; col += 1) {
+        const header = ws[XLSX.utils.encode_cell({ r: 0, c: col })]?.v;
+        if (!numericHeaders.has(header)) continue;
+        for (let row = 1; row <= range.e.r; row += 1) {
+          const cell = ws[XLSX.utils.encode_cell({ r: row, c: col })];
+          if (cell && typeof cell.v === 'number') cell.z = '#,##0;[Red]-#,##0;-';
+        }
+      }
+    }
     function toSummaryRowKey(row = {}) {
       return [
         String(row.subcon || '').trim().toUpperCase(),
@@ -1475,18 +1501,18 @@
           Item: idx + 1,
           'File No.': textOrDash(r.fileNo),
           'D365 code': d365Code.text,
-          "D365 Q'ty": d365Qty || '',
-          Actual: textOrDash(r.total),
+          "D365 Q'ty": excelNumberOrBlank(d365Qty),
+          Actual: excelNumberOrBlank(r.total),
           Diff: d365Diff === null ? '' : d365Diff,
-          BOH: textOrDash(r.boh),
-          Supply: textOrDash(r.supply),
-          Delivery: textOrDash(r.delivery),
-          NG: textOrDash(r.ng),
-          EOH: textOrDash(r.eoh),
-          OK: textOrDash(r.confirmOk),
-          Hold: textOrDash(r.confirmHold),
-          Total: textOrDash(r.total),
-          'Delta +/-': textOrDash(r.diff),
+          BOH: excelNumberOrBlank(r.boh),
+          Supply: excelNumberOrBlank(r.supply),
+          Delivery: excelNumberOrBlank(r.delivery),
+          NG: excelNumberOrBlank(r.ng),
+          EOH: excelNumberOrBlank(r.eoh),
+          OK: excelNumberOrBlank(r.confirmOk),
+          Hold: excelNumberOrBlank(r.confirmHold),
+          Total: excelNumberOrBlank(r.total),
+          'Delta +/-': excelNumberOrBlank(r.diff),
           Remark: textOrDash(r.remark),
           SUBC: textOrDash(String(r.subcon || '').toUpperCase()),
           Plant: getSummaryRowPlant(r),
@@ -1613,6 +1639,7 @@
       const wb = XLSX.utils.book_new();
       const wsTop = XLSX.utils.json_to_sheet(topRows);
       const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+      formatSummaryExportNumbers(wsDetail);
       XLSX.utils.book_append_sheet(wb, wsTop, 'Summary Top');
       XLSX.utils.book_append_sheet(wb, wsDetail, 'Summary Detail');
       const stamp = new Date();
