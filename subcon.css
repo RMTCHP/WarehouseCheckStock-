@@ -378,6 +378,16 @@
       border-left-color: #ef7d7a;
       color: #a54542;
     }
+    .status-countdown {
+      min-height: 18px;
+      margin-top: 8px;
+      color: #a54542;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(140px, 1fr));

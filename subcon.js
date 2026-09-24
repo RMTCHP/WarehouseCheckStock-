@@ -122,6 +122,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
       const card = document.querySelector('.status-card');
       const chip = document.getElementById('submissionStatusChip');
       const dateEl = document.getElementById('submissionStatusDate');
+      const countdownEl = document.getElementById('submissionStatusCountdown');
       if (!card || !chip || !dateEl) return;
       const hasDate = !!String(currentDeadlineDate || '').trim();
       const dateText = hasDate ? formatDeadlineDateDisplay(currentDeadlineDate) : 'not set';
@@ -135,6 +136,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
         chip.textContent = 'Locked';
       }
       dateEl.textContent = `Final submission date: ${dateText}`;
+      if (countdownEl && (!editAllowed || !hasDate)) countdownEl.textContent = '';
       syncDashboardTopRowHeights();
     }
 
@@ -1688,6 +1690,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
       });
       const note = document.getElementById('deadlineNote');
       const countdown = document.getElementById('deadlineCountdown');
+      const statusCountdown = document.getElementById('submissionStatusCountdown');
       const box = document.getElementById('deadlineBox');
       if (editAllowed) {
         note.className = 'deadline-note open';
@@ -1698,6 +1701,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
             const end = deadlineEndTime(currentDeadlineDate);
             if (!Number.isFinite(end)) {
               countdown.textContent = '';
+              if (statusCountdown) statusCountdown.textContent = '';
               return;
             }
             const now = Date.now();
@@ -1712,18 +1716,22 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
             const h = Math.floor((sec % 86400) / 3600);
             const m = Math.floor((sec % 3600) / 60);
             const s = sec % 60;
-            countdown.textContent = `${String(d).padStart(2, '0')}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+            const remaining = `${String(d).padStart(2, '0')}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+            countdown.textContent = remaining;
+            if (statusCountdown) statusCountdown.textContent = `Remaining: ${remaining}`;
           };
           tick();
           deadlineTimer = setInterval(tick, 1000);
         } else {
           countdown.textContent = '';
+          if (statusCountdown) statusCountdown.textContent = '';
         }
       } else {
         note.className = 'deadline-note lock';
         if (box) box.className = 'deadline-box lock';
         note.textContent = currentDeadlineDate ? `Locked (deadline: ${formatDeadlineDateDisplay(currentDeadlineDate)})` : 'Locked by monthly deadline';
         countdown.textContent = '';
+        if (statusCountdown) statusCountdown.textContent = '';
       }
       renderDashboardSubmissionStatus();
     }
