@@ -1,4 +1,4 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9eoC9pV-OphIJDUI00KWNYTSm1DFTuj3ox8lZ-QSGXVefEA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx0Li6kgmz-LeOjs9CEa09eydFWmamNrS49wNV81st8tPWBs/exec';
     const SESSION_KEY = 'subcon_auth';
     let currentUser = null;
     let editAllowed = true;
@@ -8,7 +8,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
     let trendYear = new Date().getFullYear();
     let dashboardMonthlyMetricsState = [];
     let dashboardTrendCache = {};
-    let dashboardDetailCache = {};
     let monthDataCache = {};
     let isDirty = false;
     let isLoadingReport = false;
@@ -54,7 +53,13 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
       const res = await fetch(SCRIPT_URL + '?action=' + encodeURIComponent(action), {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
       });
-      return res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        // Apps Script returns HTML for execution failures and timeouts.
+        throw new Error(`The data service returned an invalid response (${res.status}).`);
+      }
     }
 
     function safeNum(v) {
@@ -76,10 +81,21 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
 
     function formatDeadlineDateDisplay(v) {
       const s = String(v || '').trim();
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      const [y, m, d] = s.split('-').map(Number);
+      const match = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):\d{2}(?::\d{2})?)?$/);
+      if (!match) return s;
+      const [, y, m, d, hour] = match;
       const dt = new Date(y, m - 1, d);
-      return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const date = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      return `${date}${hour ? ` ${hour}:00` : ''}`;
+    }
+
+    function deadlineEndTime(v) {
+      const s = String(v || '').trim();
+      const match = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):\d{2}(?::\d{2})?)?$/);
+      if (!match) return NaN;
+      const [, y, m, d, hour] = match;
+      // Date-only values were created before hourly deadlines and end at 23:59:59.
+      return new Date(Number(y), Number(m) - 1, Number(d), hour === undefined ? 23 : Number(hour), hour === undefined ? 59 : 0, hour === undefined ? 59 : 0).getTime();
     }
     function buildTimestampForFileName() {
       const now = new Date();
@@ -264,20 +280,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
         throw error;
       }
     }
-    async function fetchDashboardMonthSummaryDetail(monthKey, force = false) {
-      const cacheKey = String(monthKey || '').trim();
-      if (!cacheKey) return null;
-      if (!force && dashboardDetailCache[cacheKey]) return dashboardDetailCache[cacheKey];
-      dashboardDetailCache[cacheKey] = (async () => {
-        return await api('getSubconMonthSummaryDetail', { month: cacheKey, username: currentUser.username });
-      })();
-      try {
-        return await dashboardDetailCache[cacheKey];
-      } catch (error) {
-        delete dashboardDetailCache[cacheKey];
-        throw error;
-      }
-    }
     async function fetchMonthData(month, force = false) {
       const cacheKey = String(month || '').trim();
       if (!cacheKey) return null;
@@ -303,61 +305,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
         Number(m.diffItem || 0) !== 0
       );
     }
-    async function buildDashboardTrendFallback(year, force = false) {
-      const months = buildYearMonths(year);
-      const detailResults = await Promise.all(months.map(async (monthKey) => {
-        try {
-          const res = await fetchDashboardMonthSummaryDetail(monthKey, force);
-          if (!res || !res.ok || !res.summary) {
-            return {
-              month: monthKey,
-              total: 0,
-              totalItem: 0,
-              okItem: 0,
-              diffItem: 0,
-              accuracy: 0
-            };
-          }
-          const summary = res.summary || {};
-          return {
-            month: monthKey,
-            total: Number(summary.totalSubc || 0),
-            totalItem: Number(summary.totalItem || 0),
-            okItem: Number(summary.okItem || 0),
-            diffItem: Number(summary.diffItem || 0),
-            accuracy: Number(summary.accuracy || 0)
-          };
-        } catch (_) {
-          return {
-            month: monthKey,
-            total: 0,
-            totalItem: 0,
-            okItem: 0,
-            diffItem: 0,
-            accuracy: 0
-          };
-        }
-      }));
-      return {
-        totals: detailResults.map((m) => Number(m.total || 0)),
-        months: detailResults
-      };
-    }
     async function resolveDashboardTrendPayload(year, force = false) {
-      let trendData = null;
       try {
-        trendData = await fetchDashboardTrendData(year, force);
+        return await fetchDashboardTrendData(year, force);
       } catch (_) {
-        trendData = null;
+        return { totals: Array(12).fill(0), months: [] };
       }
-      // Some deployed Apps Script versions can return an empty annual trend
-      // while month detail data exists. Fall back once, then retain it locally.
-      if (!hasMeaningfulTrendPayload(trendData)) {
-        const fallback = await buildDashboardTrendFallback(year, force);
-        dashboardTrendCache[String(year || '')] = Promise.resolve(fallback);
-        return fallback;
-      }
-      return trendData;
     }
     function getAccuracyScoreText(accuracyValue, hasData = true) {
       if (!hasData) return '-';
@@ -982,21 +935,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
           renderDashboardKpiFromRows([]);
         }
 
-        const trendMissing = !hasMeaningfulTrendPayload(trendData);
-        const accuracyMissing = !hasMeaningfulTrendPayload(accuracyData);
-        if (trendMissing || accuracyMissing) {
-          const fallback = await buildDashboardTrendFallback(accuracyYear, force);
-          dashboardTrendCache[String(accuracyYear || '')] = Promise.resolve(fallback);
-          if (currentTrendYear === accuracyYear) {
-            trendData = fallback;
-            accuracyData = fallback;
-          } else {
-            accuracyData = fallback;
-            if (trendMissing) {
-              trendData = await buildDashboardTrendFallback(currentTrendYear, force);
-            }
-          }
-        }
+        // An empty annual response is valid for years with no report data.
+        // Do not fan out into 12 month-detail requests in that case.
+        if (!hasMeaningfulTrendPayload(trendData)) trendData = { totals: Array(12).fill(0), months: [] };
+        if (!hasMeaningfulTrendPayload(accuracyData)) accuracyData = { totals: Array(12).fill(0), months: [] };
 
         renderYearTrendChart(
           currentTrendYear,
@@ -1469,7 +1411,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
         await Swal.fire(swalTheme({ icon: 'success', title: rows.length ? 'Data saved successfully' : 'All data cleared successfully' }));
         clearDirty();
         dashboardTrendCache = {};
-        dashboardDetailCache = {};
         monthDataCache = {};
         lastUpdatedText = rows.length ? new Date().toLocaleString('en-GB') : '-';
         loadReport(true, true);
@@ -1712,7 +1653,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
         }
         updateMonthlyTitle();
         if (!document.getElementById('addDataView').classList.contains('hidden')) loadReport();
-        if (!document.getElementById('dashboardView').classList.contains('hidden')) loadDashboardPanels(true, true);
+        if (!document.getElementById('dashboardView').classList.contains('hidden')) loadDashboardPanels(true, false);
       });
       updateMonthlyTitle();
       bindExcelKeys();
@@ -1754,11 +1695,16 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9
         note.textContent = currentDeadlineDate ? `Final submission date: ${formatDeadlineDateDisplay(currentDeadlineDate)}` : 'Final submission date: not set';
         if (currentDeadlineDate) {
           const tick = () => {
-            const end = new Date(currentDeadlineDate + 'T23:59:59').getTime();
+            const end = deadlineEndTime(currentDeadlineDate);
+            if (!Number.isFinite(end)) {
+              countdown.textContent = '';
+              return;
+            }
             const now = Date.now();
             const ms = end - now;
             if (ms <= 0) {
-              countdown.textContent = '00d 00h 00m 00s';
+              // Lock immediately even when the page remains open at the cutoff.
+              setEditMode(false, currentDeadlineDate);
               return;
             }
             const sec = Math.floor(ms / 1000);

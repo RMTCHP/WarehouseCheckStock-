@@ -1,5 +1,5 @@
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoho9Al9UNeRp9NhNU9eoC9pV-OphIJDUI00KWNYTSm1DFTuj3ox8lZ-QSGXVefEA/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx0Li6kgmz-LeOjs9CEa09eydFWmamNrS49wNV81st8tPWBs/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const RMT_PAGE_CONFIG = window.RMT_PAGE_CONFIG || {};
@@ -224,14 +224,24 @@
 
     function formatDashboardDate(v) {
       const s = String(v || '').trim();
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      const [y, m, d] = s.split('-').map(Number);
+      const match = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):\d{2}(?::\d{2})?)?$/);
+      if (!match) return s;
+      const [, y, m, d, hour] = match;
       const dt = new Date(y, m - 1, d);
       if (isNaN(dt.getTime())) return s;
       const day = String(dt.getDate()).padStart(2, '0');
       const mon = dt.toLocaleDateString('en-US', { month: 'short' });
       const year = dt.getFullYear();
-      return `${day}-${mon}-${year}`;
+      return `${day}-${mon}-${year}${hour ? ` ${hour}:00` : ''}`;
+    }
+
+    function deadlineEndTime(v) {
+      const s = String(v || '').trim();
+      const match = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):\d{2}(?::\d{2})?)?$/);
+      if (!match) return NaN;
+      const [, y, m, d, hour] = match;
+      // Legacy date-only values retain their original end-of-day behavior.
+      return new Date(Number(y), Number(m) - 1, Number(d), hour === undefined ? 23 : Number(hour), hour === undefined ? 59 : 0, hour === undefined ? 59 : 0).getTime();
     }
 
     function renderDashboardDeadline(month) {
@@ -243,9 +253,9 @@
         return;
       }
       const ddDisplay = formatDashboardDate(dd);
-      const end = new Date(dd + 'T23:59:59');
+      const end = deadlineEndTime(dd);
       const now = new Date();
-      const closed = Number.isFinite(end.getTime()) ? now > end : false;
+      const closed = Number.isFinite(end) ? now.getTime() > end : false;
       const chipClass = closed ? 'closed' : 'open';
       const chipText = closed ? 'CLOSED' : 'OPEN';
       el.innerHTML = `Deadline: <span>${ddDisplay}</span> <span class="chip ${chipClass}">${chipText}</span>`;
@@ -402,14 +412,24 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
+            interaction: { mode: 'nearest', intersect: false },
             plugins: {
               legend: { display: false },
               tooltip: {
+                displayColors: false,
                 callbacks: {
-                  label: (ctx) => ctx.dataset.yAxisID === 'yAccuracy'
-                    ? `${ctx.dataset.label}: ${Number(ctx.raw || 0).toFixed(2)}%`
-                    : `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString('en-US')}`
+                  label: (ctx) => {
+                    const pairStart = Math.floor(ctx.datasetIndex / 2) * 2;
+                    const totalDataset = ctx.chart.data.datasets[pairStart] || {};
+                    const accuracyDataset = ctx.chart.data.datasets[pairStart + 1] || {};
+                    const subcon = String(totalDataset.label || '').replace(/\s+Total$/, '') || 'Subcon';
+                    const total = Number((totalDataset.data || [])[ctx.dataIndex] || 0);
+                    const accuracy = Number((accuracyDataset.data || [])[ctx.dataIndex] || 0);
+                    return [
+                      `${subcon} Total: ${total.toLocaleString('en-US')}`,
+                      `${subcon} %Accuracy: ${accuracy.toFixed(2)}%`
+                    ];
+                  }
                 }
               }
             },
@@ -752,10 +772,14 @@
     }
 
     function formatDeadlineDate(v) {
-      if (!v) return 'Not set';
-      const d = new Date(v);
+      const raw = String(v || '').trim();
+      if (!raw) return 'Not set';
+      const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):\d{2}(?::\d{2})?)?$/);
+      if (!match) return raw;
+      const [, y, m, day, hour] = match;
+      const d = new Date(Number(y), Number(m) - 1, Number(day));
       if (isNaN(d.getTime())) return v;
-      return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+      return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}${hour ? ` ${hour}:00` : ''}`;
     }
 
     function safePct(a, b) {
@@ -2019,14 +2043,16 @@
       if (!month) return;
       Swal.fire(swalLoading('Loading summary report...'));
       try {
-        const [res, mapRes, dashRes, d365Res, overrideRes] = await Promise.all([
-          api('getReport', { month, subcon: 'ALL', role: currentUser.role, username: currentUser.username }),
-          api('listFileNoMap', { username: currentUser.username }),
-          api('getDashboard', { month, username: currentUser.username }),
-          api('getD365Substock', { month, username: currentUser.username }),
-          api('getSummaryD365QtyOverrides', { month, username: currentUser.username })
-        ]);
+        const summaryRes = await api('getSummaryReportData', { month, username: currentUser.username });
         Swal.close();
+        if (!summaryRes || !summaryRes.ok) {
+          return Swal.fire(swalTheme({ icon: 'error', title: summaryRes?.message || 'Failed to load summary report' }));
+        }
+        const res = summaryRes.report || {};
+        const mapRes = summaryRes.map || {};
+        const dashRes = summaryRes.dashboard || {};
+        const d365Res = summaryRes.d365 || {};
+        const overrideRes = summaryRes.overrides || {};
         if (!res.ok) return Swal.fire(swalTheme({ icon: 'error', title: res.message || 'Failed to load summary report' }));
         if (mapRes && mapRes.ok) hydrateFileNoMap(mapRes.rows || []);
         summaryQtyOverrideState = {};
@@ -2322,16 +2348,24 @@
     async function openDeadlineSwal(monthKey) {
       const currentVal = deadlineState[monthKey] || '';
       const [yy, mm] = (monthKey || '').split('-').map(Number);
-      const defaultDate = currentVal || `${monthKey}-01`;
+      const currentMatch = String(currentVal).match(/^(\d{4}-\d{2}-\d{2})(?:T(\d{2}):\d{2}(?::\d{2})?)?$/);
+      const defaultDate = currentMatch ? currentMatch[1] : `${monthKey}-01`;
+      const defaultHour = currentMatch ? (currentMatch[2] || '23') : '23';
       const monthStart = `${monthKey}-01`;
       const monthEnd = `${monthKey}-${String(new Date(yy, mm, 0).getDate()).padStart(2, '0')}`;
+      const hourOptions = Array.from({ length: 24 }, (_, hour) => {
+        const value = String(hour).padStart(2, '0');
+        return `<option value="${value}" ${value === defaultHour ? 'selected' : ''}>${value}:00</option>`;
+      }).join('');
       const rs = await Swal.fire(swalTheme({
         title: `Set deadline (${monthKeyToShortLabel(monthKey)})`,
         html: `
           <input id="swDeadlineDate" type="hidden" value="${currentVal}">
           <div class="deadline-modal-wrap">
-            <div class="deadline-modal-note">Select the final submission date for this month.</div>
+            <div class="deadline-modal-note">Select the final submission date and hour for all Subcons.</div>
             <div id="swDeadlineCalendar"></div>
+            <label class="deadline-hour-label" for="swDeadlineHour">Final submission hour</label>
+            <select id="swDeadlineHour" class="form-select deadline-hour-select">${hourOptions}</select>
           </div>
         `,
         customClass: {
@@ -2359,7 +2393,11 @@
           });
           if (!currentVal) document.getElementById('swDeadlineDate').value = '';
         },
-        preConfirm: () => (document.getElementById('swDeadlineDate').value || '').trim()
+        preConfirm: () => {
+          const date = (document.getElementById('swDeadlineDate').value || '').trim();
+          const hour = (document.getElementById('swDeadlineHour').value || '').trim();
+          return date && /^\d{2}$/.test(hour) ? `${date}T${hour}:00:00` : '';
+        }
       }));
       if (rs.isConfirmed) {
         deadlineState[monthKey] = rs.value || '';
@@ -2423,7 +2461,6 @@
         loadUsers();
       }
       if (isSummary) {
-        refreshSubconOptions();
         loadSummaryReport();
       }
       if (isD365Substock) {
@@ -2651,15 +2688,13 @@
           if (m) await loadD365Substock(m);
         }
         updateDashboardTitle();
-        const dashPromise = loadDashboard(true);
-        const refreshPromise = refreshSubconOptions();
-        if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
-          loadReport();
-          loadSummaryReport();
+        const dashboardActive = !document.getElementById('dashboardView').classList.contains('hidden');
+        const summaryActive = !document.getElementById('summaryView').classList.contains('hidden');
+        if (dashboardActive) {
+          await loadDashboard(true);
+          if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend();
         }
-        await refreshPromise;
-        await dashPromise;
-        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend();
+        if (summaryActive) await loadSummaryReport();
       });
       document.getElementById('dashboardMonthInput').addEventListener('change', async (e) => {
         const v = (e.target.value || '').trim();
@@ -2672,15 +2707,13 @@
           if (m) await loadD365Substock(m);
         }
         updateDashboardTitle();
-        const dashPromise = loadDashboard(true);
-        const refreshPromise = refreshSubconOptions();
-        if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
-          loadReport();
-          loadSummaryReport();
+        const dashboardActive = !document.getElementById('dashboardView').classList.contains('hidden');
+        const summaryActive = !document.getElementById('summaryView').classList.contains('hidden');
+        if (dashboardActive) {
+          await loadDashboard(true);
+          if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend();
         }
-        await refreshPromise;
-        await dashPromise;
-        if (dashboardDisplayPanel === 'trend') await loadRmtTotalTrend();
+        if (summaryActive) await loadSummaryReport();
       });
       document.getElementById('rmtTrendYearSelect').addEventListener('change', () => {
         if (dashboardDisplayPanel === 'trend') loadRmtTotalTrend();
@@ -2691,7 +2724,6 @@
       sel.addEventListener('change', () => {
         if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
           loadReport();
-          loadSummaryReport();
         } else {
           renderRows([]);
           setSummaryDirtyState(false);
@@ -2713,7 +2745,6 @@
       syncDashboardMonthInput();
       syncSummaryMonthInput();
       initSubstockMonth();
-      refreshSubconOptions();
       bindSummaryDragScroll();
       bindD365FilterInputs();
       bindSummaryFilterInputs();
@@ -2731,7 +2762,5 @@
         syncDashboardMonthInput();
         initSubstockMonth();
         updateDashboardTitle();
-        const refreshPromise = refreshSubconOptions();
         await loadSummaryReport();
-        await refreshPromise;
       });

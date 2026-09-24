@@ -683,6 +683,8 @@
       padding: 10px 10px 8px;
     }
     .deadline-modal-note { display: none; }
+    .deadline-hour-label { display:block; margin:10px auto 5px; max-width:280px; color:#475569; font-size:12px; font-weight:800; text-align:left; }
+    .deadline-hour-select { display:block; width:280px; max-width:100%; margin:0 auto; font-weight:700; }
     .deadline-swal-popup .flatpickr-calendar.inline {
       box-shadow: none !important;
       border: 0 !important;
