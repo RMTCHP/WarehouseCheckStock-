@@ -1165,6 +1165,17 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
       return Promise.reject(new Error('Logo data is not available'));
     }
 
+    function hasThaiCharacters(value) {
+      return /[\u0E00-\u0E7F]/.test(String(value || ''));
+    }
+
+    async function registerPdfThaiFont(doc) {
+      const fontData = window.PDF_THAI_FONT_BASE64;
+      if (!fontData) throw new Error('Thai PDF font could not be loaded');
+      doc.addFileToVFS('Sarabun-Regular.ttf', fontData);
+      doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal');
+    }
+
     function drawPdfSignatureBlock(doc, startY, marginX = 8, tableWidth = null) {
       const pageWidth = doc.internal.pageSize.getWidth();
       const availableWidth = tableWidth || (pageWidth - (marginX * 2));
@@ -1221,6 +1232,8 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
         const fileName = `SubconInventory_${subcon}_${buildTimestampForFileName()}.pdf`;
         const totalRowIndex = rows.length;
         const exportBody = [...rows, getPdfTotalsRow()];
+        const hasThaiRemark = exportBody.some((row) => hasThaiCharacters(row[11]));
+        if (hasThaiRemark) await registerPdfThaiFont(doc);
         const tableLeft = 8;
         const tableRight = 8;
         const tableWidth = doc.internal.pageSize.getWidth() - tableLeft - tableRight;
@@ -1303,6 +1316,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx
             }
             if (data.section === 'body' && data.column.index === 10) {
               data.cell.styles.textColor = [15, 23, 42];
+            }
+            if (data.section === 'body' && data.column.index === 11 && hasThaiCharacters(data.cell.raw)) {
+              data.cell.styles.font = 'Sarabun';
+              data.cell.styles.fontStyle = 'normal';
+              data.cell.styles.fontSize = 6.8;
             }
           }
         });
