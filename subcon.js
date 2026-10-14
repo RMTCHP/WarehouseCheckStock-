@@ -1213,13 +1213,14 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
       const boxHeight = 24;
       const labels = ['Prepared by / Date', 'Checked by / Date', 'Authorize by / Date'];
 
-      doc.setDrawColor(148, 163, 184);
-      doc.setLineWidth(0.3);
-      doc.setFillColor(248, 250, 252);
       doc.setTextColor(31, 41, 55);
 
       labels.forEach((label, index) => {
         const x = marginX + (index * boxWidth);
+        // Reset the fill for every box because jsPDF-AutoTable can leave a dark fill state.
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.3);
+        doc.setFillColor(255, 255, 255);
         doc.rect(x, startY, boxWidth, boxHeight, 'FD');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
@@ -1262,7 +1263,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
           throw new Error('PDF library is not available');
         }
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const month = document.getElementById('monthInput')?.value || '';
         const monthText = monthLabel(month) || month;
         const subcon = (currentUser?.subcon || currentUser?.username || 'SUBCON').toUpperCase();
@@ -1271,11 +1272,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
         const exportBody = [...rows, getPdfTotalsRow()];
         const hasThaiRemark = exportBody.some((row) => hasThaiCharacters(row[11]));
         if (hasThaiRemark) await registerPdfThaiFont(doc);
-        const tableLeft = 12;
-        const tableRight = 12;
+        const tableLeft = 8;
+        const tableRight = 8;
         const tableWidth = doc.internal.pageSize.getWidth() - tableLeft - tableRight;
         const logoAspectRatio = 1797 / 237;
-        const logoWidth = 31;
+        const logoWidth = 26;
         const logoHeight = logoWidth / logoAspectRatio;
         const logoX = tableLeft;
         const logoY = 9;
@@ -1287,19 +1288,19 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
         } catch (_) {}
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
+        doc.setFontSize(10);
         doc.setTextColor(71, 85, 105);
-        doc.text('Sub-con Inventory Data Check System', headerTextX, 19);
+        doc.text('Sub-con Inventory Data Check System', headerTextX, 17);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(17);
+        doc.setFontSize(16);
         doc.setTextColor(15, 23, 42);
-        doc.text(`Monthly Inventory report ${monthText} (${subcon})`, headerTextX, 27);
+        doc.text(`Monthly Inventory report ${monthText} (${subcon})`, headerTextX, 24);
         doc.setDrawColor(37, 99, 235);
         doc.setLineWidth(0.7);
-        doc.line(tableLeft, 31, tableLeft + tableWidth, 31);
+        doc.line(tableLeft, 28, tableLeft + tableWidth, 28);
 
         doc.autoTable({
-          startY: 36,
+          startY: 32,
           margin: { left: tableLeft, right: tableRight },
           tableWidth,
           head: [[
@@ -1314,15 +1315,15 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
             'FG',
             'Hold',
             'Total',
-            'Delta +/-',
+            'Delta\n+/-',
             'Remark'
           ]],
           body: exportBody,
           theme: 'grid',
           styles: {
             font: 'helvetica',
-            fontSize: 7.5,
-            cellPadding: 1.7,
+            fontSize: 6.8,
+            cellPadding: 1.2,
             overflow: 'linebreak',
             valign: 'middle'
           },
@@ -1330,30 +1331,31 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
             fillColor: [31, 41, 55],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
+            fontSize: 6.2,
             halign: 'center'
           },
           columnStyles: {
-            0: { halign: 'center', cellWidth: 8 },
-            1: { halign: 'left', cellWidth: 16 },
-            2: { halign: 'right', cellWidth: 14 },
-            3: { halign: 'right', cellWidth: 16 },
-            4: { halign: 'right', cellWidth: 16 },
-            5: { halign: 'right', cellWidth: 12 },
-            6: { halign: 'right', cellWidth: 14 },
-            7: { halign: 'right', cellWidth: 18 },
-            8: { halign: 'right', cellWidth: 15 },
-            9: { halign: 'right', cellWidth: 16 },
-            10: { halign: 'right', cellWidth: 15 },
-            11: { halign: 'right', cellWidth: 15 },
-            12: { halign: 'left', cellWidth: 98 }
+            0: { halign: 'center', cellWidth: 7 },
+            1: { halign: 'left', cellWidth: 13 },
+            2: { halign: 'right', cellWidth: 10 },
+            3: { halign: 'right', cellWidth: 12 },
+            4: { halign: 'right', cellWidth: 12 },
+            5: { halign: 'right', cellWidth: 8 },
+            6: { halign: 'right', cellWidth: 10 },
+            7: { halign: 'right', cellWidth: 13 },
+            8: { halign: 'right', cellWidth: 9 },
+            9: { halign: 'right', cellWidth: 11 },
+            10: { halign: 'right', cellWidth: 11 },
+            11: { halign: 'right', cellWidth: 11 },
+            12: { halign: 'left', cellWidth: 67 }
           },
           didParseCell: (data) => {
             if (data.section === 'body' && data.row.index === totalRowIndex) {
               data.cell.styles.fillColor = [219, 234, 254];
               data.cell.styles.textColor = [15, 23, 42];
               data.cell.styles.fontStyle = 'bold';
-              data.cell.styles.fontSize = 7;
-              data.cell.styles.cellPadding = 1.3;
+              data.cell.styles.fontSize = 6.4;
+              data.cell.styles.cellPadding = 1.1;
               data.cell.styles.overflow = 'visible';
             }
             if (data.section === 'body' && data.column.index === 10) {
@@ -1362,7 +1364,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
             if (data.section === 'body' && data.column.index === 12 && hasThaiCharacters(data.cell.raw)) {
               data.cell.styles.font = 'Sarabun';
               data.cell.styles.fontStyle = 'normal';
-              data.cell.styles.fontSize = 8;
+              data.cell.styles.fontSize = 7.2;
             }
           }
         });
