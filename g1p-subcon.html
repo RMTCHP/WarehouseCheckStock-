@@ -150,10 +150,11 @@
             <col style="width:6%;">
             <col style="width:7%;">
             <col style="width:8%;">
+            <col style="width:7%;">
             <col style="width:8%;">
             <col style="width:7%;">
             <col style="width:7%;">
-            <col style="width:24%;">
+            <col style="width:17%;">
           </colgroup>
           <thead>
             <tr>
@@ -164,10 +165,11 @@
               <th>Delivery</th>
               <th>NG</th>
               <th>EOH</th>
-              <th>Supplier confirm OK</th>
+              <th>Supplier confirm RM/WIP</th>
+              <th>Supplier confirm FG</th>
               <th>Supplier confirm Hold</th>
               <th>Total</th>
-              <th>Diff</th>
+              <th>Delta +/-</th>
               <th style="min-width:260px;">Remark</th>
             </tr>
           </thead>
@@ -182,6 +184,7 @@
               <td id="sumNg">-</td>
               <td id="sumEoh">-</td>
               <td id="sumConfirmOk">-</td>
+              <td id="sumConfirmFg">-</td>
               <td id="sumConfirmHold">-</td>
               <td id="sumTotal">-</td>
               <td id="sumDiff">-</td>
@@ -234,23 +237,25 @@
         </table>
       </div>
       <div class="table-wrap summary-wrap">
-        <table class="summary-table" style="min-width:1800px;">
+        <table class="summary-table" style="min-width:1880px;">
           <thead>
             <tr>
               <th class="summary-filter-head" data-filter-key="item">Item</th>
               <th class="summary-filter-head" data-filter-key="fileNo">File No.</th>
               <th class="summary-filter-head" data-filter-key="d365Code">D365 code</th>
               <th class="summary-filter-head" data-filter-key="d365Qty">D365 Q'ty</th>
+              <th>Actual</th>
               <th class="summary-filter-head" data-filter-key="d365Diff">Diff</th>
               <th class="summary-filter-head" data-filter-key="boh">BOH</th>
               <th class="summary-filter-head" data-filter-key="supply">Supply</th>
               <th class="summary-filter-head" data-filter-key="delivery">Delivery</th>
               <th class="summary-filter-head" data-filter-key="ng" style="background:#fef08a; color:#111827;">NG</th>
               <th class="summary-filter-head" data-filter-key="eoh">EOH</th>
-              <th class="summary-filter-head" data-filter-key="confirmOk">OK</th>
+              <th class="summary-filter-head" data-filter-key="confirmOk">RM/WIP</th>
+              <th class="summary-filter-head" data-filter-key="confirmFg">FG</th>
               <th class="summary-filter-head" data-filter-key="confirmHold">Hold</th>
               <th class="summary-filter-head" data-filter-key="total">Total</th>
-              <th class="summary-filter-head" data-filter-key="diff">Diff</th>
+              <th class="summary-filter-head" data-filter-key="diff">Delta +/-</th>
               <th class="summary-filter-head" data-filter-key="remark">Remark</th>
               <th class="summary-filter-head" data-filter-key="subcon">SUBC</th>
               <th>Total D365</th>
