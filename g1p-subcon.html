@@ -63,6 +63,7 @@
   </div>
 
   <main class="content">
+    <input id="monthInput" type="month" hidden aria-hidden="true" tabindex="-1" />
     <div id="pageHeader">
       <div class="section-title" id="dashboardTitle">G1P Dashboard (Monthly Inventory)</div>
       <div class="dashboard-month-box">
@@ -123,77 +124,6 @@
       </div>
     </div>
 
-    <div id="searchView">
-      <div class="search-toolbar">
-        <div class="search-panel">
-          <div class="search-title">Search Filter</div>
-          <div class="search-grid">
-            <div>
-              <label class="form-label mb-1">Month</label>
-              <input id="monthInput" type="month" class="form-control" />
-            </div>
-            <div>
-              <label class="form-label mb-1">Subcon</label>
-              <select id="subconSelect" class="form-select"></select>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <colgroup>
-            <col style="width:4%;">
-            <col style="width:8%;">
-            <col style="width:7%;">
-            <col style="width:7%;">
-            <col style="width:7%;">
-            <col style="width:6%;">
-            <col style="width:7%;">
-            <col style="width:8%;">
-            <col style="width:7%;">
-            <col style="width:8%;">
-            <col style="width:7%;">
-            <col style="width:7%;">
-            <col style="width:17%;">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>File No.</th>
-              <th>BOH</th>
-              <th>Supply</th>
-              <th>Delivery</th>
-              <th>NG</th>
-              <th>EOH</th>
-              <th>Supplier confirm RM/WIP</th>
-              <th>Supplier confirm FG</th>
-              <th>Supplier confirm Hold</th>
-              <th>Total</th>
-              <th>Delta +/-</th>
-              <th style="min-width:260px;">Remark</th>
-            </tr>
-          </thead>
-          <tbody id="reportBody"></tbody>
-          <tfoot>
-            <tr>
-              <td></td>
-              <td class="text-center">Total</td>
-              <td id="sumBoh">-</td>
-              <td id="sumSupply">-</td>
-              <td id="sumDelivery">-</td>
-              <td id="sumNg">-</td>
-              <td id="sumEoh">-</td>
-              <td id="sumConfirmOk">-</td>
-              <td id="sumConfirmFg">-</td>
-              <td id="sumConfirmHold">-</td>
-              <td id="sumTotal">-</td>
-              <td id="sumDiff">-</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
 
     <div id="summaryView" class="hidden">
       <div class="card mb-3">
@@ -409,12 +339,14 @@
       dashboardTitle: 'G1P Dashboard (Monthly Inventory)',
       directAccess: true,
       directAccessUsername: 'G1P_PUBLIC',
-      allowD365QtyEdit: false
+      allowD365QtyEdit: false,
+      hideSearchView: true
     };
   </script>
   <script src="rmt.js"></script>
 </body>
 </html>
+
 
 
 

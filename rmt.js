@@ -530,7 +530,9 @@
     async function loadReport() {
       const month = document.getElementById('monthInput').value;
       if (!month) return Swal.fire(swalTheme({ icon: 'warning', title: 'Please select a month' }));
-      const subcon = document.getElementById('subconSelect').value || 'ALL';
+      const subconSelect = document.getElementById('subconSelect');
+      if (!subconSelect) return;
+      const subcon = subconSelect.value || 'ALL';
       if (!subcon || subcon === '__SELECT__' || subcon === '__LOADING__') {
         renderRows([]);
         return;
@@ -2478,7 +2480,7 @@
       }
 
       document.getElementById('dashboardView').classList.toggle('hidden', !isDashboard);
-      document.getElementById('searchView').classList.add('hidden');
+      document.getElementById('searchView')?.classList.add('hidden');
       document.getElementById('summaryView').classList.toggle('hidden', !isSummary);
       document.getElementById('settingView').classList.toggle('hidden', !isSetting);
       document.getElementById('d365SubstockView').classList.toggle('hidden', !isD365Substock);
@@ -2549,6 +2551,7 @@
 
     async function refreshSubconOptions() {
       const sel = document.getElementById('subconSelect');
+      if (!sel) return;
       const prev = sel.value;
       sel.disabled = true;
       sel.innerHTML = '<option value="__LOADING__" selected>Loading subcons...</option>';
@@ -2712,8 +2715,10 @@
       initRmtTrendYearSelect();
 
       const sel = document.getElementById('subconSelect');
-      sel.innerHTML = '<option value="__LOADING__" selected>Loading subcons...</option>';
-      sel.disabled = true;
+      if (sel) {
+        sel.innerHTML = '<option value="__LOADING__" selected>Loading subcons...</option>';
+        sel.disabled = true;
+      }
       document.getElementById('monthInput').addEventListener('change', async () => {
         syncDashboardMonthInput();
         syncSummaryMonthInput();
@@ -2756,15 +2761,17 @@
       document.getElementById('deadlineYearInput').addEventListener('change', () => {
         renderDeadlineGrid();
       });
-      sel.addEventListener('change', () => {
-        if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
-          loadReport();
-        } else {
-          renderRows([]);
-          setSummaryDirtyState(false);
-          renderSummaryRows([]);
-        }
-      });
+      if (sel) {
+        sel.addEventListener('change', () => {
+          if (sel.value && sel.value !== '__SELECT__' && sel.value !== '__LOADING__') {
+            loadReport();
+          } else {
+            renderRows([]);
+            setSummaryDirtyState(false);
+            renderSummaryRows([]);
+          }
+        });
+      }
       document.getElementById('substockMonthInput').addEventListener('change', async () => {
         const m = (document.getElementById('substockMonthInput')?.value || '').trim();
         if (!m) return renderD365SubstockRows([]);
