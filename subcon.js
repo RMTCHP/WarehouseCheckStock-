@@ -1016,12 +1016,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
       const hold = safeNum(tr.querySelector('[name="confirmHold"]').value);
       const eoh = (boh + supply) - delivery - ng;
       const total = ok + fg + hold;
-      const diff = Math.abs(eoh - total);
       const signedDiff = total - eoh;
       const diffInput = tr.querySelector('[name="diff"]');
       tr.querySelector('[name="eoh"]').value = eoh || '';
       tr.querySelector('[name="total"]').value = total || '';
-      diffInput.value = diff || '';
+      diffInput.value = signedDiff || '';
       diffInput.classList.remove('diff-positive', 'diff-negative');
       if (signedDiff < 0) {
         diffInput.classList.add('diff-negative');

@@ -120,9 +120,7 @@
       return safeNum(row.total) - safeNum(row.eoh);
     }
     function getDisplayDiffValue(row = {}) {
-      const explicit = String(row.diff ?? '').trim();
-      if (explicit !== '') return Math.abs(safeNum(row.diff));
-      return Math.abs(getSignedDiffValue(row));
+      return getSignedDiffValue(row);
     }
     function diffClassFromSigned(signed) {
       return signed < 0 ? 'diff-negative' : 'diff-positive';
