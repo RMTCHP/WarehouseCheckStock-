@@ -2755,7 +2755,7 @@
         }
         if (summaryActive) await loadSummaryReport();
       });
-      document.getElementById('rmtTrendYearSelect').addEventListener('change', () => {
+      document.getElementById('rmtTrendYearSelect')?.addEventListener('change', () => {
         if (dashboardDisplayPanel === 'trend') loadRmtTotalTrend();
       });
       document.getElementById('deadlineYearInput').addEventListener('change', () => {
@@ -2781,6 +2781,15 @@
         updateDashboardTitle();
         await loadD365Substock(m);
       });
+      document.getElementById('summaryMonthInput')?.addEventListener('change', async (e) => {
+        const month = String(e.target.value || '').trim();
+        if (!month) return;
+        document.getElementById('monthInput').value = month;
+        syncDashboardMonthInput();
+        initSubstockMonth();
+        updateDashboardTitle();
+        await loadSummaryReport(month);
+      });
 
       setMenu('dashboard');
       updateDashboardTitle();
@@ -2795,14 +2804,3 @@
     }
 
     boot();
-  
-
-      document.getElementById('summaryMonthInput').addEventListener('change', async (e) => {
-        const v = (e.target.value || '').trim();
-        if (!v) return;
-        document.getElementById('monthInput').value = v;
-        syncDashboardMonthInput();
-        initSubstockMonth();
-        updateDashboardTitle();
-        await loadSummaryReport(v);
-      });
