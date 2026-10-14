@@ -1210,20 +1210,27 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
       const pageWidth = doc.internal.pageSize.getWidth();
       const availableWidth = tableWidth || (pageWidth - (marginX * 2));
       const boxWidth = availableWidth / 3;
-      const boxHeight = 18;
-      const labelY = startY + boxHeight - 3;
+      const boxHeight = 24;
       const labels = ['Prepared by / Date', 'Checked by / Date', 'Authorize by / Date'];
 
-      doc.setDrawColor(120, 120, 120);
+      doc.setDrawColor(148, 163, 184);
       doc.setLineWidth(0.3);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFillColor(248, 250, 252);
       doc.setTextColor(31, 41, 55);
 
       labels.forEach((label, index) => {
         const x = marginX + (index * boxWidth);
-        doc.rect(x, startY, boxWidth, boxHeight);
-        doc.text(label, x + (boxWidth / 2), labelY, { align: 'center' });
+        doc.rect(x, startY, boxWidth, boxHeight, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text(label, x + 5, startY + 5);
+        doc.setDrawColor(100, 116, 139);
+        doc.line(x + 12, startY + 16, x + boxWidth - 12, startY + 16);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Name / Signature', x + (boxWidth / 2), startY + 21, { align: 'center' });
+        doc.setTextColor(31, 41, 55);
       });
     }
 
@@ -1255,7 +1262,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
           throw new Error('PDF library is not available');
         }
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         const month = document.getElementById('monthInput')?.value || '';
         const monthText = monthLabel(month) || month;
         const subcon = (currentUser?.subcon || currentUser?.username || 'SUBCON').toUpperCase();
@@ -1264,14 +1271,14 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
         const exportBody = [...rows, getPdfTotalsRow()];
         const hasThaiRemark = exportBody.some((row) => hasThaiCharacters(row[11]));
         if (hasThaiRemark) await registerPdfThaiFont(doc);
-        const tableLeft = 8;
-        const tableRight = 8;
+        const tableLeft = 12;
+        const tableRight = 12;
         const tableWidth = doc.internal.pageSize.getWidth() - tableLeft - tableRight;
         const logoAspectRatio = 1797 / 237;
-        const logoWidth = 26;
+        const logoWidth = 31;
         const logoHeight = logoWidth / logoAspectRatio;
         const logoX = tableLeft;
-        const logoY = 8.5;
+        const logoY = 9;
         const headerTextX = tableLeft;
 
         try {
@@ -1280,16 +1287,19 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
         } catch (_) {}
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
+        doc.setFontSize(10.5);
         doc.setTextColor(71, 85, 105);
-        doc.text('Sub-con Inventory Data Check System', headerTextX, 17);
+        doc.text('Sub-con Inventory Data Check System', headerTextX, 19);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
+        doc.setFontSize(17);
         doc.setTextColor(15, 23, 42);
-        doc.text(`Monthly Inventory report ${monthText} (${subcon})`, headerTextX, 24);
+        doc.text(`Monthly Inventory report ${monthText} (${subcon})`, headerTextX, 27);
+        doc.setDrawColor(37, 99, 235);
+        doc.setLineWidth(0.7);
+        doc.line(tableLeft, 31, tableLeft + tableWidth, 31);
 
         doc.autoTable({
-          startY: 31,
+          startY: 36,
           margin: { left: tableLeft, right: tableRight },
           tableWidth,
           head: [[
@@ -1300,19 +1310,19 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
             'Delivery',
             'NG',
             'EOH',
-            'Supplier confirm RM/WIP',
-            'Supplier confirm FG',
-            'Supplier confirm Hold',
+            'RM/WIP',
+            'FG',
+            'Hold',
             'Total',
-            'Diff',
+            'Delta +/-',
             'Remark'
           ]],
           body: exportBody,
           theme: 'grid',
           styles: {
             font: 'helvetica',
-            fontSize: 6.6,
-            cellPadding: 1.4,
+            fontSize: 7.5,
+            cellPadding: 1.7,
             overflow: 'linebreak',
             valign: 'middle'
           },
@@ -1324,26 +1334,26 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
           },
           columnStyles: {
             0: { halign: 'center', cellWidth: 8 },
-            1: { halign: 'left', cellWidth: 13 },
-            2: { halign: 'right', cellWidth: 9 },
-            3: { halign: 'right', cellWidth: 10 },
-            4: { halign: 'right', cellWidth: 10 },
-            5: { halign: 'right', cellWidth: 7 },
-            6: { halign: 'right', cellWidth: 9 },
-            7: { halign: 'right', cellWidth: 13 },
-            8: { halign: 'right', cellWidth: 11 },
-            9: { halign: 'right', cellWidth: 13 },
-            10: { halign: 'right', cellWidth: 9 },
-            11: { halign: 'right', cellWidth: 9 },
-            12: { halign: 'left', cellWidth: 63 }
+            1: { halign: 'left', cellWidth: 16 },
+            2: { halign: 'right', cellWidth: 14 },
+            3: { halign: 'right', cellWidth: 16 },
+            4: { halign: 'right', cellWidth: 16 },
+            5: { halign: 'right', cellWidth: 12 },
+            6: { halign: 'right', cellWidth: 14 },
+            7: { halign: 'right', cellWidth: 18 },
+            8: { halign: 'right', cellWidth: 15 },
+            9: { halign: 'right', cellWidth: 16 },
+            10: { halign: 'right', cellWidth: 15 },
+            11: { halign: 'right', cellWidth: 15 },
+            12: { halign: 'left', cellWidth: 98 }
           },
           didParseCell: (data) => {
             if (data.section === 'body' && data.row.index === totalRowIndex) {
               data.cell.styles.fillColor = [219, 234, 254];
               data.cell.styles.textColor = [15, 23, 42];
               data.cell.styles.fontStyle = 'bold';
-              data.cell.styles.fontSize = 6.1;
-              data.cell.styles.cellPadding = 1.1;
+              data.cell.styles.fontSize = 7;
+              data.cell.styles.cellPadding = 1.3;
               data.cell.styles.overflow = 'visible';
             }
             if (data.section === 'body' && data.column.index === 10) {
@@ -1352,20 +1362,20 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19Ecbw
             if (data.section === 'body' && data.column.index === 12 && hasThaiCharacters(data.cell.raw)) {
               data.cell.styles.font = 'Sarabun';
               data.cell.styles.fontStyle = 'normal';
-              data.cell.styles.fontSize = 6.8;
+              data.cell.styles.fontSize = 8;
             }
           }
         });
         const pageHeight = doc.internal.pageSize.getHeight();
         let lastPage = doc.getNumberOfPages();
         doc.setPage(lastPage);
-        let signatureY = (doc.lastAutoTable?.finalY || 24) + 10;
-        const signatureBlockHeight = 22;
+        const signatureBlockHeight = 24;
+        let signatureY = Math.max((doc.lastAutoTable?.finalY || 24) + 12, pageHeight - 38);
         if (signatureY + signatureBlockHeight > pageHeight - 10) {
           doc.addPage();
           lastPage = doc.getNumberOfPages();
           doc.setPage(lastPage);
-          signatureY = 18;
+          signatureY = pageHeight - 38;
         }
         drawPdfSignatureBlock(doc, signatureY, tableLeft, tableWidth);
 
