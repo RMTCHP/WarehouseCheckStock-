@@ -209,15 +209,11 @@
       const dash = document.getElementById('dashboardMonthInput');
       const summary = document.getElementById('summaryMonthInput');
       const substock = document.getElementById('substockMonthInput');
-      if (base) base.value = currentMonth;
-      if (menu === 'dashboard' && dash) dash.value = currentMonth;
-      if (menu === 'summary' && summary) summary.value = currentMonth;
-      if (menu === 'd365substock' && substock) substock.value = currentMonth;
-      if (menu === 'dashboard' || menu === 'summary' || menu === 'd365substock') {
-        if (dash && menu !== 'dashboard') dash.value = currentMonth;
-        if (summary && menu !== 'summary') summary.value = currentMonth;
-        if (substock && menu !== 'd365substock') substock.value = currentMonth;
-      }
+      // Keep a selected historical month when navigating between menus.
+      if (base && !base.value) base.value = currentMonth;
+      if (dash && !dash.value) dash.value = base?.value || currentMonth;
+      if (summary && !summary.value) summary.value = base?.value || currentMonth;
+      if (substock && !substock.value) substock.value = base?.value || currentMonth;
       updateDashboardTitle();
     }
 
@@ -2073,9 +2069,13 @@
       if (icon) icon.textContent = summaryTopCollapsedState[section] ? '+' : '-';
     }
 
-    async function loadSummaryReport() {
-      const month = document.getElementById('monthInput').value;
+    async function loadSummaryReport(monthOverride = '') {
+      const baseMonth = document.getElementById('monthInput');
+      const summaryMonth = document.getElementById('summaryMonthInput');
+      const month = String(monthOverride || summaryMonth?.value || baseMonth?.value || '').trim();
       if (!month) return;
+      if (baseMonth) baseMonth.value = month;
+      if (summaryMonth) summaryMonth.value = month;
       Swal.fire(swalLoading('Loading summary report...'));
       try {
         const summaryRes = await api('getSummaryReportData', { month, username: currentUser.username });
@@ -2797,5 +2797,5 @@
         syncDashboardMonthInput();
         initSubstockMonth();
         updateDashboardTitle();
-        await loadSummaryReport();
+        await loadSummaryReport(v);
       });
