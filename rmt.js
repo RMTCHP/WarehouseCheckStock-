@@ -1,5 +1,5 @@
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4hsnO9b5B3WvnaQxRx0Li6kgmz-LeOjs9CEa09eydFWmamNrS49wNV81st8tPWBs/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT0rjaE06apgX19EcbwXdx9-uuiwcSpasUPFDgkJR8ex1pNn7UFps1JBth16uk34Y/exec';
     const SESSION_KEY = 'subcon_auth';
     const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const RMT_PAGE_CONFIG = window.RMT_PAGE_CONFIG || {};
@@ -19,6 +19,7 @@
     let summaryAllSubconsState = [];
     let rmtTotalTrendChart = null;
     let rmtTrendCache = {};
+    let rmtTrendRequests = {};
     let rmtTrendSeriesState = [];
     let rmtTrendSubconVisibility = {};
     let rmtTrendMetricVisibility = { total: true, accuracy: true };
@@ -27,7 +28,7 @@
     let summaryQtyOverrideState = {};
     let summaryDirtyGroupsState = {};
     let summaryFilterMultiState = {
-      item: [], fileNo: [], d365Code: [], d365Qty: [], d365Diff: [], boh: [], supply: [], delivery: [], ng: [], eoh: [], confirmOk: [], confirmHold: [], total: [], diff: [], remark: [], subcon: [], plant: []
+      item: [], fileNo: [], d365Code: [], d365Qty: [], d365Diff: [], boh: [], supply: [], delivery: [], ng: [], eoh: [], confirmOk: [], confirmFg: [], confirmHold: [], total: [], diff: [], remark: [], subcon: [], plant: []
     };
     let summaryDirty = false;
     let d365FilterState = {
@@ -352,6 +353,29 @@
       if (isTrend) loadRmtTotalTrend();
     }
 
+    function getRmtYearTrend(year, force = false) {
+      if (!force && rmtTrendCache[year]) return Promise.resolve(rmtTrendCache[year]);
+      if (rmtTrendRequests[year]) return rmtTrendRequests[year];
+      const request = api('getRmtYearTrend', { year, username: currentUser.username, force: !!force })
+        .then((result) => {
+          if (result?.ok) rmtTrendCache[year] = result;
+          return result;
+        })
+        .finally(() => {
+          delete rmtTrendRequests[year];
+        });
+      rmtTrendRequests[year] = request;
+      return request;
+    }
+
+    function prefetchRmtTotalTrend() {
+      const year = getDashboardTrendYear();
+      if (rmtTrendCache[year] || rmtTrendRequests[year]) return;
+      // Warm the small annual result after the dashboard is ready, without
+      // blocking cards or displaying a second loading state.
+      getRmtYearTrend(year).catch(() => {});
+    }
+
     async function loadRmtTotalTrend(force = false) {
       const canvas = document.getElementById('rmtTotalTrendChart');
       const loading = document.getElementById('rmtTrendLoading');
@@ -359,14 +383,11 @@
       if (!canvas || !loading || !label || typeof Chart === 'undefined') return;
       const year = getDashboardTrendYear();
       label.textContent = `Year ${year} | Total and %Accuracy by Subcon`;
+      loading.textContent = 'Loading total trend...';
       loading.classList.remove('hidden');
       canvas.parentElement.classList.add('hidden');
       try {
-        let result = !force ? rmtTrendCache[year] : null;
-        if (!result) {
-          result = await api('getRmtYearTrend', { year, username: currentUser.username, force: !!force });
-          if (result?.ok) rmtTrendCache[year] = result;
-        }
+        const result = await getRmtYearTrend(year, force);
         if (!result?.ok) throw new Error(result?.message || 'Unable to load total trend');
         const series = (result.series || []).filter((entry) => !isRetiredSubcon(entry.subcon));
         rmtTrendSeriesState = series;
@@ -412,7 +433,8 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: 'nearest', intersect: false },
+            // Show details only when the pointer intersects a bar or line point.
+            interaction: { mode: 'nearest', intersect: true },
             plugins: {
               legend: { display: false },
               tooltip: {
@@ -458,7 +480,7 @@
     function renderRows(rows = []) {
       const body = document.getElementById('reportBody');
       if (!rows.length) {
-        body.innerHTML = '<tr><td class="text-center" colspan="12">No data found</td></tr>';
+        body.innerHTML = '<tr><td class="text-center" colspan="13">No data found</td></tr>';
         recalcTotals([]);
         return;
       }
@@ -472,6 +494,7 @@
           <td>${r.ng || ''}</td>
           <td>${r.eoh || ''}</td>
           <td>${r.confirmOk || ''}</td>
+          <td>${r.confirmFg || ''}</td>
           <td>${r.confirmHold || ''}</td>
           <td>${r.total || ''}</td>
           <td class="diff-cell ${diffClassFromSigned(getSignedDiffValue(r))}">${formatNumOrDash(getDisplayDiffValue(r))}</td>
@@ -482,7 +505,7 @@
     }
 
     function recalcTotals(rows = []) {
-      let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
+      let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, fg = 0, hold = 0, total = 0, diff = 0;
       rows.forEach((r) => {
         boh += safeNum(r.boh);
         supply += safeNum(r.supply);
@@ -490,6 +513,7 @@
         ng += safeNum(r.ng);
         eoh += safeNum(r.eoh);
         ok += safeNum(r.confirmOk);
+        fg += safeNum(r.confirmFg);
         hold += safeNum(r.confirmHold);
         total += safeNum(r.total);
         diff += getSignedDiffValue(r);
@@ -500,6 +524,7 @@
       document.getElementById('sumNg').textContent = formatNumOrDash(ng);
       document.getElementById('sumEoh').textContent = formatNumOrDash(eoh);
       document.getElementById('sumConfirmOk').textContent = formatNumOrDash(ok);
+      document.getElementById('sumConfirmFg').textContent = formatNumOrDash(fg);
       document.getElementById('sumConfirmHold').textContent = formatNumOrDash(hold);
       document.getElementById('sumTotal').textContent = formatNumOrDash(total);
       const sumDiffEl = document.getElementById('sumDiff');
@@ -631,6 +656,9 @@
       }
       finally {
         if (showLoadingSwal) Swal.close();
+        // Start the annual aggregation after visible dashboard content is ready.
+        // The Total Trend tab can then render from browser memory immediately.
+        setTimeout(prefetchRmtTotalTrend, 200);
       }
     }
 
@@ -653,7 +681,7 @@
           return Swal.fire(swalTheme({ icon: 'error', title: (res && res.message) || 'Failed to load data' }));
         }
         const rows = filterRowsByActivePlant(res.rows || []);
-        let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, hold = 0, total = 0, diff = 0;
+        let boh = 0, supply = 0, delivery = 0, ng = 0, eoh = 0, ok = 0, fg = 0, hold = 0, total = 0, diff = 0;
         rows.forEach((r) => {
           boh += safeNum(r.boh);
           supply += safeNum(r.supply);
@@ -661,6 +689,7 @@
           ng += safeNum(r.ng);
           eoh += safeNum(r.eoh);
           ok += safeNum(r.confirmOk);
+          fg += safeNum(r.confirmFg);
           hold += safeNum(r.confirmHold);
           total += safeNum(r.total);
           diff += getSignedDiffValue(r);
@@ -678,10 +707,11 @@
                 <col style="width:6%;">
                 <col style="width:7%;">
                 <col style="width:8%;">
+                <col style="width:7%;">
                 <col style="width:8%;">
                 <col style="width:7%;">
                 <col style="width:7%;">
-                <col style="width:24%;">
+                <col style="width:17%;">
               </colgroup>
               <thead>
                 <tr>
@@ -692,7 +722,8 @@
                   <th>Delivery</th>
                   <th>NG</th>
                   <th>EOH</th>
-                  <th>Supplier confirm OK</th>
+                  <th>Supplier confirm RM/WIP</th>
+                  <th>Supplier confirm FG</th>
                   <th>Supplier confirm Hold</th>
                   <th>Total</th>
                   <th>Delta +/-</th>
@@ -710,12 +741,13 @@
                     <td>${textOrDash(r.ng)}</td>
                     <td>${textOrDash(r.eoh)}</td>
                     <td>${textOrDash(r.confirmOk)}</td>
+                    <td>${textOrDash(r.confirmFg)}</td>
                     <td>${textOrDash(r.confirmHold)}</td>
                     <td>${textOrDash(r.total)}</td>
                     <td class="diff-cell ${diffClassFromSigned(getSignedDiffValue(r))}">${formatNumOrDash(getDisplayDiffValue(r))}</td>
                     <td style="text-align:left;">${textOrDash(r.remark)}</td>
                   </tr>
-                `).join('') : '<tr><td colspan="12" class="text-center">No data found</td></tr>'}
+                `).join('') : '<tr><td colspan="13" class="text-center">No data found</td></tr>'}
               </tbody>
               <tfoot>
                 <tr>
@@ -727,6 +759,7 @@
                   <td>${formatNumOrDash(ng)}</td>
                   <td>${formatNumOrDash(eoh)}</td>
                   <td>${formatNumOrDash(ok)}</td>
+                  <td>${formatNumOrDash(fg)}</td>
                   <td>${formatNumOrDash(hold)}</td>
                   <td>${formatNumOrDash(total)}</td>
                   <td class="${diffClassFromSigned(diff)}">${formatNumOrDash(diff)}</td>
@@ -946,6 +979,7 @@
             ng: '',
             eoh: '',
             confirmOk: '',
+            confirmFg: '',
             confirmHold: '',
             total: '',
             diff: '',
@@ -1025,7 +1059,7 @@
       const filteredRows = applySummaryFilter(rows || []);
       if (!filteredRows.length && !allSubcons.length) {
         setSummaryDirtyState(false);
-        body.innerHTML = '<tr><td class="text-center" colspan="24">No data found</td></tr>';
+        body.innerHTML = '<tr><td class="text-center" colspan="26">No data found</td></tr>';
         return;
       }
       const grouped = filteredRows.reduce((acc, r) => {
@@ -1036,7 +1070,7 @@
       }, {});
       const keys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
       if (!keys.length) {
-        body.innerHTML = '<tr><td class="text-center" colspan="24">No matching records found</td></tr>';
+        body.innerHTML = '<tr><td class="text-center" colspan="26">No matching records found</td></tr>';
         return;
       }
 
@@ -1055,14 +1089,14 @@
         let diffItem = 0;
 
         html += `<tr>
-          <td colspan="25" style="background:#e2e8f0; font-weight:800; text-align:left; cursor:pointer;" onclick="toggleSummaryGroup('${groupId}')">
+          <td colspan="26" style="background:#e2e8f0; font-weight:800; text-align:left; cursor:pointer;" onclick="toggleSummaryGroup('${groupId}')">
             <span id="sumToggle_${groupId}" style="display:inline-block; width:20px;">${summaryCollapsedState[groupId] ? '+' : '-'}</span>SUBCON: ${subUpper}
           </td>
         </tr>`;
         html += gRows.map((r, i) => {
           const m = getFileNoMapEntry(r.fileNo);
           const totalD365 = normalizeSummaryQtyValue(r.__d365Qty);
-          const totalSubc = safeNum(r.confirmOk) + safeNum(r.confirmHold);
+          const totalSubc = safeNum(r.confirmOk) + safeNum(r.confirmFg) + safeNum(r.confirmHold);
           const hasComparableD365 = hasComparableSummaryD365(r, totalD365);
           const diffQty = hasComparableD365 ? getSummaryDisplayDiff(totalD365, r) : null;
           const d365Code = resolveDisplayD365Code(r.fileNo);
@@ -1101,6 +1135,7 @@
               <td>${r.ng || '-'}</td>
               <td>${r.eoh || '-'}</td>
               <td>${r.confirmOk || '-'}</td>
+              <td>${r.confirmFg || '-'}</td>
               <td>${r.confirmHold || '-'}</td>
               <td>${r.total || '-'}</td>
               <td>${r.diff || '-'}</td>
@@ -1121,7 +1156,7 @@
         if (!gRows.length) {
           html += `
             <tr data-summary-group="${groupId}" style="${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
-              <td colspan="25" class="text-center" style="color:#64748b;">No data submitted</td>
+              <td colspan="26" class="text-center" style="color:#64748b;">No data submitted</td>
             </tr>
           `;
         }
@@ -1130,7 +1165,7 @@
         const accPct = safePct(okItem, totalItem);
         html += `
           <tr data-summary-group="${groupId}" style="background:#f8fafc; font-weight:700; ${summaryCollapsedState[groupId] ? 'display:none;' : ''}">
-            <td colspan="17" style="text-align:right;">Total (${subUpper})</td>
+            <td colspan="18" style="text-align:right;">Total (${subUpper})</td>
             <td>${formatNumOrDash(sumTotalD365)}</td>
             <td>${formatNumOrDash(sumTotalSubc)}</td>
             <td>${qtyPct}</td>
@@ -1381,6 +1416,7 @@
         case 'ng': return textOrDash(row.ng);
         case 'eoh': return textOrDash(row.eoh);
         case 'confirmOk': return textOrDash(row.confirmOk);
+        case 'confirmFg': return textOrDash(row.confirmFg);
         case 'confirmHold': return textOrDash(row.confirmHold);
         case 'total': return textOrDash(row.total);
         case 'diff': return textOrDash(row.diff);
@@ -1421,7 +1457,7 @@
         if (!byPlant[plant]) byPlant[plant] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
         if (!bySubcon[subcon]) bySubcon[subcon] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
         const d365Qty = getSummaryRowD365Qty(r);
-        const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
+        const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmFg) + safeNum(r.confirmHold);
         const diffQty = getSummaryRowD365Diff(r);
         const isOk = diffQty === null || diffQty === 0;
 
@@ -1533,7 +1569,8 @@
           Delivery: excelNumberOrBlank(r.delivery),
           NG: excelNumberOrBlank(r.ng),
           EOH: excelNumberOrBlank(r.eoh),
-          OK: excelNumberOrBlank(r.confirmOk),
+          'RM/WIP': excelNumberOrBlank(r.confirmOk),
+          FG: excelNumberOrBlank(r.confirmFg),
           Hold: excelNumberOrBlank(r.confirmHold),
           Total: excelNumberOrBlank(r.total),
           'Delta +/-': excelNumberOrBlank(r.diff),
@@ -1919,7 +1956,7 @@
         if (!bySubcon[subcon]) bySubcon[subcon] = { d365: 0, subc: 0, totalItem: 0, okItem: 0, diffItem: 0 };
 
         const d365Qty = normalizeSummaryQtyValue(r.__d365Qty);
-        const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmHold);
+        const subcQty = safeNum(r.confirmOk) + safeNum(r.confirmFg) + safeNum(r.confirmHold);
         const hasComparableD365 = hasComparableSummaryD365(r, d365Qty);
         const diffQty = hasComparableD365 ? getSummaryDisplayDiff(d365Qty, r) : null;
         const isOk = diffQty === null || diffQty === 0;
