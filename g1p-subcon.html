@@ -12,7 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="rmt.css">
   <style>
-    /* These shared views remain in the DOM for rmt.js, but are not part of G1P. */
+    /* These support views remain in the DOM for g1p-subcon.js, but are not part of G1P navigation. */
     #settingView,
     #d365SubstockView,
     #saveSummaryQtyBtn { display: none !important; }
@@ -333,17 +333,7 @@
     </div>
   </main>
 
-  <script>
-    window.RMT_PAGE_CONFIG = {
-      plantFilter: 'G1P',
-      dashboardTitle: 'G1P Dashboard (Monthly Inventory)',
-      directAccess: true,
-      directAccessUsername: 'G1P_PUBLIC',
-      allowD365QtyEdit: false,
-      hideSearchView: true
-    };
-  </script>
-  <script src="rmt.js"></script>
+  <script src="g1p-subcon.js?v=20261014-g1p-standalone"></script>
 </body>
 </html>
 
