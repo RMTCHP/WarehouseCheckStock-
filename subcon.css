@@ -106,6 +106,10 @@
     table { border-collapse: collapse; width: 100%; min-width: 0; table-layout: fixed; }
     th, td { border: 1px solid #edf0f3; padding: 3px; font-size: 12px; }
     th { background: #1f2937; color: #ffffff; text-align: center; position: sticky; top: 0; z-index: 2; font-weight: 700; }
+    .file-no-sort-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; border: 0; padding: 2px; color: inherit; background: transparent; font: inherit; cursor: pointer; }
+    .file-no-sort-btn:hover { color: #bfdbfe; }
+    .file-no-sort-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; border-radius: 4px; }
+    .file-no-sort-btn i { font-size: 11px; }
     td input {
       font-size: 13px;
       padding: 4px 6px;
@@ -116,6 +120,8 @@
       min-height: 28px;
     }
     td input:focus { outline: none; border-color: #94a3b8; box-shadow: 0 0 0 2px rgba(148,163,184,.2); }
+    #reportBody tr.duplicate-file-row td { background: #fff7ed; }
+    #reportBody input.duplicate-file-no { border-color: #f97316; background: #fff7ed; box-shadow: 0 0 0 2px rgba(249, 115, 22, .16); }
     td.num input { text-align: right; }
     tfoot td {
       background: #dbeafe;

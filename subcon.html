@@ -165,7 +165,12 @@
           <thead>
             <tr>
               <th>Item</th>
-              <th>File No.</th>
+              <th>
+                <button id="fileNoSortButton" class="file-no-sort-btn" type="button" onclick="sortRowsByFileNo()" title="Sort File No. A-Z">
+                  <span>File No.</span>
+                  <i id="fileNoSortIcon" class="fa-solid fa-arrow-down-a-z" aria-hidden="true"></i>
+                </button>
+              </th>
               <th>BOH</th>
               <th>Supply</th>
               <th>Delivery</th>
