@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 FG Inventory data check</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root {
+  --pkg-a: 65px;
+  --pkg-b: 65px;
+  --pkg-c: 65px;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 20px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.header-bar {
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  color: white;
+  text-align: center;
+  padding: 12px;
+  border-radius: 14px 14px 0 0;
+  margin: -24px -24px 20px -24px;
+}
+
+.header-bar h3 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 17px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+input, select {
+  width: 100%;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  height: 42px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+input[readonly], select:disabled {
+  background-color: #f1f5f9 !important;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+input.editable, select.editable {
+  background-color: #ffffff !important;
+  color: #1e293b;
+  cursor: text;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  font-size: 14px;
+}
+
+.btn-add {
+  background: #10b981;
+  color: white;
+  font-size: 20px;
+}
+
+.name-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.name-row select {
+  flex: 1;
+  height: 42px;
+}
+
+.name-row button {
+  flex: 0 0 110px;
+  height: 42px;
+}
+
+.row2col {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.col {
+  flex: 1;
+  min-width: 120px;
+}
+
+.rack-set {
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rack-set:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+}
+
+.set-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: -4px;
+}
+
+.btn-edit,
+.btn-delete {
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-edit {
+  background: #3b82f6;
+}
+
+.btn-delete {
+  background: #ef4444;
+}
+
+.package-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin-top: 10px;
+}
+
+.package-box {
+  flex: 0 0 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.actQty-box {
+  flex: 0 0 20%;
+  display: flex;
+  flex-direction: column;
+}
+
+.package-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pkg-input {
+  text-align: center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  height: 42px;
+  font-size: 14px;
+}
+
+.pkg-input.a { width: var(--pkg-a); }
+.pkg-input.b { width: var(--pkg-b); }
+.pkg-input.c { width: var(--pkg-c); }
+
+.package-inputs span {
+  font-weight: 600;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* 📱 Responsive */
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+  .container {
+    padding: 16px;
+    border-radius: 10px;
+  }
+  input, select, button {
+    height: 46px;
+    font-size: 15px;
+  }
+  .btn-primary {
+    font-size: 15px;
+  }
+  .btn-add {
+    font-size: 22px;
+    height: 46px;
+  }
+  label {
+    font-size: 14px;
+  }
+  .package-row {
+    flex-direction: column;
+  }
+  .package-box,
+  .actQty-box {
+    flex: 1 1 100%;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header-bar"><h3>📋 FG Inventory data check</h3></div>
+
+  <div class="name-row">
+    <div style="flex:1;">
+      <label>ชื่อผู้ทำ</label>
+      <select id="nameSelect"></select>
+    </div>
+    <button class="btn-primary" onclick="fetchItems()">🔍 ค้นหา</button>
+  </div>
+
+  <div id="itemSection" style="display:none;">
+    <label>เลือกลูกค้า</label>
+    <select id="customerSelect" onchange="filterItemsByCustomer()"></select>
+
+    <label style="margin-top:10px;">เลือกรายการ</label>
+    <select id="itemSelect" onchange="showDetail()"></select>
+
+    <div class="row2col" style="margin-top:10px;">
+      <div class="col">
+        <label>Customer</label>
+        <input id="customer" readonly>
+      </div>
+      <div class="col">
+        <label>File</label>
+        <input id="file5digit" readonly>
+      </div>
+    </div>
+
+    <div class="row2col">
+      <div class="col">
+        <label>Lot</label>
+        <input id="lot" readonly>
+      </div>
+      <div class="col">
+        <label>Q'ty</label>
+        <input id="sumQty" readonly>
+      </div>
+    </div>
+
+    <label>Rack</label>
+    <input id="rack" readonly>
+
+    <div id="rackZone">
+      <div class="rack-set" data-master="true">
+        <div class="set-title">Act Set #1</div>
+        <div class="action-buttons">
+          <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
+          <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        </div>
+
+        <label>Act Rack</label>
+        <div class="row2col">
+          <div class="col">
+            <select class="rackGroup" onchange="updateRackSub(this)">
+              <option value="">--เลือก--</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="PCCHPAREA">PCCHPAREA</option>
+              <option value="PCBKKAREA">PCBKKAREA</option>
+              <option value="PCSUBSTORE">PCSUBSTORE</option>
+            </select>
+          </div>
+          <div class="col">
+            <select class="rackSub"></select>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label>Act Lot</label>
+          <input type="text" class="actLotInput">
+        </div>
+
+        <div class="package-row">
+          <div class="package-box">
+            <label>Package</label>
+            <div class="package-inputs">
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a"
+       oninput="validateNumber(this); calcActQty(this)">
+<span>×</span>
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b"
+       oninput="validateNumber(this); calcActQty(this)">
+<span>+</span>
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c"
+       oninput="validateNumber(this); calcActQty(this)">
+
+            </div>
+          </div>
+          <div class="actQty-box">
+            <label>Act Q'ty</label>
+            <input class="actQty" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:15px;">
+<button class="btn-add" type="button" onclick="addRackSet()">＋</button>
+      <button class="btn-primary" style="flex:1;" onclick="saveData()">💾 บันทึกข้อมูล</button>
+    </div>
+  </div>
+
+  <div class="footer">© 2025 Resonac Materials (Thailand) Co., Ltd.</div>
+</div>
+
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbzJtLPm7YZgDuVRH6czodixGe5hRBVUpT5QYrTZKa2Bjt1OnMNXpcx9U0XQknrEqVOp/exec";
+let currentItems = [];
+
+// Rack Map
+const rackMap = {
+  A: [
+    "A-A01","A-A02","A-A03","A-A04","A-A05","A-A06","A-A07","A-A08",
+    "A-B01","A-B02","A-B03","A-B04","A-B05","A-B06","A-B07","A-B08",
+    "A-C01","A-C02","A-C03","A-C04","A-C05","A-C06","A-C07","A-C08",
+    "A-D01","A-D02","A-D03","A-D04","A-D05","A-D06","A-D07","A-D08"
+  ],
+  
+  B: Array.from({ length: 28 }, (_, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      return ["B-A", "B-B", "B-C", "B-D"].map(p => `${p}${num}`);
+    }).flat(),
+
+  C: Array.from({ length: 36 }, (_, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      return ["C-A", "C-B", "C-C", "C-D"].map(p => `${p}${num}`);
+    }).flat(),
+  
+  D: [
+    "D-A01","D-A02","D-A03","D-A04","D-A05","D-A06","D-A07","D-A08",
+    "D-A09","D-A10","D-A11","D-A12","D-A13","D-A14","D-A15","D-A16","D-A17","D-A18","D-A19","D-A20","D-A21","D-A22",
+    "D-B01","D-B02","D-B03","D-B04","D-B05","D-B06","D-B07","D-B08",
+    "D-B09","D-B10","D-B11","D-B12","D-B13","D-B14","D-B15","D-B16","D-B17","D-B18","D-B19","D-B20","D-B21","D-B22"
+  ],
+
+  PCBKKAREA: [
+    "BKK-A1","BKK-A2","BKK-A3","BKK-A4","BKK-A5","BKK-A6","BKK-A7",
+    "BKK-B1","BKK-B2","BKK-B3","BKK-B4","BKK-B5","BKK-B6","BKK-B7"
+  ]
+};
+
+// ทำให้ทุก rack-set มี set-title + จัดโหมด edit/lock
+function refreshRackSets() {
+  const sets = document.querySelectorAll(".rack-set");
+
+  sets.forEach((set, idx) => {
+
+    // ⭐ Assign ID ถ้าไม่มี
+    if (!set.dataset.id) {
+      set.dataset.id = idx === 0 ? "1" : "new";
+    }
+
+    // ⭐ เซตแรกเป็น master เสมอ
+    const isMaster = idx === 0;
+    set.dataset.master = isMaster ? "true" : "false";
+
+    // ⭐ ตรวจว่ามาจาก Database หรือไม่
+    const isLoadedFromDB = set.dataset.loaded === "true";
+
+    // -------------------------
+    // 1. Update Title
+    // -------------------------
+    let title = set.querySelector(".set-title");
+    if (!title) {
+      title = document.createElement("div");
+      title.className = "set-title";
+      set.prepend(title);
+    }
+    title.textContent = `Act Set #${idx + 1}`;
+
+    // -------------------------
+    // 2. ปุ่ม Edit / Delete
+    // -------------------------
+    const editBtn = set.querySelector(".btn-edit");
+    const delBtn  = set.querySelector(".btn-delete");
+
+    // ================================
+    // ⭐ CASE A: เซตใหม่ (ไม่เคยบันทึก)
+    // ================================
+    if (!isLoadedFromDB) {
+
+      // Master หรือเซตใหม่จากปุ่ม + → Editable
+      if (editBtn) {
+        editBtn.dataset.editing = "true";
+        editBtn.textContent = "🔒";
+        editBtn.style.background = "#10b981";
+      }
+
+      if (delBtn) {
+        delBtn.style.display = isMaster ? "none" : "inline-flex";
+      }
+
+      // เปิดแก้ไข input/select
+      set.querySelectorAll("input").forEach(el => {
+        if (!el.classList.contains("actQty")) {
+          el.readOnly = false;
+          el.classList.add("editable");
+        }
+      });
+
+      set.querySelectorAll("select").forEach(el => {
+        el.disabled = false;
+        el.classList.add("editable");
+      });
+
+      return;   // ⬅ จบ สำหรับเซตที่ยังไม่เคยบันทึก
+    }
+
+    // =====================================
+    // ⭐ CASE B: โหลดจาก DATABASE → ต้อง Lock
+    // =====================================
+    if (editBtn) {
+      editBtn.dataset.editing = "false";
+      editBtn.textContent = "✏️";
+      editBtn.style.background = "#3b82f6";
+    }
+
+    if (delBtn) {
+      delBtn.style.display = isMaster ? "none" : "inline-flex";
+    }
+
+    // Lock fields
+    set.querySelectorAll("input").forEach(el => {
+      if (!el.classList.contains("actQty")) {
+        el.readOnly = true;
+        el.classList.remove("editable");
+      }
+    });
+
+    set.querySelectorAll("select").forEach(el => {
+      el.disabled = true;
+      el.classList.remove("editable");
+    });
+
+  });
+}
+
+
+// โหลดรายชื่อผู้ทำ
+async function loadNames() {
+  Swal.fire({
+    title: "กำลังโหลดรายชื่อผู้ทำ...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+  try {
+    const res = await fetch(`${scriptURL}?page=getNames`);
+    const data = await res.json();
+    nameSelect.innerHTML =
+      '<option value="">-- เลือกชื่อผู้ทำ --</option>' +
+      data.map(n => `<option>${n}</option>`).join('');
+    Swal.close();
+  } catch {
+    Swal.fire("❌", "โหลดรายชื่อผู้ทำไม่สำเร็จ", "error");
+  }
+}
+
+loadNames();
+refreshRackSets();
+
+async function fetchItems() {
+  const name = nameSelect.value;
+  if (!name) {
+    return Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
+  }
+
+  Swal.fire({
+    title: "กำลังดึงข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
+    const rows = await res.json();
+    Swal.close();
+
+    if (!rows || rows.length === 0) {
+      return Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
+    }
+
+    currentItems = rows;
+    loadCustomers(rows);
+    itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+    itemSection.style.display = "block";
+  } catch {
+    Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
+  }
+}
+
+function showDetail() {
+  try {
+    const value = itemSelect.value;
+
+    // -----------------------------------------
+    // ถ้ายังไม่เลือกรายการ → reset เป็น Act Set #1 ว่าง
+    // -----------------------------------------
+    if (!value) {
+      customer.value = "";
+      file5digit.value = "";
+      lot.value = "";
+      sumQty.value = "";
+      rack.value = "";
+
+      document.getElementById("rackZone").innerHTML = `
+         <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
+          <div class="set-title">Act Set #1</div>
+          <div class="action-buttons">
+            <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
+            <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+          </div>
+
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)">
+                <option value="">--เลือก--</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="PCCHPAREA">PCCHPAREA</option>
+                <option value="PCBKKAREA">PCBKKAREA</option>
+                <option value="PCSUBSTORE">PCSUBSTORE</option>
+              </select>
+            </div>
+            <div class="col"><select class="rackSub"></select></div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Act Lot</label>
+            <input type="text" class="actLotInput">
+          </div>
+
+          <div class="package-row">
+            <div class="package-box">
+              <label>Package</label>
+              <div class="package-inputs">
+                <input type="text" inputmode="numeric" pattern="[0-9]*"
+                       class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+                <span>×</span>
+                <input type="text" inputmode="numeric" pattern="[0-9]*"
+                       class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
+                <span>+</span>
+                <input type="text" inputmode="numeric" pattern="[0-9]*"
+                       class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
+              </div>
+            </div>
+            <div class="actQty-box">
+              <label>Act Q'ty</label>
+              <input class="actQty" readonly>
+            </div>
+          </div>
+        </div>
+      `;
+      refreshRackSets();
+      return;
+    }
+
+    // -----------------------------------------
+    // แยกค่า File | Lot | Rack เดิม
+    // -----------------------------------------
+    const [fileCode, lotCode, rackName] = value.split("|");
+    if (!fileCode || !lotCode) return;
+
+    // -----------------------------------------
+    // เลือกเฉพาะแถวที่ File + Lot + Rack ตรงกัน
+    // -----------------------------------------
+    const selectedRows = currentItems.filter(r => {
+      return (
+        String(r.File5digit).trim() === fileCode.trim() &&
+        String(r.Lot).trim()        === lotCode.trim() &&
+        String(r.Rack).replace(/\[.*?\]/g, "").trim() === rackName.trim()
+      );
+    });
+
+    if (selectedRows.length === 0) {
+      return Swal.fire("⚠️", "ไม่พบข้อมูลของรายการนี้", "warning");
+    }
+
+    // ใช้แถวแรกเป็น base
+    const base = selectedRows[0];
+    const getVal = key => {
+      const found = Object.keys(base).find(k => k.trim().toLowerCase() === key.toLowerCase());
+      return found ? base[found] : "";
+    };
+
+    customer.value  = getVal("Customer");
+    file5digit.value = getVal("File5digit");
+    lot.value       = getVal("Lot");
+    rack.value      = getVal("Rack");
+    sumQty.value    = getVal("Sum of Qty") || getVal("SumOfQty") || "";
+
+    // -----------------------------------------
+    // สร้าง rack-set ทั้งหมด
+    // -----------------------------------------
+    let htmlRack = "";
+
+    selectedRows.forEach((row, index) => {
+
+      // ⭐⭐⭐ จุดแก้สำคัญ: แถวที่ไม่มี ID → ถือว่าเป็น "new"
+      let rawId =
+        row.ID !== undefined ? row.ID :
+        row.Id !== undefined ? row.Id :
+        row.id;
+
+      let idStr = (rawId === undefined || rawId === null || rawId === "") ? "new" : String(rawId);
+
+      const isMaster = (idStr === "1");
+
+      const actRackRaw = row.Act_Rack || "";
+      const actRack = actRackRaw === "PCBKKAREA" ? "" : actRackRaw;
+      const isLegacyPcbkk = actRackRaw === "PCBKKAREA";
+      const rawActLot = row.Act_Lot;
+      const actLotVal = rawActLot || row.Lot || "";
+      const actPkg    = row.Act_Package || "";
+      const actQty    = row.Act_Qty     || "";
+
+      const pkgA = actPkg ? (actPkg.split("×")[0] || "") : "";
+      const pkgB = actPkg ? ((actPkg.split("×")[1] || "").split("+")[0] || "") : "";
+      const pkgC = actPkg ? ((actPkg.split("+")[1] || "") || "") : "";
+
+      htmlRack += `
+        <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}" data-loaded="true">
+
+          <div class="set-title">Act Set #${index + 1}</div>
+
+          <div class="action-buttons">
+            <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+            ${isMaster ? "" : '<button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>'}
+          </div>
+
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? "disabled" : ""}>
+                <option value="">--เลือก--</option>
+                <option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
+                <option value="B" ${actRack.startsWith("B") && !actRack.startsWith("BKK-") ? "selected" : ""}>B</option>
+                <option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
+                <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
+                <option value="PCCHPAREA" ${actRack === "PCCHPAREA" ? "selected" : ""}>PCCHPAREA</option>
+                <option value="PCBKKAREA" ${(isLegacyPcbkk || actRack.startsWith("BKK-")) ? "selected" : ""}>PCBKKAREA</option>
+                <option value="PCSUBSTORE" ${actRack === "PCSUBSTORE" ? "selected" : ""}>PCSUBSTORE</option>
+              </select>
+            </div>
+            <div class="col">
+              <select class="rackSub" ${actRack ? "disabled" : ""}>
+                ${actRack ? `<option value="${actRack}" selected>${actRack}</option>` : ""}
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Act Lot</label>
+            <input type="text" class="actLotInput" value="${actLotVal}" ${rawActLot ? "readonly" : ""}>
+          </div>
+
+          <div class="package-row">
+            <div class="package-box">
+              <label>Package</label>
+              <div class="package-inputs">
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a"
+       value="${pkgA}"
+       ${actPkg ? "readonly" : ""}
+       oninput="validateNumber(this); calcActQty(this)">
+<span>×</span>
+
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b"
+       value="${pkgB}"
+       ${actPkg ? "readonly" : ""}
+       oninput="validateNumber(this); calcActQty(this)">
+<span>+</span>
+
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c"
+       value="${pkgC}"
+       ${actPkg ? "readonly" : ""}
+       oninput="validateNumber(this); calcActQty(this)">
+
+              </div>
+            </div>
+            <div class="actQty-box">
+              <label>Act Q'ty</label>
+              <input class="actQty" readonly value="${actQty}">
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    // -------------------------------
+    // ถ้าไม่มี rack-set เลย → Create Act Set #1
+    // -------------------------------
+    if (!htmlRack) {
+      htmlRack = `
+        <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
+          <div class="set-title">Act Set #1</div>
+          <div class="action-buttons">
+            <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
+          </div>
+
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)">
+                <option value="">--เลือก--</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="PCCHPAREA">PCCHPAREA</option>
+                <option value="PCBKKAREA">PCBKKAREA</option>
+                <option value="PCSUBSTORE">PCSUBSTORE</option>
+              </select>
+            </div>
+            <div class="col"><select class="rackSub"></select></div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Act Lot</label>
+            <input class="actLotInput" value="${lotCode}">
+          </div>
+
+          <div class="package-row">
+            <div class="package-box">
+              <label>Package</label>
+              <div class="package-inputs">
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+<span>×</span>
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
+<span>+</span>
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
+
+              </div>
+            </div>
+            <div class="actQty-box">
+              <label>Act Q'ty</label>
+              <input class="actQty" readonly>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById("rackZone").innerHTML = htmlRack;
+    refreshRackSets();
+    document.querySelectorAll("#rackZone .rack-set .rackGroup").forEach(sel => {
+      const sub = sel.closest(".rack-set").querySelector(".rackSub");
+      if (sel.value && sub && !sub.value) updateRackSub(sel);
+    });
+
+  } catch (err) {
+    console.error("showDetail error:", err);
+    Swal.fire("❌", "ไม่สามารถโหลดรายละเอียดได้", "error");
+  }
+}
+
+
+function updateRackSub(select) {
+  const subSelect = select.closest(".rack-set").querySelector(".rackSub");
+  const group = select.value;
+
+  if (group === "PCCHPAREA" || group === "PCSUBSTORE") {
+    subSelect.innerHTML = `<option value="${group}" selected>${group}</option>`;
+    return;
+  }
+
+  if (group === "PCBKKAREA") {
+    const list = [...(rackMap.PCBKKAREA || []), "PCBKKAREA"];
+    subSelect.innerHTML = list.map(v => `<option value="${v}">${v}</option>`).join("");
+    return;
+  }
+
+if (group) {
+  const source = rackMap[group] || [];
+  const sorted = source.sort((a, b) => {
+    const pa = a.split("-");
+    const pb = b.split("-");
+    const sectionA = pa[1].substring(0, 1);
+    const sectionB = pb[1].substring(0, 1);
+    const numA = parseInt(pa[1].substring(1), 10);
+    const numB = parseInt(pb[1].substring(1), 10);
+
+    // เรียง A → B → C → D ก่อน
+    if (sectionA !== sectionB) return sectionA.localeCompare(sectionB);
+    // ถ้าอยู่ในโซนเดียวกัน ให้เรียงตามเลข
+    return numA - numB;
+  });
+
+  subSelect.innerHTML = sorted
+    .map(v => `<option value="${v}">${v}</option>`)
+    .join("");
+} else {
+  subSelect.innerHTML = "";
+}
+}
+
+function calcActQty(input) {
+  const p = input.closest(".rack-set");
+  const a = +p.querySelector(".pkg-input.a").value || 0;
+  const b = +p.querySelector(".pkg-input.b").value || 0;
+  const c = +p.querySelector(".pkg-input.c").value || 0;
+  p.querySelector(".actQty").value = (a * b) + c;
+}
+
+function addRackSet() {
+  const zone = document.getElementById("rackZone");
+
+  const newSet = document.createElement("div");
+  newSet.className = "rack-set";
+  newSet.dataset.master = "false";
+  newSet.dataset.id = "new"; // ⭐ ส่งค่า new เพื่อให้ code.gs สร้าง ID ใหม่
+
+  newSet.innerHTML = `
+    <div class="set-title">Act Set #?</div>
+    <div class="action-buttons">
+      <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
+      <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+    </div>
+
+    <label>Act Rack</label>
+    <div class="row2col">
+      <div class="col">
+        <select class="rackGroup" onchange="updateRackSub(this)">
+          <option value="">--เลือก--</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="PCCHPAREA">PCCHPAREA</option>
+          <option value="PCBKKAREA">PCBKKAREA</option>
+          <option value="PCSUBSTORE">PCSUBSTORE</option>
+        </select>
+      </div>
+      <div class="col"><select class="rackSub"></select></div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label>Act Lot</label>
+      <input type="text" class="actLotInput" value="${lot.value}">
+    </div>
+
+    <div class="package-row">
+      <div class="package-box">
+        <label>Package</label>
+        <div class="package-inputs">
+          <input type="text" inputmode="numeric" pattern="[0-9]*"
+                 class="pkg-input a"
+                 oninput="validateNumber(this); calcActQty(this)">
+          <span>×</span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*"
+                 class="pkg-input b"
+                 oninput="validateNumber(this); calcActQty(this)">
+          <span>+</span>
+          <input type="text" inputmode="numeric" pattern="[0-9]*"
+                 class="pkg-input c"
+                 oninput="validateNumber(this); calcActQty(this)">
+        </div>
+      </div>
+
+      <div class="actQty-box">
+        <label>Act Q'ty</label>
+        <input class="actQty" readonly>
+      </div>
+    </div>
+  `;
+
+  zone.appendChild(newSet);
+  refreshRackSets();
+}
+
+async function removeRackSet(btn) {
+  const rackSet = btn.closest(".rack-set");
+  const isMaster = rackSet.dataset.master === "true";
+  if (isMaster) return;
+
+  const rackId = rackSet.dataset.id;
+
+  // ⭐ ถ้าเป็นชุดใหม่ (ID = new) → ลบ UI อย่างเดียว ไม่เรียก API
+  if (!rackId || rackId === "new") {
+    rackSet.remove();
+    refreshRackSets();
+    return;
+  }
+
+  // ⭐ ถ้าเป็น ID จริง → ค่อยลบใน Google Sheet
+  const actRack = rackSet.querySelector(".rackSub").value.trim();
+  const file = file5digit.value.trim();
+  const lotVal = lot.value.trim();
+  const name = nameSelect.value.trim();
+  const originalRack = rack.value.replace(/\[.*?\]/g, "").trim();
+
+  const confirm = await Swal.fire({
+    title: "ยืนยันการลบ?",
+    text: `ต้องการลบ Rack ${actRack} ของ ${file} (${lotVal}) หรือไม่`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก"
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({
+    title: "กำลังลบข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=deleteRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        lot: lotVal,
+        originalRack,
+        id: rackId
+      })
+    });
+
+    const result = await res.json();
+    Swal.close();
+
+    if (result.success) {
+      rackSet.remove();
+      refreshRackSets();
+      Swal.fire("✅", "ลบข้อมูลเรียบร้อยแล้ว", "success");
+    } else {
+      Swal.fire("⚠️", result.message || "ไม่สามารถลบข้อมูลได้", "warning");
+    }
+  } catch (err) {
+    Swal.close();
+    Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error");
+    console.error(err);
+  }
+}
+
+
+function toggleEdit(btn) {
+  const rack = btn.closest(".rack-set");
+  const isEditing = btn.dataset.editing !== "true"; // toggle
+
+  btn.dataset.editing = isEditing ? "true" : "false";
+  btn.textContent = isEditing ? "🔒" : "✏️";
+  btn.style.background = isEditing ? "#10b981" : "#3b82f6";
+
+  rack.querySelectorAll("input").forEach(el => {
+    if (el.classList.contains("actQty")) return;
+    el.readOnly = !isEditing;
+    el.classList.toggle("editable", isEditing);
+  });
+
+  rack.querySelectorAll("select").forEach(el => {
+    el.disabled = !isEditing;
+    el.classList.toggle("editable", isEditing);
+  });
+}
+
+async function saveData() {
+  const name = nameSelect.value;
+  const file = file5digit.value.trim();
+  const itemValue = itemSelect.value;
+  const sets = document.querySelectorAll(".rack-set");
+
+  let originalRack = rack.value.replace(/\[.*?\]/g, "").trim();
+
+  // ⭐ FIX: ถ้าค่าว่าง ให้ใช้ค่า Act Rack ของ master set แทน
+  if (!originalRack) {
+    const master = document.querySelector(".rack-set[data-master='true']");
+    if (master) {
+      const g = master.querySelector(".rackGroup")?.value.trim() || "";
+      const s = master.querySelector(".rackSub")?.value.trim() || "";
+      originalRack = s || g || "";
+    }
+  }
+
+  const customerVal = customer.value.trim();
+  const sumQtyVal = sumQty.value.trim();
+
+  if (!itemValue) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณาเลือกรายการก่อนบันทึกข้อมูล",
+      confirmButtonText: "ตกลง"
+    });
+  }
+
+  //----------------------------------------------
+  // VALIDATE ทุก rack-set กรอกครบ
+  //----------------------------------------------
+//----------------------------------------------
+// VALIDATE ทุก rack-set กรอกครบ
+//----------------------------------------------
+for (const s of sets) {
+
+  const group = s.querySelector(".rackGroup").value.trim();
+  const sub   = s.querySelector(".rackSub").value.trim();
+  const actRack = (group && sub) ? sub : "";
+
+  const actLot = s.querySelector(".actLotInput").value.trim();
+  const a = s.querySelector(".pkg-input.a").value.trim();
+  const b = s.querySelector(".pkg-input.b").value.trim();
+  const c = s.querySelector(".pkg-input.c").value.trim() || "0";
+  const actQty = s.querySelector(".actQty").value.trim();
+
+  // ❗ บังคับเลือก Act Rack ทุกชุด รวม Act Set #1
+  if (!actRack) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณาเลือก Act Rack",
+      confirmButtonText: "ตกลง"
+    });
+  }
+
+  // ❗ บังคับกรอก Act Lot และ Package
+  if (!actLot || !a || !b || !actQty) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง",
+      confirmButtonText: "ตกลง"
+    });
+  }
+}
+
+
+  //----------------------------------------------
+  // เตรียมบันทึก
+  //----------------------------------------------
+  const confirm = await Swal.fire({
+    title: "ยืนยันการบันทึกข้อมูล?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก"
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({
+    title: "กำลังบันทึกข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  //----------------------------------------------
+  // POST ไป code.gs ทีละชุด
+  //----------------------------------------------
+  for (const s of sets) {
+    const isMaster = s.dataset.master === "true";
+    const group = s.querySelector(".rackGroup").value.trim();
+    const sub   = s.querySelector(".rackSub").value.trim();
+    let actRack = group && sub ? sub : "";
+    const actLot = s.querySelector(".actLotInput").value.trim();
+
+    let a = s.querySelector(".pkg-input.a").value.trim();
+    let b = s.querySelector(".pkg-input.b").value.trim();
+    let c = s.querySelector(".pkg-input.c").value.trim() || "0";
+    const actQty = s.querySelector(".actQty").value.trim();
+
+    if (isMaster && !actRack) actRack = originalRack;
+
+    const actPackage = `${a}×${b}+${c}`;
+    const rackId = s.dataset.id || "";
+
+    await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        lot: lot.value,
+        originalRack,
+        customer: customerVal,
+        sumQty: sumQtyVal,
+        actRack,
+        actLot,
+        actQty,
+        actPackage,
+        rackId
+      })
+    });
+  }
+
+  Swal.close();
+  await Swal.fire({ icon: "success", title: "บันทึกข้อมูลสำเร็จแล้ว" });
+
+// ⭐ จำลูกค้าที่เลือกไว้ก่อนบันทึก
+const lastCustomer = customerSelect.value;
+
+clearForm();
+await fetchItems();
+
+// ⭐ เลือกลูกค้าคืนให้เหมือนเดิม
+customerSelect.value = lastCustomer;
+filterItemsByCustomer();
+
+}
+
+function clearForm() {
+  customer.value = "";
+  file5digit.value = "";
+  lot.value = "";
+  sumQty.value = "";
+  rack.value = "";
+  itemSelect.value = "";
+
+  const zone = document.getElementById("rackZone");
+  zone.innerHTML = `
+    <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
+      <div class="set-title">Act Set #1</div>
+      <div class="action-buttons">
+        <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+      </div>
+
+      <label>Act Rack</label>
+      <div class="row2col">
+        <div class="col">
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="PCCHPAREA">PCCHPAREA</option>
+            <option value="PCBKKAREA">PCBKKAREA</option>
+            <option value="PCSUBSTORE">PCSUBSTORE</option>
+          </select>
+        </div>
+        <div class="col"><select class="rackSub"></select></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Act Lot</label>
+        <input type="text" class="actLotInput">
+      </div>
+
+      <div class="package-row">
+        <div class="package-box">
+          <label>Package</label>
+          <div class="package-inputs">
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a"
+       oninput="validateNumber(this); calcActQty(this)">
+<span>×</span>
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b"
+       oninput="validateNumber(this); calcActQty(this)">
+<span>+</span>
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c"
+       oninput="validateNumber(this); calcActQty(this)">
+          </div>
+        </div>
+        <div class="actQty-box">
+          <label>Act Q'ty</label>
+          <input class="actQty" readonly>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById("itemSection").style.display = "none";
+  refreshRackSets();
+}
+
+function validateNumber(el) {
+  el.value = el.value.replace(/[^0-9]/g, "");
+}
+
+function loadCustomers(rows) {
+  const customers = [...new Set(rows.map(r => r.Customer || ""))];
+
+  customerSelect.innerHTML =
+    `<option value="">-- เลือกลูกค้า --</option>` +
+    customers.map(c => `<option value="${c}">${c}</option>`).join("");
+}
+
+function filterItemsByCustomer() {
+  const customerSel = customerSelect.value;
+  const list = document.getElementById("itemSelect");
+
+  // เคลียร์ข้อมูลฟอร์ม
+  customer.value = "";
+  file5digit.value = "";
+  lot.value = "";
+  sumQty.value = "";
+  rack.value = "";
+
+  // รีเซ็ต rackZone -> Act Set #1 (โหมดกรอกได้)
+  document.getElementById("rackZone").innerHTML = `
+    <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
+      <div class="set-title">Act Set #1</div>
+      <div class="action-buttons">
+        <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+      </div>
+
+      <label>Act Rack</label>
+      <div class="row2col">
+        <div class="col">
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="PCCHPAREA">PCCHPAREA</option>
+            <option value="PCBKKAREA">PCBKKAREA</option>
+            <option value="PCSUBSTORE">PCSUBSTORE</option>
+          </select>
+        </div>
+        <div class="col"><select class="rackSub"></select></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Act Lot</label>
+        <input type="text" class="actLotInput">
+      </div>
+
+      <div class="package-row">
+        <div class="package-box">
+          <label>Package</label>
+          <div class="package-inputs">
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+
+<span>×</span>
+
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
+
+<span>+</span>
+
+<input type="text" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
+
+
+          </div>
+        </div>
+        <div class="actQty-box">
+          <label>Act Q'ty</label>
+          <input class="actQty" readonly>
+        </div>
+      </div>
+    </div>
+  `;
+  refreshRackSets();
+
+  // รีเซ็ตรายการ
+  list.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+  if (!customerSel) return;
+
+  const rows = currentItems.filter(r => r.Customer === customerSel);
+
+  // ✅ ใส่ data-done="yes/no" เพื่อให้ showDetail() รู้ว่าอันไหน DONE
+list.innerHTML += rows
+  .filter(r => String(r.ID) === "1")
+  .map(r => {
+    const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+
+    // ค่า Q'ty จากต้นทาง
+    const sumQty = Number(r["Sum of Qty"] || r.SumOfQty || 0);
+
+    // หา Act ทั้งหมดของ File + Lot + Rack นี้
+    const related = currentItems.filter(item =>
+      String(item.File5digit).trim() === String(r.File5digit).trim() &&
+      String(item.Lot).trim()        === String(r.Lot).trim() &&
+      String(item.Rack).replace(/\[.*?\]/g, "").trim() === cleanRack
+    );
+
+    // รวม Act_Qty ทุกชุด
+    const totalActQty = related.reduce((sum, it) => {
+      return sum + Number(it.Act_Qty || 0);
+    }, 0);
+
+    // -----------------------------
+    // 🔥 เลือกสัญลักษณ์ตามเงื่อนไขใหม่
+    // -----------------------------
+    let icon = "⚪️";   // ยังไม่ทำ
+
+    if (totalActQty > 0) {
+      if (totalActQty === sumQty) icon = "✅";   // ทำครบ ถูกต้อง
+      else icon = "🔴";                             // ทำแล้ว แต่ผิดจำนวน
+    }
+
+    return `
+      <option value="${r.File5digit}|${r.Lot}|${cleanRack}"
+              data-total="${totalActQty}"
+              data-sum="${sumQty}">
+        ${icon} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+      </option>
+    `;
+  })
+  .join("");
+
+}
+
+</script>
+</body>
+</html>
