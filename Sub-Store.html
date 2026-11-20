@@ -1,0 +1,2230 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sub-Store Inventory Data Check</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    body { overflow-x: hidden; background-color: #f8fafc; }
+    .navbar { background: #1e293b; color: white; }
+    .navbar-time { font-size: 16px; color: #e2e8f0; font-weight: 500; }
+
+    .sidebar {
+      width: 260px; height: 100vh;
+      position: fixed; left: 0; top: 56px;
+      background: #1e293b; color: white; padding: 15px;
+      overflow-y: auto;
+    }
+
+    .content { margin-left: 260px; padding: 80px 30px; transition: all 0.3s ease; }
+    .progress { height: 22px; margin-top: 10px; display: none; }
+    table { font-size: 14px; }
+
+    /* 🎨 Tabs */
+    .nav-tabs { border-bottom: 1px solid #475569; margin-bottom: 15px; }
+    .nav-tabs .nav-link {
+      color: #cbd5e1; border: none; border-radius: 0; background: transparent;
+    }
+    .nav-tabs .nav-link.active {
+      background-color: #0f7250;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .nav-tabs .nav-link:hover {
+      background-color: #1a8a62;
+      color: #fff;
+    }
+
+    .collapse-content {
+      background-color: #0f7250;
+      border-radius: 8px; padding: 10px; margin-bottom: 10px;
+    }
+
+    /* กลุ่ม */
+    .table-group {
+      background-color: #dbeafe !important;
+      color: #1e3a8a; font-weight: 600; border-top: 2px solid #93c5fd;
+    }
+
+    .table-detail:hover { background-color: #f1f5f9; }
+
+    /* ✅ Delta */
+    .delta-positive {
+      color: #15803d !important; background-color: #dcfce7 !important; font-weight: 600;
+    }
+    .delta-negative {
+      color: #b91c1c !important; background-color: #fee2e2 !important; font-weight: 600;
+    }
+    .delta-zero {
+      color: #334155 !important; background-color: #f1f5f9 !important; font-weight: 500;
+    }
+.arrow {
+  color: #6b7280; 
+  font-weight: bold;
+  padding-right: 6px;
+  display: inline-block;   /* <-- ตัวนี้คือคำตอบ */
+  width: 12px;             /* ช่วยให้ไอคอนนิ่ง */
+}
+/* เพิ่มความกว้าง popup เป็น 700px */
+.swal-wide {
+  width: 700px !important;
+  max-width: 90% !important;
+}
+
+/* เพิ่มความสูง popup เป็น auto + scroll เมื่อข้อความเยอะ */
+.swal2-html-container {
+  text-align: left !important;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+    /* 🌟 Summary Dashboard Cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.summary-card {
+  padding: 18px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  cursor: pointer;
+  border-left: 6px solid transparent;   /* default = transparent */
+}
+
+/* 🎨 Color Themes */
+.card-blue {
+  background: linear-gradient(145deg, #fff7ed, #ffedd5);
+  border-left-color: #f97316 !important;
+}
+.card-gray {
+  background: linear-gradient(145deg, #f0f0f0, #dcdcdc);
+  border-left-color: #757575 !important;
+}
+.card-green {
+  background: linear-gradient(145deg, #e8f5e9, #c8e6c9);
+  border-left-color: #43a047 !important;
+}
+.card-red {
+  background: linear-gradient(145deg, #ffebee, #ffcdd2);
+  border-left-color: #e53935 !important;
+}
+.card-orange {
+  background: linear-gradient(145deg, #fff3e0, #ffe0b2);
+  border-left-color: #fb8c00 !important;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
+.summary-card.active {
+  box-shadow: 0 0 0 2px #d97706 inset;
+}
+.summary-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.summary-value {
+  font-size: 26px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+  /* ✅ Navbar right section: button + datetime */
+  .navbar-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .btn-mainmenu{
+    font-weight:600;
+    border-color: rgba(226,232,240,.25);
+  }
+  .btn-mainmenu:hover{
+    border-color: rgba(226,232,240,.45);
+  }
+  /* ===== Final UI Theme (clean) ===== */
+  body {
+    background: radial-gradient(circle at 14% 8%, #f3f7fb 0%, #edf2f7 52%, #e8eef4 100%);
+    color: #102030;
+  }
+
+  .navbar {
+    min-height: 64px;
+    background: linear-gradient(135deg, #9a3412, #7c2d12) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(124, 45, 18, 0.28);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .navbar-brand {
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+  }
+
+  .navbar-brand-icon { width:38px; height:38px; object-fit:contain; vertical-align:middle; margin-right:8px; }
+  .ui-icon { width:19px; height:19px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:middle; }
+  #sidebarTabs .nav-link { gap:10px; }
+  .content-heading h4 .ui-icon, .content > h4 .ui-icon { margin-right:8px; color:#a94415; }
+  .btn-mainmenu .ui-icon, .substore-refresh .ui-icon { width:18px; height:18px; }
+
+  .navbar-time {
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-mainmenu {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 280px;
+    top: 64px;
+    height: calc(100vh - 64px);
+    padding: 16px;
+    background: linear-gradient(135deg, #d97706, #b45309) !important;
+    color: #ffffff !important;
+    box-shadow: 10px 0 24px rgba(146, 64, 14, 0.24);
+    font-size: 13px;
+  }
+
+  #sidebarTabContent {
+    flex: 1 1 auto;
+    overflow-y: auto;
+  }
+
+  .settings-card {
+    background: #ffffff;
+    border: 1px solid #dbe5ef;
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(18, 33, 48, 0.08);
+    padding: 20px;
+  }
+
+  .settings-tabs .nav-link {
+    color: #64748b;
+    font-weight: 700;
+    border: 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  .settings-tabs .nav-link.active {
+    color: #b45309;
+    background: transparent;
+    border-bottom-color: #d97706;
+  }
+
+  .settings-table-actions {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+  .settings-table-actions button { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; padding:7px; }
+  .settings-table-actions svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .settings-table-actions button:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+
+  .settings-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+
+  .settings-card .btn-primary {
+    background: #d97706;
+    border-color: #d97706;
+  }
+
+  .settings-card .btn-primary:hover {
+    background: #b45309;
+    border-color: #b45309;
+  }
+
+  .content {
+    margin-left: 280px;
+    padding: 88px 36px 26px;
+  }
+
+  .content h4 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0d223b;
+    margin-bottom: 14px;
+  }
+
+  .content-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .content-heading h4 { margin-bottom:14px; }
+  .substore-refresh { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; border:1px solid #9a3412; border-radius:10px; color:#fff; background:#9a3412; transition:transform .16s ease,background .16s ease; }
+  .substore-refresh:hover { color:#ffffff; background:#7c2d12; transform:translateY(-1px); }
+  .substore-refresh:active { transform:translateY(0); }
+  .substore-refresh:focus-visible { outline:3px solid #fb923c; outline-offset:3px; }
+
+  .nav-tabs {
+    border-bottom: 0;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .sidebar .nav-tabs .nav-link {
+    border-radius: 10px;
+    color: #eaf2ff;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.32);
+    background: rgba(255,255,255,0.08);
+    font-size: 12px;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+
+  .sidebar .nav-tabs .nav-link.active {
+    background: #9a3412 !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25), 0 6px 12px rgba(0,0,0,0.16);
+  }
+
+  .sidebar .nav-tabs .nav-link:hover {
+    background: #c2410c !important;
+    border-color: rgba(255,255,255,0.6);
+    color: #ffffff !important;
+  }
+
+  .sidebar .nav-tabs .nav-link:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+
+  #sidebarTabs { display:grid; grid-template-columns:1fr; gap:8px; }
+  #sidebarTabs .nav-item { width:100%; }
+  #sidebarTabs .sidebar-submenu { max-height:0; overflow:hidden; visibility:hidden; transition:max-height .28s ease, visibility 0s linear .28s; }
+  #sidebarTabs .sidebar-submenu.is-open { max-height:1200px; visibility:visible; transition:max-height .28s ease, visibility 0s; }
+  #sidebarTabs .sidebar-submenu:not(.is-open) { padding-top:0; padding-bottom:0; margin-top:0; margin-bottom:0; }
+  @media (prefers-reduced-motion:reduce) { #sidebarTabs .sidebar-submenu { transition:none; } }
+  #sidebarTabs .nav-link {
+    display:flex;
+    align-items:center;
+    width:100%;
+    min-height:54px;
+    padding:14px 18px;
+    text-align:left;
+    font-size:15px;
+    line-height:1.2;
+  }
+
+  .compare-d365-card { max-width:1040px; padding:26px; border:1px solid #fed7aa; border-radius:18px; background:linear-gradient(145deg,#ffffff 0%,#fff7ed 100%); box-shadow:0 12px 30px rgba(154,52,18,.08); }
+  .compare-d365-card > p { max-width:720px; color:#64748b; }
+  .compare-d365-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:22px; }
+  .compare-d365-source { min-height:190px; padding:20px; border:1px solid #fed7aa; border-radius:14px; background:#ffffff; }
+  .compare-d365-source h5 { margin:0; color:#9a3412; font-size:18px; font-weight:800; }
+  .compare-d365-source p { min-height:38px; margin:7px 0 14px; color:#64748b; font-size:13px; }
+  .compare-d365-picker { display:flex; align-items:center; justify-content:center; min-height:44px; border:1px dashed #fb923c; border-radius:10px; color:#9a3412; background:#fff7ed; font-size:13px; font-weight:700; cursor:pointer; transition:background .16s ease,transform .16s ease; }
+  .compare-d365-picker:hover { background:#ffedd5; transform:translateY(-1px); }
+  .compare-d365-picker input { display:none; }
+  .compare-sidebar { padding:10px 6px 4px; }
+  .database-group { margin:12px 4px 0; padding:14px 12px; border:1px solid rgba(255,255,255,.3); border-radius:12px; background:rgba(124,45,18,.28); }
+  .database-group h3 { margin:0 0 4px; color:#fff; font-size:14px; font-weight:700; }
+  .database-group p { margin:0 0 12px; color:#ffedd5; font-size:12px; line-height:1.4; }
+  .database-group.compare-sidebar { padding:14px 12px; }
+  .sidebar .compare-sidebar .compare-d365-picker { margin-top:10px; color:#7c2d12; background:#fff7ed; border:1px solid #fed7aa; font-size:13px; font-weight:700; }
+  .sidebar .compare-sidebar .compare-d365-picker:hover { color:#7c2d12; background:#ffedd5; }
+  .sidebar .compare-sidebar .compare-d365-picker:active { transform:translateY(0); background:#fed7aa; }
+  .sidebar #uploadTab .compare-d365-picker { color:#7c2d12; background:#fff7ed; border:1px solid #fed7aa; font-size:13px; font-weight:700; }
+  .sidebar #uploadTab .compare-d365-picker:hover { color:#7c2d12; background:#ffedd5; }
+  .sidebar #uploadTab .compare-d365-picker:active { transform:translateY(0); background:#fed7aa; }
+  .sidebar #uploadTab .compare-d365-file { color:#fff; text-align:left; margin-bottom:12px; }
+  .compare-sidebar .compare-d365-file { color:#fff; text-align:left; }
+  .database-group .btn { min-height:44px; }
+  .database-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:20px; align-items:stretch; }
+  .database-grid .database-group { display:flex; flex-direction:column; margin:0; padding:22px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 8px 20px rgba(15,23,42,.05); }
+  .database-grid .database-group h3 { color:#0d223b; font-size:18px; }
+  .database-grid .database-group p { color:#64748b; font-size:13px; }
+  .database-grid .compare-d365-picker { color:#7c2d12; border:1px solid #fdba74; background:#fff7ed; }
+  .database-grid .compare-d365-picker:active { transform:translateY(0); background:#fed7aa; }
+  .database-grid .compare-d365-file { color:#64748b; text-align:left; margin-bottom:12px; }
+  .database-grid .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .database-grid .database-group > button:last-child { margin-top:auto !important; }
+  @media (max-width:1100px) { .database-grid { grid-template-columns:1fr; } }
+  .sidebar .database-group .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .compare-d365-file { display:block; min-height:20px; margin-top:10px; overflow:hidden; color:#475569; font-size:12px; font-weight:600; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+  .compare-d365-status { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:22px; }
+  .compare-d365-status div { padding:12px 14px; border:1px solid #e2e8f0; border-radius:11px; background:#f8fafc; color:#64748b; font-size:12px; font-weight:600; }
+  .compare-d365-status strong { display:block; margin-top:3px; color:#0f172a; font-size:18px; font-weight:800; }
+  .compare-d365-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+  .compare-d365-actions .btn { min-width:190px; font-weight:700; }
+  @media (max-width:760px) { .compare-d365-grid,.compare-d365-status { grid-template-columns:1fr; } .compare-d365-card { padding:18px; } .compare-d365-actions .btn { width:100%; } }
+
+  .sidebar .collapse-content {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 4px 2px 0;
+    box-shadow: none;
+  }
+
+  .sidebar label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #eef4ff;
+    margin-bottom: 6px;
+  }
+
+  .sidebar .form-control {
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.28);
+    box-shadow: none;
+    font-size: 12px;
+  }
+
+  .sidebar .form-control:focus {
+    border-color: #9ec5ff;
+    box-shadow: 0 0 0 0.18rem rgba(158, 197, 255, 0.24);
+  }
+
+  .sidebar .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
+  }
+
+  .sidebar .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(7, 30, 62, 0.24);
+    filter: brightness(1.04);
+  }
+
+  .table-responsive {
+    background: #ffffff;
+    border: 1px solid #dbe5ef;
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(18, 33, 48, 0.08);
+    padding: 8px;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  .table-dark {
+    --bs-table-bg: #b45309;
+    --bs-table-striped-bg: #9a3412;
+    --bs-table-striped-color: #ffffff;
+    --bs-table-color: #ffffff;
+  }
+
+  .table thead th {
+    border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .table thead th:last-child {
+    border-right: none !important;
+  }
+
+  .table tbody tr:hover {
+    background-color: #fff7ed;
+  }
+
+  .summary-grid {
+    gap: 12px;
+  }
+
+  .summary-card {
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(16, 32, 48, 0.1);
+  }
+
+  button.summary-card {
+    width: 100%;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    text-align: left;
+    transition: transform .14s ease, box-shadow .14s ease;
+  }
+
+  .summary-card .summary-title,
+  .summary-card .summary-value {
+    display: block;
+  }
+
+  .substore-filter-head {
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .substore-filter-head:hover {
+    background: #9a3412 !important;
+  }
+
+  .substore-filter-head.active-filter {
+    background: #0f766e !important;
+    color: #ffffff !important;
+  }
+
+  .substore-filter-dialog { text-align:left; }
+  .substore-filter-dialog .swal2-input { box-sizing:border-box; width:100%; height:44px; margin:0; padding:0 13px; border:1px solid #cbd5e1; border-radius:9px; font-size:14px; box-shadow:none; }
+  .substore-filter-dialog .swal2-input:focus { border-color:#c2410c; outline:3px solid #ffedd5; }
+  .substore-filter-hint { margin:8px 0 14px; color:#526579; font-size:12px; line-height:1.4; }
+  .substore-filter-actions { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; color:#475569; font-size:12px; font-weight:700; }
+  .substore-filter-actions > div { display:flex; gap:6px; }
+  .substore-filter-actions button { min-height:34px; border:1px solid #d7e0e8; border-radius:8px; padding:6px 10px; color:#7c2d12; background:#fff; font-size:12px; font-weight:700; }
+  .substore-filter-actions button:hover { background:#fff7ed; border-color:#fb923c; }
+  .substore-filter-actions button:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+  .substore-filter-list { max-height:min(280px,35vh); overflow:auto; padding:6px; border:1px solid #dce4eb; border-radius:10px; background:#fff; }
+  .substore-filter-option { display:flex; align-items:center; gap:10px; min-height:38px; margin:0; padding:7px 9px; border-radius:6px; color:#334155; font-size:13px; cursor:pointer; overflow-wrap:anywhere; }
+  .substore-filter-option:hover { background:#fff7ed; }
+  .substore-filter-choice { width:16px; height:16px; flex:none; accent-color:#9a3412; }
+  .substore-filter-empty { padding:18px 10px; color:#64748b; text-align:center; font-size:13px; }
+  .substore-filter-empty[hidden] { display:none; }
+
+  .summary-card.active {
+    box-shadow: 0 0 0 2px #d97706 inset, 0 8px 18px rgba(16, 32, 48, 0.12);
+  }
+
+  .summary-title {
+    color: #3f5468;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .summary-value {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  /* Shared SweetAlert2 theme for every dialog in the Sub-Store module. */
+  .swal2-popup {
+    width: min(32rem, calc(100vw - 32px));
+    padding: 26px;
+    color: #1f2937;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    border: 1px solid #fed7aa;
+    border-radius: 18px;
+    box-shadow: 0 20px 52px rgba(120, 53, 15, 0.24);
+  }
+
+  .swal2-title {
+    color: #7c2d12;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .swal2-html-container {
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .swal2-actions {
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .swal2-styled {
+    min-width: 92px;
+    margin: 0 !important;
+    padding: 10px 16px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+  }
+
+  .swal2-confirm {
+    background: #d97706 !important;
+    color: #ffffff !important;
+  }
+
+  .swal2-confirm:hover {
+    background: #b45309 !important;
+  }
+
+  .swal2-cancel {
+    color: #ffffff !important;
+    background: #64748b !important;
+  }
+
+  .swal2-cancel:hover {
+    background: #475569 !important;
+  }
+
+  .swal2-close {
+    color: #94a3b8 !important;
+    transition: color .16s ease, transform .16s ease;
+  }
+
+  .swal2-close:hover {
+    color: #9a3412 !important;
+    transform: rotate(90deg);
+  }
+
+  .swal2-input,
+  .swal2-textarea,
+  .swal2-select {
+    width: 100% !important;
+    height: 42px !important;
+    margin: 5px 0 0 !important;
+    color: #1f2937 !important;
+    font-size: 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+  }
+
+  .swal2-input:focus,
+  .swal2-textarea:focus,
+  .swal2-select:focus {
+    border-color: #d97706 !important;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.16) !important;
+  }
+
+  .swal2-loader {
+    border-color: #d97706 transparent #d97706 transparent !important;
+  }
+
+  .substore-record-modal { width:min(980px,calc(100vw - 32px)) !important; padding:28px !important; }
+  .substore-record-modal .swal2-html-container { margin:12px 0 0 !important; max-height:65vh; }
+  .record-modal-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 16px; }
+  .record-modal-stat { padding:11px 12px; border:1px solid #e2e8f0; border-radius:11px; background:#f8fafc; text-align:left; }
+  .record-modal-stat span { display:block; color:#64748b; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .record-modal-stat b { display:block; margin-top:3px; color:#0f172a; font-size:21px; }
+  .record-modal-stat.checked { border-color:#86efac; background:#f0fdf4; }
+  .record-modal-stat.pending { border-color:#fdba74; background:#fff7ed; }
+  .record-modal-table-wrap { overflow:auto; border:1px solid #e2e8f0; border-radius:11px; }
+  .record-modal-table { width:100%; min-width:760px; border-collapse:collapse; font-size:12px; }
+  .record-modal-table th { position:sticky; top:0; padding:10px; color:#ffffff; background:#9a3412; font-size:10px; letter-spacing:.04em; text-align:left; text-transform:uppercase; }
+  .record-modal-table td { padding:10px; border-bottom:1px solid #eef2f7; color:#334155; white-space:nowrap; }
+  .record-modal-table tr:last-child td { border-bottom:0; }
+  .record-modal-table tbody tr:hover { background:#fff7ed; }
+  .record-status { display:inline-flex; align-items:center; border-radius:999px; padding:4px 8px; font-size:10px; font-weight:800; }
+  .record-status.checked { color:#166534; background:#dcfce7; }
+  .record-status.pending { color:#9a3412; background:#ffedd5; }
+  .summary-status { display:inline-flex; align-items:center; gap:7px; padding:5px 10px; border:1px solid; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
+  .summary-status svg { width:15px; height:15px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .summary-status.checked { color:#166534; background:#f0fdf4; border-color:#bbf7d0; }
+  .summary-status.pending { color:#9a3412; background:#fff7ed; border-color:#fed7aa; }
+  .summary-status.missing { color:#475569; background:#f1f5f9; border-color:#cbd5e1; }
+  .summary-status.different { color:#991b1b; background:#fef2f2; border-color:#fecaca; }
+  .d365-summary-cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0 0 18px; }
+  .d365-summary-card { min-height:92px; padding:16px; border:1px solid #fed7aa; border-left:4px solid #ea580c; border-radius:14px; background:#fff7ed; color:#9a3412; text-align:left; transition:transform .15s,box-shadow .15s; }
+  .d365-summary-card:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(124,45,18,.12); }
+  .d365-summary-card:active { transform:translateY(0); }
+  .d365-summary-card:focus-visible { outline:3px solid #c2410c; outline-offset:2px; }
+  .d365-summary-card.active { box-shadow:0 0 0 2px currentColor inset; }
+  .d365-summary-card.checked { color:#166534; border-color:#bbf7d0; border-left-color:#16a34a; background:#f0fdf4; }
+  .d365-summary-card.pending { color:#9a3412; border-color:#fed7aa; border-left-color:#f97316; background:#fff7ed; }
+  .d365-summary-card.missing { color:#475569; border-color:#cbd5e1; border-left-color:#64748b; background:#f8fafc; }
+  .d365-summary-card span { display:block; font-size:12px; font-weight:700; }
+  .d365-summary-card strong { display:block; margin-top:8px; font-size:24px; line-height:1; }
+  @media (max-width:1000px) { .d365-summary-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .d365-summary-filter { cursor:pointer; }
+  .d365-summary-filter:hover { background:#9a3412 !important; }
+  .d365-summary-filter.active-filter { background:#0f766e !important; color:#fff; }
+  .d365-summary-filter:focus-visible { outline:3px solid #fb923c; outline-offset:-3px; }
+  .record-modal-empty { padding:30px 12px; color:#64748b; text-align:center; }
+  @media (max-width:600px) { .record-modal-summary { grid-template-columns:1fr; } .substore-record-modal { padding:20px !important; } }
+
+  /* Sub-Store location board */
+  .substore-result-tabs { display:flex; gap:8px; margin:0 0 18px; border-bottom:1px solid #e2e8f0; }
+  .substore-result-tabs button { border:0; border-bottom:3px solid transparent; background:transparent; color:#64748b; font-weight:700; padding:9px 14px; transition:.2s ease; }
+  .substore-result-tabs button:hover { color:#9a3412; background:#fff7ed; }
+  .substore-result-tabs button.active { color:#9a3412; border-bottom-color:#ea580c; }
+  .overview-dashboard { display:grid; gap:16px; }
+  .overview-dashboard[hidden] { display:none; }
+  .overview-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+  .overview-metric { padding:18px; border:1px solid #dce4eb; border-radius:12px; background:#fff; }
+  .overview-metric span { display:block; color:#526579; font-size:12px; font-weight:700; }
+  .overview-metric strong { display:block; margin-top:10px; color:#172b3d; font-size:27px; line-height:1; font-variant-numeric:tabular-nums; }
+  .overview-metric small { display:block; margin-top:7px; color:#64748b; font-size:11px; }
+  .overview-metric .overview-checked-detail { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .overview-metric .overview-check-stat { flex:1 1 100px; padding:7px 9px; border-radius:6px; color:#166534; background:#f0fdf4; font-size:12px; font-weight:700; }
+  .overview-metric .overview-check-stat.mismatch { color:#991b1b; background:#fef2f2; }
+  .overview-metric .overview-check-stat.incomplete { color:#475569; background:#f1f5f9; }
+  .overview-metric .overview-check-stat b { float:right; font-variant-numeric:tabular-nums; }
+  .overview-metric .overview-check-stat[hidden] { display:none; }
+  .overview-panels { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .overview-panel { min-width:0; padding:20px; border:1px solid #dce4eb; border-radius:12px; background:#fff; }
+  .overview-panel h5 { margin:0; color:#172b3d; font-size:16px; font-weight:700; }
+  .overview-panel p { margin:5px 0 16px; color:#64748b; font-size:12px; }
+  .rack-progress-list { display:grid; gap:9px; }
+  .rack-progress-row { display:grid; grid-template-columns:55px minmax(0,1fr) 90px; gap:10px; align-items:center; width:100%; padding:6px 8px; border:0; border-radius:8px; background:transparent; text-align:left; color:#334155; font-size:12px; }
+  .rack-progress-row:not(:disabled) { cursor:pointer; }
+  .rack-progress-row:not(:disabled):hover { background:#fff7ed; }
+  .rack-progress-row:focus-visible,.overview-status:focus-visible,.overview-attention button:focus-visible { outline:3px solid #c2410c; outline-offset:2px; }
+  .rack-progress-row:disabled { color:#94a3b8; }
+  .rack-progress-track { display:flex; overflow:hidden; height:10px; border-radius:999px; background:#e2e8f0; }
+  .rack-progress-checked { background:#16a34a; }
+  .rack-progress-pending { background:#f59e0b; }
+  .rack-progress-count { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .overview-legend { display:flex; gap:16px; margin-bottom:12px; color:#526579; font-size:12px; }
+  .overview-legend span::before { content:""; display:inline-block; width:9px; height:9px; margin-right:5px; border-radius:2px; background:#16a34a; }
+  .overview-legend span:last-child::before { background:#f59e0b; }
+  .overview-status-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .overview-status { display:flex; justify-content:space-between; gap:8px; align-items:center; min-height:48px; padding:10px 12px; border:1px solid #e2e8f0; border-left:3px solid var(--status-color); border-radius:9px; background:#fff; color:#334155; text-align:left; font-size:12px; font-weight:700; }
+  .overview-status:hover { background:#f8fafc; }
+  .overview-status strong { color:var(--status-color); font-size:18px; font-variant-numeric:tabular-nums; }
+  .overview-attention { margin-top:16px; }
+  .overview-attention-list { display:grid; gap:8px; }
+  .overview-attention button { display:flex; justify-content:space-between; gap:10px; width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; color:#334155; text-align:left; font-size:12px; }
+  .overview-attention button:hover { background:#fff7ed; }
+  .overview-empty { padding:14px; border:1px dashed #cbd5e1; border-radius:8px; color:#64748b; font-size:12px; }
+  @media (max-width:1000px) { .overview-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .overview-panels { grid-template-columns:1fr; } }
+  @media (max-width:450px) { .overview-metrics { gap:8px; } .overview-metric { padding:14px; } .rack-progress-row { grid-template-columns:48px minmax(0,1fr) 72px; } }
+  .location-board { --location-cell-width:86px; display:grid; row-gap:18px; column-gap:150px; grid-template-columns:calc(var(--location-cell-width) + 30px) minmax(0,1fr); align-items:start; }
+  .location-main { display:grid; gap:18px; }
+  .rack-b-zone { display:grid; grid-template-columns:calc(var(--location-cell-width) + 30px) minmax(0,1fr); gap:12px; align-items:start; }
+  .location-main > .rack-location-group,
+  .location-main > .rack-b-zone { width:fit-content; justify-self:end; }
+  .rack-b-zone > .rack-location-group { width:fit-content; }
+  .warehouse-zone-label { width:fit-content; justify-self:center; border:0; background:transparent; color:#0f6c91; cursor:pointer; font-size:24px; font-weight:800; letter-spacing:.08em; padding:3px 12px; text-align:center; transition:color .18s ease, transform .18s ease; }
+  .warehouse-zone-label:hover { color:#9a3412; transform:translateY(-1px); }
+  .warehouse-zone-label:active { transform:translateY(0); }
+  .warehouse-zone-label.pending { color:#9a3412; animation:substore-pending-pulse 1.6s ease-in-out infinite; }
+  .warehouse-zone-label.checked { color:#15803d; animation:substore-checked-pulse 1.8s ease-in-out infinite; }
+  .warehouse-zone-label.mismatch { color:#b91c1c; }
+  .warehouse-zone-label.unknown { color:#64748b; }
+  .warehouse-zone-label.empty { color:#94a3b8; }
+  .rack-location-group { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:14px; box-shadow:0 8px 20px rgba(15,23,42,.05); }
+  .rack-location-group h5 { margin:0 0 11px; color:#0f172a; font-size:15px; font-weight:800; }
+  .rack-location-group.rack-G h5, .rack-location-group.rack-H h5 { text-align:center; }
+  .rack-location-grid { display:grid; grid-template-columns:repeat(var(--rack-columns, 6),var(--location-cell-width)); justify-content:end; gap:7px; }
+  .rack-G .rack-location-grid { justify-content:start; }
+  .rack-location { min-height:42px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; color:#475569; font-size:12px; font-weight:800; cursor:pointer; transition:transform .18s ease, box-shadow .18s ease; }
+  .rack-location[data-tooltip], .warehouse-zone-label[data-tooltip] { position:relative; }
+  .rack-location[data-tooltip]::after, .warehouse-zone-label[data-tooltip]::after { position:absolute; z-index:20; bottom:calc(100% + 9px); left:50%; width:max-content; max-width:260px; padding:8px 10px; border-radius:8px; color:#ffffff; background:#172033; box-shadow:0 10px 22px rgba(15,23,42,.22); content:attr(data-tooltip); font-size:11px; font-weight:600; line-height:1.45; opacity:0; pointer-events:none; text-align:left; transform:translate(-50%,4px); transition:opacity .16s ease,transform .16s ease; white-space:pre-line; }
+  .rack-location[data-tooltip]:hover::after, .warehouse-zone-label[data-tooltip]:hover::after { opacity:1; transform:translate(-50%,0); }
+  .rack-location[data-tooltip]:hover, .warehouse-zone-label[data-tooltip]:hover { z-index:10; }
+  .rack-location:hover { transform:translateY(-2px); box-shadow:0 6px 12px rgba(15,23,42,.13); }
+  .rack-location:active { transform:translateY(0); }
+  .rack-location.pending { background:#fff7ed; border-color:#fdba74; color:#9a3412; animation:substore-pending-pulse 1.6s ease-in-out infinite; }
+  .rack-location.checked { background:#ecfdf5; border-color:#86efac; color:#15803d; animation:substore-checked-pulse 1.8s ease-in-out infinite; }
+  .rack-location.mismatch { background:#fef2f2; border-color:#fca5a5; color:#b91c1c; }
+  .rack-location.unknown { background:#f1f5f9; border-color:#cbd5e1; color:#475569; }
+  .table-striped > tbody > tr.inventory-answer-yes > * { --bs-table-bg-type:#ecfdf5; background-color:#ecfdf5; }
+  .table-striped > tbody > tr.inventory-answer-no > * { --bs-table-bg-type:#fef2f2; background-color:#fef2f2; }
+  .verification-legend { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0; color:#475569; font-size:12px; }
+  .verification-legend span::before { content:""; display:inline-block; width:10px; height:10px; margin-right:5px; border-radius:3px; background:#cbd5e1; }
+  .verification-legend .yes::before { background:#86efac; }
+  .verification-legend .no::before { background:#fca5a5; }
+  .verification-legend .pending::before { background:#fdba74; }
+  .export-toolbar { display:flex; justify-content:flex-end; margin:12px 0; }
+  .export-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:8px 14px; border:1px solid #b8561d; border-radius:8px; background:#fff; color:#8b3511; font-size:13px; font-weight:700; }
+  .export-button:hover { background:#fff7ed; border-color:#8b3511; }
+  .export-button:active { background:#ffedd5; }
+  .export-button:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+  .export-button:disabled { opacity:.5; cursor:not-allowed; }
+  .rack-location.empty { color:#94a3b8; background:#f8fafc; border-color:#e2e8f0; }
+  .location-status { display:block; margin-top:2px; font-size:9px; font-weight:700; }
+  @keyframes substore-pending-pulse { 50% { box-shadow:0 0 0 4px rgba(249,115,22,.16); } }
+  @keyframes substore-checked-pulse { 50% { box-shadow:0 0 0 4px rgba(34,197,94,.15); } }
+  @media (max-width:700px) { .location-board,.rack-b-zone { grid-template-columns:1fr; } .location-board { column-gap:18px; } .rack-location-grid { grid-template-columns:repeat(5,minmax(0,1fr)); } }
+
+  /* Left sidebar navigation. */
+  .sidebar { top:64px; right:auto; bottom:0; width:280px; height:calc(100vh - 64px); padding:16px; overflow-y:auto; z-index:1020; }
+  .content { margin-left:280px; padding:88px 36px 26px; }
+  @media (max-width:700px) { .sidebar { width:240px; padding:12px; } .content { margin-left:240px; padding:82px 15px 20px; } }
+
+  /* Sub-Store operations surface */
+  :root { --ss-ink:#172b3d; --ss-muted:#526579; --ss-border:#dce4eb; --ss-accent:#a94415; --ss-surface:#fff; }
+  body { color:var(--ss-ink); background:#f3f6f8; }
+  .navbar { background:#843715 !important; box-shadow:0 3px 12px rgba(31,41,51,.14); border-bottom:0; }
+  .navbar-brand { font-size:1.15rem; }
+  .sidebar { background:linear-gradient(180deg,#a94b14,#88380f) !important; box-shadow:2px 0 12px rgba(31,41,51,.08); }
+  .sidebar .nav-tabs .nav-link { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.2); color:#fff; }
+  .sidebar .nav-tabs .nav-link.active { background:#fff7ed !important; color:#7c2d12 !important; border-color:#fff7ed; box-shadow:none; }
+  .sidebar .nav-tabs .nav-link.active:hover { color:#7c2d12 !important; background:#ffedd5 !important; }
+  .content h4 { color:var(--ss-ink); font-size:1.45rem; letter-spacing:-.02em; }
+  .content-heading { align-items:center; margin-bottom:14px; }
+  .content-heading h4 { margin:0; }
+  .settings-card,.rack-location-group,.database-grid .database-group { border-color:var(--ss-border); box-shadow:0 3px 12px rgba(32,48,64,.05); }
+  .database-status-list { display:grid; gap:8px; margin:12px 0 16px; }
+  .database-status { padding:10px 12px; border:1px solid #dce4eb; border-radius:8px; background:#f8fafc; font-size:12px; }
+  .database-status-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#334155; font-weight:700; }
+  .database-status-badge { padding:3px 8px; border-radius:999px; background:#e2e8f0; color:#475569; font-size:11px; font-weight:700; white-space:nowrap; }
+  .database-status-badge.available { background:#dcfce7; color:#166534; }
+  .database-status-badge.error { background:#fef2f2; color:#991b1b; }
+  .database-status-meta { margin-top:5px; color:#526579; overflow-wrap:anywhere; }
+  .substore-result-tabs { gap:4px; margin-bottom:22px; border-color:var(--ss-border); overflow-x:auto; }
+  .substore-result-tabs button { flex:none; padding:11px 16px; }
+  .summary-card,.d365-summary-card { box-shadow:0 3px 12px rgba(32,48,64,.06); }
+  .summary-grid { grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:0; }
+  button.summary-card,.d365-summary-card {
+    --metric-accent:#b45309;
+    position:relative; min-width:0; min-height:112px; padding:19px 20px;
+    overflow:hidden; border:1px solid #dce4eb !important; border-radius:12px;
+    background:#fff; color:#172b3d; text-align:left;
+    box-shadow:0 3px 12px rgba(32,48,64,.05);
+    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+  }
+  button.summary-card::before,.d365-summary-card::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; background:var(--metric-accent); }
+  button.summary-card.card-gray,.d365-summary-card.missing { --metric-accent:#64748b; }
+  button.summary-card.card-green,.d365-summary-card.checked { --metric-accent:#15803d; }
+  button.summary-card.card-red { --metric-accent:#b91c1c; }
+  button.summary-card.card-orange,.d365-summary-card.pending { --metric-accent:#c46208; }
+  button.summary-card:hover,.d365-summary-card:hover { transform:translateY(-2px); border-color:var(--metric-accent) !important; box-shadow:0 8px 20px rgba(32,48,64,.1); }
+  button.summary-card:active,.d365-summary-card:active { transform:translateY(0); }
+  button.summary-card.active,.d365-summary-card.active { border-color:var(--metric-accent) !important; box-shadow:0 0 0 1px var(--metric-accent),0 4px 14px rgba(32,48,64,.08); }
+  button.summary-card:focus-visible,.d365-summary-card:focus-visible { outline:3px solid #a94415; outline-offset:3px; }
+  .summary-card .summary-title,.d365-summary-card span { color:#526579; font-size:12px; font-weight:700; letter-spacing:.02em; }
+  .summary-card .summary-value,.d365-summary-card strong { margin-top:12px; color:#172b3d; font-size:27px; line-height:1; font-weight:750; font-variant-numeric:tabular-nums; }
+  @media (max-width:1200px) { .summary-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media (max-width:700px) { .summary-grid,.d365-summary-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } button.summary-card,.d365-summary-card { min-height:98px; padding:16px; } }
+  .table-responsive { border:1px solid var(--ss-border); border-radius:12px; background:#fff; }
+  .table { margin-bottom:0; }
+  .table thead th { vertical-align:middle; }
+  .table tbody td { vertical-align:middle; }
+  .database-grid .database-group { min-width:0; }
+  .database-grid .compare-d365-picker { border-style:solid; }
+  .compare-d365-picker input { display:block; position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .compare-d365-picker:focus-within { outline:3px solid #c2410c; outline-offset:2px; }
+  @media (max-width:700px) {
+    .navbar { position:relative; min-height:64px; gap:8px; }
+    .navbar-brand { white-space:normal; font-size:1rem; }
+    .navbar-time { font-size:12px; }
+    .sidebar { position:relative; top:auto; bottom:auto; width:100%; height:auto; padding:10px 12px; overflow:visible; }
+    #sidebarTabs { display:flex; gap:6px; margin:0; overflow-x:auto; }
+    #sidebarTabs .nav-item { width:auto; flex:1 0 auto; }
+    #sidebarTabs .nav-link { min-height:44px; padding:10px 12px; font-size:13px; justify-content:center; }
+    .content { margin-left:0; padding:22px 14px 30px; }
+    .location-board { overflow-x:auto; }
+    .rack-location-group { max-width:100%; overflow-x:auto; }
+  }
+  @media (prefers-reduced-motion:reduce) { .summary-card,.d365-summary-card,.substore-refresh,.substore-result-tabs button { transition:none; } }
+</style>
+</head>
+<body>
+<nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
+  <span class="navbar-brand h4 mb-0"><img class="navbar-brand-icon" src="assets/substore.png" alt="">Sub-Store Inventory Data Check</span>
+
+  <div class="navbar-right">
+    <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
+        <a href="https://rmtchp.github.io/WarehouseCheckStock-/"
+       class="btn btn-sm btn-outline-light btn-mainmenu"
+       title="Go to Main Menu">
+      <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-7h6v7"/></svg><span class="visually-hidden">Main menu</span>
+    </a>
+  </div>
+</nav>
+
+  <!-- Sidebar navigation -->
+  <div class="sidebar">
+    <ul class="nav nav-tabs nav-justified" id="sidebarTabs" role="tablist">
+      <li class="nav-item" role="presentation"><button class="nav-link active" id="search-tab" type="button" role="tab"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/></svg>Inventory Overview</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="upload-tab" type="button" role="tab"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg>Manage Database</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="settings-tab" type="button" role="tab"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6"/><circle cx="8" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></svg>Setting</button></li>
+    </ul>
+    <div id="sidebarTabContent">
+      <div id="searchTab" hidden></div>
+    </div>
+  </div>
+
+<!-- ===================== CONTENT: SEARCH ===================== -->
+<div id="contentSearch" class="content">
+  <div class="content-heading"><h4><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/></svg>Inventory Overview</h4><button class="substore-refresh" type="button" onclick="refreshSubStoreDashboard()" title="Refresh data" aria-label="Refresh data"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div>
+  <div class="substore-result-tabs" role="tablist" aria-label="Sub-Store results">
+    <button id="subStoreDashboardTab" class="active" type="button" role="tab" aria-selected="true" onclick="showSubStoreResultView('dashboard')">Dashboard</button>
+    <button id="subStoreLocationTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('location')">Rack Locations</button>
+    <button id="subStoreSearchResultTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('search')">Inventory Records</button>
+    <button id="subStoreD365SummaryTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('d365')">D365 Comparison</button>
+  </div>
+  <section id="subStoreDashboardPane" class="overview-dashboard">
+    <div class="overview-metrics" aria-label="Inventory record summary">
+      <div class="overview-metric"><span>Total Records</span><strong id="overviewTotal">0</strong><small>Inventory records</small></div>
+      <div class="overview-metric"><span>Checked</span><strong id="overviewChecked">0</strong><div class="overview-checked-detail" aria-label="Checked record comparison"><span class="overview-check-stat">Match <b id="overviewMatch">0</b></span><span class="overview-check-stat mismatch">Mismatch <b id="overviewMismatch">0</b></span><span class="overview-check-stat incomplete" id="overviewIncompleteCard" hidden>Incomplete <b id="overviewIncomplete">0</b></span></div></div>
+      <div class="overview-metric"><span>Not Checked</span><strong id="overviewPending">0</strong><small>Records remaining</small></div>
+      <div class="overview-metric"><span>Check Progress</span><strong id="overviewProgress">-</strong><small>Of inventory records</small></div>
+    </div>
+    <div class="overview-panels">
+      <section class="overview-panel"><h5>Rack Progress</h5><p>Checked and not checked records by rack. Select a rack to view details.</p><div class="overview-legend"><span>Checked</span><span>Not Checked</span></div><div id="overviewRackProgress" class="rack-progress-list"></div></section>
+      <div><section class="overview-panel"><h5>D365 Comparison</h5><p>Number of D365 Codes. Select a status to view details.</p><div id="overviewD365Status" class="overview-status-grid"></div></section>
+      <section class="overview-panel overview-attention"><h5>Needs Attention</h5><p>Checked codes with a difference or missing D365 data.</p><div id="overviewAttention" class="overview-attention-list"></div></section></div>
+    </div>
+  </section>
+  <section id="subStoreSearchResultPane" hidden>
+  <div id="subStoreSummaryBox" style="display:none;">
+    <div class="summary-grid">
+      <button type="button" class="summary-card card-blue" id="subStoreCardTotal" onclick="filterSubStoreSummary('ALL', this)">
+        <span class="summary-title">Total Records</span>
+        <span class="summary-value" id="subStoreSumTotal">0</span>
+      </button>
+      <button type="button" class="summary-card card-gray" id="subStoreCardMatch" onclick="filterSubStoreSummary('CHECKED', this)">
+        <span class="summary-title">Checked</span>
+        <span class="summary-value" id="subStoreSumMatch">0</span>
+      </button>
+      <button type="button" class="summary-card card-orange" id="subStoreCardPending" onclick="filterSubStoreSummary('PENDING', this)">
+        <span class="summary-title">Not Checked</span>
+        <span class="summary-value" id="subStoreSumPending">0</span>
+      </button>
+      <button type="button" class="summary-card card-green" id="subStoreCardOver" onclick="filterSubStoreSummary('OVER', this)">
+        <span class="summary-title">Over (+)</span>
+        <span class="summary-value" id="subStoreSumOver">0</span>
+      </button>
+      <button type="button" class="summary-card card-red" id="subStoreCardUnder" onclick="filterSubStoreSummary('UNDER', this)">
+        <span class="summary-title">Under (-)</span>
+        <span class="summary-value" id="subStoreSumUnder">0</span>
+      </button>
+    </div>
+  </div>
+  <div id="subStoreSearchMeta" class="text-secondary mb-2" hidden></div>
+  <div class="verification-legend"><span class="yes">Answered Yes</span><span class="no">Answered No</span><span>No saved answer</span></div>
+  <div class="export-toolbar"><button class="export-button" type="button" onclick="exportSubStoreTable('inventory')"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg>Export Excel</button></div>
+
+  <div class="table-responsive mt-3">
+    <table class="table table-striped" id="searchTable">
+      <thead class="table-dark"><tr id="searchTableHead"></tr></thead>
+      <tbody id="searchTableBody"></tbody>
+    </table>
+  </div>
+  </section>
+  <section id="subStoreLocationPane" hidden>
+    <div class="verification-legend"><span class="yes">All Yes</span><span class="no">Contains No</span><span class="pending">Pending</span><span>Answer unavailable / No data</span></div>
+    <div id="subStoreLocationBoard" class="location-board"></div>
+  </section>
+  <section id="subStoreD365SummaryPane" hidden>
+    <div class="d365-summary-cards" aria-label="D365 summary filters">
+      <button type="button" class="d365-summary-card active" data-summary-status="all" aria-pressed="true"><span>Total Items</span><strong id="d365CardTotal">0</strong></button>
+      <button type="button" class="d365-summary-card checked" data-summary-status="checked" aria-pressed="false"><span>Checked</span><strong id="d365CardChecked">0</strong></button>
+      <button type="button" class="d365-summary-card pending" data-summary-status="pending" aria-pressed="false"><span>Not Checked</span><strong id="d365CardPending">0</strong></button>
+      <button type="button" class="d365-summary-card missing" data-summary-status="missing" aria-pressed="false"><span>No D365 Data</span><strong id="d365CardMissing">0</strong></button>
+    </div>
+    <div class="settings-card"><h5>D365 Comparison</h5>
+      <div class="export-toolbar"><button class="export-button" type="button" onclick="exportSubStoreTable('d365')"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg>Export Excel</button></div>
+      <div class="table-responsive"><table class="table table-striped"><thead class="table-dark"><tr id="subStoreD365SummaryHead"></tr></thead><tbody id="subStoreD365SummaryBody"></tbody></table></div>
+    </div>
+  </section>
+</div>   <!-- ✅ ต้องมี -->
+
+<!-- ===================== CONTENT: UPLOAD ===================== -->
+<div id="contentUpload" class="content" style="display:none;">
+  <h4>Manage Database</h4>
+  <div class="database-grid">
+    <section class="database-group" aria-label="Inventory WMS import">
+      <h3>Inventory (WMS)</h3><p>Import inventory records for checking.</p>
+      <div class="database-status-list" aria-live="polite"><div class="database-status" id="databaseStatusWms"></div></div>
+      <label class="compare-d365-picker">Choose WMS file<input type="file" id="fileInput" accept=".xlsx,.xls"></label>
+      <span class="compare-d365-file" id="importFileName">No file selected</span>
+      <button id="uploadBtn" class="btn btn-success w-100 mb-2" onclick="uploadToSheet()" disabled style="opacity:0.5; cursor:not-allowed;">Import Inventory</button>
+      <div class="progress"><div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div></div>
+    </section>
+    <section class="database-group" aria-label="D365 balance import">
+      <h3>D365 Balance</h3><p>Import both sites for D365 Comparison.</p>
+      <div class="database-status-list" aria-live="polite"><div class="database-status" id="databaseStatusChp"></div><div class="database-status" id="databaseStatusG1p"></div></div>
+      <label class="compare-d365-picker">Choose CHP file<input id="compareChpFile" type="file" accept=".xlsx,.xls,.csv"></label>
+      <span class="compare-d365-file" id="compareChpFileName">No file selected</span>
+      <label class="compare-d365-picker">Choose G1P file<input id="compareG1pFile" type="file" accept=".xlsx,.xls,.csv"></label>
+      <span class="compare-d365-file" id="compareG1pFileName">No file selected</span>
+      <button id="compareImportBtn" class="btn btn-success w-100 mt-2" type="button" onclick="importD365CompareFiles()" disabled>Import CHP + G1P</button>
+    </section>
+    <section class="database-group" aria-label="Manage data deletion">
+      <h3>Manage Delete</h3><p>Choose which dataset to delete.</p>
+      <label for="deleteDataset" class="form-label">Dataset</label>
+      <select id="deleteDataset" class="form-select mb-3"><option value="">Select a dataset</option><option value="inventory">Inventory + Actual</option><option value="CHP">D365 CHP</option><option value="G1P">D365 G1P</option><option value="all">All datasets</option></select>
+      <button id="deleteDatasetBtn" class="btn btn-danger w-100" type="button" onclick="confirmDeleteAll()" disabled>Delete Selected Data</button>
+    </section>
+  </div>
+  <div id="uploadResultText" class="mt-3 text-secondary"></div>
+
+  <div id="uploadPreviewWrap" class="table-responsive mt-3" hidden>
+    <table class="table table-striped" id="uploadTable">
+      <thead class="table-dark"><tr id="uploadTableHead"></tr></thead>
+      <tbody id="uploadTableBody"></tbody>
+    </table>
+  </div>
+</div> <!-- ✅ ปิด contentUpload ให้ถูกต้อง -->
+
+<!-- ===================== CONTENT: D365 COMPARE ===================== -->
+<div id="contentCompare" class="content" style="display:none;">
+  <h4><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M5 7h14M7 7l-4 7h8L7 7Zm10 0-4 7h8l-4-7ZM8 21h8"/></svg>Compare D365</h4>
+  <section class="settings-card mt-3" aria-label="D365 comparison results">
+    <h5>D365 Comparison</h5>
+    <div class="table-responsive"><table class="table table-striped"><thead class="table-dark"><tr><th>Site</th><th>D365 Code</th><th class="text-end">D365 Balance</th><th class="text-end">Act Qty (all sites)</th><th class="text-end">Q'ty Diff D365</th><th>Status</th></tr></thead><tbody id="d365CompareBody"><tr><td colspan="6" class="text-center text-muted">Import CHP and G1P files to view comparison.</td></tr></tbody></table></div>
+  </section>
+</div>
+
+<!-- ===================== CONTENT: SETTINGS ===================== -->
+<div id="contentSettings" class="content" style="display:none;">
+  <h4>Setting</h4>
+  <div class="settings-card">
+    <ul class="nav nav-tabs settings-tabs" id="settingsTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="settings-user-tab" data-bs-toggle="tab" data-bs-target="#settingsUserPane" type="button" role="tab">User</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="settings-file-sub-tab" data-bs-toggle="tab" data-bs-target="#settingsFileSubPane" type="button" role="tab">File + Sub</button>
+      </li>
+    </ul>
+
+    <div class="tab-content pt-3">
+      <div class="tab-pane fade show active" id="settingsUserPane" role="tabpanel">
+        <div class="settings-toolbar"><button class="btn btn-primary" type="button" onclick="openSubStoreUserSwal()">+ Add User</button></div>
+        <div class="table-responsive"><table class="table table-striped mb-0"><thead class="table-dark"><tr><th>Username</th><th>Active</th><th>Updated At</th><th>Action</th></tr></thead><tbody id="subStoreUsersBody"><tr><td colspan="4" class="text-center text-muted">No users found</td></tr></tbody></table></div>
+      </div>
+
+      <div class="tab-pane fade" id="settingsFileSubPane" role="tabpanel">
+        <div class="settings-toolbar"><button class="btn btn-primary" type="button" onclick="openSubStoreFileSubSwal()">+ Add File</button></div>
+        <div class="table-responsive"><table class="table table-striped mb-0"><thead class="table-dark"><tr><th>File No.</th><th>Subcon</th><th>Updated At</th><th>Action</th></tr></thead><tbody id="subStoreFileSubBody"><tr><td colspan="4" class="text-center text-muted">No mappings found</td></tr></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  const scriptURL = "https://script.google.com/macros/s/AKfycbwKSlkhthhAVoNLUfbv6l4JWnau2xkBejeSYdu0h_mQ2vI0Z3lysxjsasl_HRCdWpE/exec";
+  let subStoreSearchRows = [];
+  let subStoreLocationRows = [];
+  let subStoreSnapshotCache = null;
+  let subStoreSnapshotRequest = null;
+  let subStoreSnapshotVersion = null;
+  let subStoreAutoSyncBusy = false;
+  let subStoreSummaryFilter = "ALL";
+  let subStoreColumnFilters = {};
+  let subStoreD365Filters = {};
+  let subStoreD365Rows = [];
+  let subStoreD365CardFilter = "all";
+  let databaseStatusRequestId = 0;
+
+  const subStoreLocationRow = (prefix, first, last = 1) => Array.from({ length:first - last + 1 }, (_, index) => `${prefix}-${first - index}`);
+  const SUBSTORE_LOCATION_LAYOUT = {
+    A: { columns:8, rows:[subStoreLocationRow("AA",8),subStoreLocationRow("AB",8),subStoreLocationRow("AC",8),subStoreLocationRow("AD",8)] },
+    B: { columns:6, rows:[subStoreLocationRow("BA",6),subStoreLocationRow("BB",6),subStoreLocationRow("BC",6),subStoreLocationRow("BD",6),subStoreLocationRow("BA",12,7),subStoreLocationRow("BB",12,7),subStoreLocationRow("BC",12,7),subStoreLocationRow("BD",12,7)] },
+    C: { columns:6, rows:[subStoreLocationRow("CA",6),subStoreLocationRow("CB",6),subStoreLocationRow("CC",6),subStoreLocationRow("CD",6),subStoreLocationRow("CA",12,7),subStoreLocationRow("CB",12,7),subStoreLocationRow("CC",12,7),subStoreLocationRow("CD",12,7)] },
+    D: { columns:6, rows:[subStoreLocationRow("DA",6),subStoreLocationRow("DB",6),subStoreLocationRow("DC",6),subStoreLocationRow("DD",6),subStoreLocationRow("DA",12,7),subStoreLocationRow("DB",12,7),subStoreLocationRow("DC",12,7),subStoreLocationRow("DD",12,7)] },
+    E: { columns:6, rows:[subStoreLocationRow("EA",6),subStoreLocationRow("EB",6),subStoreLocationRow("EC",6),subStoreLocationRow("ED",6),subStoreLocationRow("EA",12,7),subStoreLocationRow("EB",12,7),subStoreLocationRow("EC",12,7),subStoreLocationRow("ED",12,7)] },
+    F: { columns:8, rows:[subStoreLocationRow("FA",8),subStoreLocationRow("FB",8),subStoreLocationRow("FC",8),subStoreLocationRow("FD",8)] },
+    G: { columns:1, rows:Array.from({ length:20 }, (_, index) => [`GA-${index + 1}`, `GB-${index + 1}`, `GC-${index + 1}`]) },
+    H: { columns:1, rows:[["HA-1"],["HB-1"],["HC-1"]] }
+  };
+
+  function subStoreLocationKey(value) {
+    return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+  }
+
+  function subStoreAnswerState(rows) {
+    if (!rows.length) return "empty";
+    if (rows.some(row => String(row.verificationAnswer || "").toUpperCase() === "NO")) return "mismatch";
+    if (rows.some(row => !isSubStoreChecked(row))) return "pending";
+    if (rows.some(row => String(row.verificationAnswer || "").toUpperCase() !== "YES")) return "unknown";
+    return "checked";
+  }
+  function renderSubStoreLocationBoard() {
+    const board = document.getElementById("subStoreLocationBoard");
+    const byLocation = subStoreLocationRows.reduce((groups, row) => {
+      const key = subStoreLocationKey(row.storageArea);
+      if (key) (groups[key] ||= []).push(row);
+      return groups;
+    }, {});
+    const tooltip = rows => rows.length ? [...new Set(rows.map(row => `${row.fileNo || "-"} [${row.subcon || "-"}] = ${formatSubStoreQuantity(row.quantity)}`))].join("\n") : "";
+    const rackGroup = ([rack, layout]) => `
+      <article class="rack-location-group rack-${rack}">
+        <h5>Rack ${rack}</h5>
+        <div class="rack-location-grid" style="--rack-columns:${layout.columns}">
+          ${layout.rows.flat().map(location => {
+            const rows = byLocation[location] || [];
+            const state = subStoreAnswerState(rows);
+            const label = {empty:"No data", checked:"All Yes", mismatch:"Contains No", pending:"Pending", unknown:"Answer unavailable"}[state];
+            const tip = tooltip(rows);
+            return `<button class="rack-location ${state}" type="button" onclick="openSubStoreLocation('${location}')" aria-label="${location}, ${label}"${tip ? ` data-tooltip="${escapeHtml(tip)}"` : ""}>${location}<span class="location-status">${rows.length ? `${rows.length} record${rows.length === 1 ? "" : "s"}` : label}</span></button>`;
+          }).join("")}
+        </div>
+      </article>`;
+    const entries = Object.entries(SUBSTORE_LOCATION_LAYOUT);
+    const gEntry = entries.find(([rack]) => rack === "G");
+    const entry = rack => entries.find(([name]) => name === rack);
+    const zoneLabel = zone => {
+      const rows = getSubStoreNamedRackRows(zone);
+      const state = subStoreAnswerState(rows);
+      const tip = tooltip(rows);
+      return `<button type="button" class="warehouse-zone-label ${state}" onclick="openSubStoreZone('${zone}')" aria-label="View Rack ${zone} details"${tip ? ` data-tooltip="${escapeHtml(tip)}"` : ""}>${zone}</button>`;
+    };
+    board.innerHTML = `${rackGroup(gEntry)}<div class="location-main">${rackGroup(entry("A"))}${zoneLabel("AAA")}<div class="rack-b-zone">${rackGroup(entry("H"))}${rackGroup(entry("B"))}</div>${zoneLabel("BBB")}${rackGroup(entry("C"))}${zoneLabel("CCC")}${rackGroup(entry("D"))}${zoneLabel("DDD")}${rackGroup(entry("E"))}${zoneLabel("EEE")}${rackGroup(entry("F"))}</div>`;
+  }
+
+  async function showSubStoreResultView(view) {
+    const searchPane = document.getElementById("subStoreSearchResultPane");
+    const locationPane = document.getElementById("subStoreLocationPane");
+    searchPane.hidden = view !== "search";
+    locationPane.hidden = view !== "location";
+    document.getElementById("subStoreDashboardPane").hidden = view !== "dashboard";
+    document.getElementById("subStoreD365SummaryPane").hidden = view !== "d365";
+    [["subStoreDashboardTab", "dashboard"], ["subStoreSearchResultTab", "search"], ["subStoreLocationTab", "location"], ["subStoreD365SummaryTab", "d365"]].forEach(([id, value]) => {
+      document.getElementById(id).classList.toggle("active", view === value);
+      document.getElementById(id).setAttribute("aria-selected", String(view === value));
+    });
+    const shouldShowLoading = true;
+    if (shouldShowLoading) Swal.fire({ title:"Refreshing Sub-Store data...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+    try {
+      await loadSubStoreSnapshot(true);
+      if (shouldShowLoading) Swal.close();
+    } catch (error) {
+      if (shouldShowLoading) Swal.close();
+      await Swal.fire({ icon:"error", title:"Could not load Sub-Store data", text:error.message || String(error) });
+    }
+  }
+
+  async function loadSubStoreSnapshot(force = false) {
+    if (!force && subStoreSnapshotCache) return subStoreSnapshotCache;
+    if (subStoreSnapshotRequest) return subStoreSnapshotRequest;
+    subStoreSnapshotRequest = subStoreApi("getSnapshot").then(result => applySubStoreSnapshot(result, false)).finally(() => { subStoreSnapshotRequest = null; });
+    return subStoreSnapshotRequest;
+  }
+
+  function applySubStoreSnapshot(result, preserveFilters) {
+      if (!Array.isArray(result.rows)) throw new Error("Invalid inventory response");
+      const balances = result.d365Balances;
+      const rows = result.rows.map(row => {
+        const code = String(row.d365Code ?? "").trim().toUpperCase();
+        const hasBalance = balances && Object.prototype.hasOwnProperty.call(balances, code);
+        const balance = hasBalance ? Number(balances[code]) : null;
+        const rawActual = String(row.actQty ?? "").trim();
+        const actual = rawActual ? Number(rawActual.replace(/,/g, "")) : null;
+        return { ...row, d365Balance: hasBalance && Number.isFinite(balance) ? balance : null,
+          d365QtyDiff: hasBalance && Number.isFinite(balance) && actual !== null && Number.isFinite(actual) ? actual - balance : null };
+      });
+      subStoreSnapshotCache = rows;
+      subStoreSnapshotVersion = result.version ?? null;
+      subStoreLocationRows = rows;
+      subStoreSearchRows = rows;
+      if (!preserveFilters) { subStoreSummaryFilter = "ALL"; subStoreColumnFilters = {}; }
+      updateSubStoreSummary(rows);
+      if (preserveFilters) {
+        const cardIds = { ALL:"subStoreCardTotal", CHECKED:"subStoreCardMatch", PENDING:"subStoreCardPending", OVER:"subStoreCardOver", UNDER:"subStoreCardUnder" };
+        document.querySelectorAll("#subStoreSummaryBox .summary-card").forEach(card => card.classList.remove("active"));
+        document.getElementById(cardIds[subStoreSummaryFilter] || cardIds.ALL).classList.add("active");
+      }
+      refreshSubStoreSearchTable();
+      renderSubStoreLocationBoard();
+      renderSubStoreD365Summary(rows);
+      renderInventoryDashboard(rows);
+      return rows;
+  }
+
+  async function syncSubStoreOverview() {
+    if (document.hidden || document.getElementById("contentSearch").style.display === "none" || subStoreAutoSyncBusy || subStoreSnapshotRequest || subStoreSnapshotVersion == null || Swal.isVisible()) return;
+    subStoreAutoSyncBusy = true;
+    try {
+      const startingVersion = subStoreSnapshotVersion;
+      const latest = await subStoreApi("getDataVersion");
+      if (String(latest.version) === String(subStoreSnapshotVersion) || document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none") return;
+      const result = await subStoreApi("getSnapshot");
+      if (document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none" || subStoreSnapshotRequest || subStoreSnapshotVersion !== startingVersion) return;
+      applySubStoreSnapshot(result, true);
+    } catch (error) { console.warn("Sub-Store automatic refresh failed", error); }
+    finally { subStoreAutoSyncBusy = false; }
+  }
+
+  function invalidateSubStoreSnapshot() {
+    subStoreSnapshotCache = null;
+    subStoreSnapshotRequest = null;
+  }
+
+  async function refreshSubStoreDashboard() {
+    Swal.fire({ title:"Refreshing Sub-Store data...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+    try {
+      invalidateSubStoreSnapshot();
+      await loadSubStoreSnapshot(true);
+      Swal.close();
+      await Swal.fire({ icon:"success", title:"Data refreshed", timer:1100, showConfirmButton:false });
+    } catch (error) {
+      Swal.close();
+      await Swal.fire({ icon:"error", title:"Refresh failed", text:error.message || String(error) });
+    }
+  }
+
+  function openSubStoreLocation(location) {
+    const rows = subStoreLocationRows.filter(row => subStoreLocationKey(row.storageArea) === location);
+    openSubStoreRecordModal(`Location ${location}`, rows);
+  }
+
+  function openSubStoreZone(zone) {
+    const rows = getSubStoreNamedRackRows(zone);
+    openSubStoreRecordModal(`Rack ${zone}`, rows);
+  }
+
+  function openSubStoreRecordModal(title, rows) {
+    const checked = rows.filter(isSubStoreChecked).length;
+    const pending = rows.length - checked;
+    const tableRows = rows.map(row => {
+      const isChecked = isSubStoreChecked(row);
+      return `<tr><td>${escapeHtml(row.storageArea || "-")}</td><td>${escapeHtml(row.fileNo || "-")}</td><td>${escapeHtml(row.subcon || "-")}</td><td>${escapeHtml(row.lotNumber || "-")}</td><td>${formatSubStoreQuantity(row.quantity)}</td><td>${formatSubStoreQuantity(row.actQty)}</td><td>${formatSubStoreQuantity(row.delta)}</td><td><span class="record-status ${isChecked ? "checked" : "pending"}">${isChecked ? "Checked" : "Pending"}</span></td></tr>`;
+    }).join("");
+    Swal.fire({
+      title,
+      html: rows.length ? `<div class="record-modal-summary"><div class="record-modal-stat"><span>Total Records</span><b>${rows.length}</b></div><div class="record-modal-stat checked"><span>Checked</span><b>${checked}</b></div><div class="record-modal-stat pending"><span>Pending</span><b>${pending}</b></div></div><div class="record-modal-table-wrap"><table class="record-modal-table"><thead><tr><th>Location</th><th>File No.</th><th>Subcon</th><th>Lot</th><th>System Qty</th><th>Actual Qty</th><th>Delta +/-</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></div>` : `<div class="record-modal-empty">No inventory records found.</div>`,
+      showCloseButton:true,
+      showConfirmButton:false,
+      customClass:{ popup:"substore-record-modal" }
+    });
+  }
+
+  function getSubStoreNamedRackRows(rack) {
+    const target = String(rack || "").toUpperCase();
+    return subStoreLocationRows.filter(row => {
+      const storageArea = subStoreLocationKey(row.storageArea);
+      return storageArea === target || storageArea.startsWith(`${target}-`);
+    });
+  }
+
+  // 🕓 อัปเดตเวลา Navbar
+  function updateDateTime() {
+    const now = new Date();
+    const formatted = now.toLocaleString('th-TH', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    document.getElementById('currentDateTime').textContent = formatted;
+  }
+  setInterval(updateDateTime, 1000); updateDateTime();
+
+// 📤 Upload Excel
+const SUBSTORE_IMPORT_HEADERS = [
+  "สินค้า", "รหัส D365", "กลุ่มสินค้า", "คลังสินค้า", "พื้นที่จัดเก็บ",
+  "หมายเลขล๊อต", "จำนวน", "หน่วยนับ", "Product", "D365 Code"
+];
+
+function normalizeImportHeader(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function normalizeSubStoreFileNo(value) {
+  const match = String(value || "").trim().toUpperCase().replace(/\s+/g, "").match(/^F?(\d{1,4})([A-Z]?)$/);
+  return match ? `F${match[1].padStart(4, "0")}${match[2]}` : "";
+}
+
+function extractSubStoreFileNo(product, d365Code) {
+  const productMatch = String(product || "").toUpperCase().match(/\[(F?\d{1,4}[A-Z]?)\]/);
+  if (productMatch) return normalizeSubStoreFileNo(productMatch[1]);
+  const d365Match = String(d365Code || "").toUpperCase().match(/T(\d{1,4})([A-Z]?)$/);
+  return d365Match ? normalizeSubStoreFileNo(`${d365Match[1]}${d365Match[2]}`) : "";
+}
+
+function extractSubStoreTextAfterBracket(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/^\s*\[[^\]]+\]\s*(.*)$/);
+  return (match ? match[1] : text).trim();
+}
+
+function normalizeSubStoreStorageArea(value) {
+  const text = extractSubStoreTextAfterBracket(value).toUpperCase().replace(/\s+/g, "");
+  const match = text.match(/^([A-Z]+)-?0*(\d+)$/);
+  return match ? `${match[1]}-${Number(match[2])}` : text;
+}
+
+function parseSubStoreImport(rawRows) {
+  if (!rawRows.length) throw new Error("The selected workbook is empty.");
+  const header = rawRows[0].map(normalizeImportHeader);
+  const missingHeaders = SUBSTORE_IMPORT_HEADERS.filter(name => !header.includes(name));
+  if (missingHeaders.length) {
+    throw new Error(`Invalid Sub-Store template. Missing columns: ${missingHeaders.join(", ")}`);
+  }
+
+  const index = Object.fromEntries(header.map((name, column) => [name, column]));
+  const rows = rawRows.slice(1)
+    .filter(row => row.some(value => String(value ?? "").trim() !== ""))
+    .map(row => {
+      const product = String(row[index["Product"]] ?? row[index["สินค้า"]] ?? "").trim();
+      const d365Code = String(row[index["D365 Code"]] ?? row[index["รหัส D365"]] ?? "").trim();
+      return {
+        fileNo: extractSubStoreFileNo(product, d365Code),
+        itemGroup: extractSubStoreTextAfterBracket(row[index["กลุ่มสินค้า"]]),
+        storageArea: normalizeSubStoreStorageArea(row[index["พื้นที่จัดเก็บ"]]),
+        lotNumber: String(row[index["หมายเลขล๊อต"]] ?? "").trim(),
+        quantity: row[index["จำนวน"]] ?? "",
+        d365Code
+      };
+    });
+
+  const detailRows = rows.filter(row => String(row.quantity ?? "").trim() !== "");
+  if (!detailRows.length) throw new Error("No stock-detail rows with Quantity were found.");
+  return { rows, detailRows };
+}
+
+function renderSubStoreUploadPreview(detailRows, result) {
+  document.getElementById("uploadPreviewWrap").hidden = false;
+  const headings = ["File No.", "Item Group", "Storage Area", "Lot", "Quantity", "D365 Code"];
+  const body = document.getElementById("uploadTableBody");
+  document.getElementById("uploadTableHead").innerHTML = headings.map(name => `<th>${name}</th>`).join("");
+  body.innerHTML = detailRows.slice(0, 100).map(row => `
+    <tr>
+      <td>${escapeHtml(row.fileNo)}</td><td>${escapeHtml(row.itemGroup)}</td>
+      <td>${escapeHtml(row.storageArea)}</td><td>${escapeHtml(row.lotNumber)}</td>
+      <td class="text-end">${Number(row.quantity).toLocaleString()}</td><td>${escapeHtml(row.d365Code)}</td>
+    </tr>`).join("");
+  const suffix = detailRows.length > 100 ? " Showing the first 100 rows." : "";
+  document.getElementById("uploadResultText").textContent =
+    `Imported ${result.savedRowCount.toLocaleString()} rows from ${result.sourceRowCount.toLocaleString()} source rows. ` +
+    `Total quantity: ${Number(result.totalQuantity).toLocaleString()}.${suffix}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+  })[char]);
+}
+
+async function uploadToSheet() {
+  const file = document.getElementById("fileInput").files[0];
+  if (!file) return Swal.fire({ icon: "warning", title: "Please select a file" });
+
+  const confirm = await Swal.fire({
+    icon:"warning", title:"Import Inventory?",
+    html:`File: <b>${escapeHtml(file.name)}</b><br><br>The current WMS inventory snapshot will be replaced. Actual data is retained only for matching records; records absent from the new file and their Actual data will be removed. D365 data and import logs are retained.`,
+    showCancelButton:true, confirmButtonText:"Import Inventory", cancelButtonText:"Cancel"
+  });
+  if (!confirm.isConfirmed) return;
+
+  const progress = document.querySelector(".progress");
+  const bar = document.getElementById("progressBar");
+  progress.style.display = "block";
+  bar.style.width = "15%";
+  bar.innerText = "15%";
+  Swal.fire({
+    title: "Reading Sub-Store WMS file...",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: true, defval: "" });
+    const parsed = parseSubStoreImport(rawRows);
+
+    bar.style.width = "55%";
+    bar.innerText = "55%";
+    Swal.update({ title: "Importing Sub-Store snapshot..." });
+    const response = await fetch(scriptURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: new URLSearchParams({
+        action: "importSnapshot",
+        rows: JSON.stringify(parsed.rows),
+        sourceFileName: file.name,
+        importedBy: "WEB"
+      })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      const detail = result.invalidRows?.length
+        ? ` Invalid rows: ${result.invalidRows.map(row => row.rowNumber).join(", ")}`
+        : "";
+      throw new Error(`${result.message || "Import failed"}.${detail}`);
+    }
+
+    bar.style.width = "100%";
+    bar.innerText = "100%";
+    bar.classList.replace("bg-info", "bg-success");
+    renderSubStoreUploadPreview(parsed.detailRows, result);
+    invalidateSubStoreSnapshot();
+    refreshDatabaseStatus();
+    document.getElementById("fileInput").value = "";
+    document.getElementById("importFileName").textContent = "No file selected";
+    uploadBtn.disabled = true;
+    uploadBtn.style.opacity = "0.5";
+    uploadBtn.style.cursor = "not-allowed";
+    await Swal.fire({
+      icon: "success",
+      title: "Sub-Store snapshot imported",
+      html: `Saved <b>${result.savedRowCount.toLocaleString()}</b> rows<br>Total quantity: <b>${Number(result.totalQuantity).toLocaleString()}</b>`
+    });
+  } catch (err) {
+    refreshDatabaseStatus();
+    Swal.close();
+    await Swal.fire({ icon: "error", title: "Import failed", text: err.message || String(err) });
+  } finally {
+    progress.style.display = "none";
+    bar.style.width = "0%";
+    bar.innerText = "0%";
+    bar.classList.replace("bg-success", "bg-info");
+  }
+}
+
+
+
+async function confirmDeleteAll() {
+  const dataset = document.getElementById("deleteDataset").value;
+  const labels = { inventory:"Inventory + Actual", CHP:"D365 CHP", G1P:"D365 G1P", all:"All datasets" };
+  if (!Object.prototype.hasOwnProperty.call(labels, dataset)) return Swal.fire({ icon:"warning", title:"Select a dataset" });
+  const confirm = await Swal.fire({
+    title: `Delete ${labels[dataset]}?`,
+    text: dataset === "all" ? "This permanently deletes all Inventory, Actual, D365 CHP and D365 G1P data. Users, mappings and import logs are retained. If deletion fails, some datasets may already be deleted." : dataset === "inventory" ? "This permanently deletes all inventory records and their Actual entries. D365 data and import logs are retained." : "This deletes the selected D365 dataset. Inventory, Actual entries and import logs are retained. Combined D365 totals will be unavailable until both files are imported again.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ใช่, ลบทั้งหมด",
+    cancelButtonText: "ยกเลิก"
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({
+    title: "กำลังลบข้อมูล...",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    const result = dataset === "all" ? await subStoreApi("clearAllSubstoreDatasets") : dataset === "inventory" ? await subStoreApi("clearSnapshot") : await subStoreApi("clearD365Compare", { source:dataset });
+    invalidateSubStoreSnapshot();
+    refreshDatabaseStatus();
+    document.getElementById("deleteDataset").value = "";
+    document.getElementById("deleteDatasetBtn").disabled = true;
+    Swal.close();
+    await Swal.fire({ icon:"success", title:`${labels[dataset]} deleted`, text:`Deleted ${Number(result.deletedRows || 0).toLocaleString()} records.` });
+  } catch (error) {
+    invalidateSubStoreSnapshot();
+    refreshDatabaseStatus();
+    Swal.close();
+    await Swal.fire({ icon:"error", title:"Delete failed", text:error.message || String(error) });
+  }
+}
+
+const SUBSTORE_SEARCH_COLUMNS = [
+  { key: "fileNo", label: "File No." },
+  { key: "subcon", label: "Subcon" },
+  { key: "storageArea", label: "Storage Area" },
+  { key: "lotNumber", label: "Lot Number" },
+  { key: "quantity", label: "Quantity" },
+  { key: "d365Code", label: "D365 Code" },
+  { key: "actFileNo", label: "Act File No." },
+  { key: "actSubcon", label: "Act Subcon" },
+  { key: "actRack", label: "Act_Rack" },
+  { key: "actLot", label: "Act_Lot" },
+  { key: "actQty", label: "Act_Qty" },
+  { key: "actPackage", label: "Act_Package" },
+  { key: "delta", label: "Delta +/-" },
+  { key: "wmsCheck", label: "WMS vs Actual" },
+  { key: "recordedBy", label: "Recorded By" },
+  { key: "recordedAt", label: "Updated At" }
+];
+
+function getSubStoreCellValue(row, key) {
+  if (key === "wmsCheck") return getSubStoreWmsCheck(row);
+  const value = row[key];
+  if (["quantity", "actQty", "delta", "d365Balance", "d365QtyDiff"].includes(key)) return formatSubStoreQuantity(value);
+  if (key === "recordedAt") return formatSubStoreDateTime(value);
+  return String(value ?? "").trim() || "-";
+}
+
+function getSubStoreWmsCheck(row) {
+  if (!isSubStoreChecked(row)) return "Not checked";
+  const norm = value => String(value ?? "").trim().toUpperCase();
+  const pairs = [[row.fileNo, row.actFileNo], [row.subcon, row.actSubcon], [row.storageArea, row.actRack], [row.lotNumber, row.actLot]];
+  const systemText = String(row.quantity ?? "").trim().replace(/,/g, "");
+  const actualText = String(row.actQty ?? "").trim().replace(/,/g, "");
+  if (pairs.some(([expected, actual]) => !norm(expected) || !norm(actual)) || !systemText || !actualText || !Number.isFinite(Number(systemText)) || !Number.isFinite(Number(actualText))) return "Incomplete";
+  return pairs.every(([expected, actual]) => norm(expected) === norm(actual)) && Number(systemText) === Number(actualText) ? "Match" : "Mismatch";
+}
+
+function getSubStoreRowsForDisplay() {
+  const selectedValues = Object.entries(subStoreColumnFilters)
+    .filter(([, values]) => Array.isArray(values) && values.length)
+    .map(([key, values]) => [key, new Set(values)]);
+  return subStoreSearchRows.filter(row => {
+    if (subStoreSummaryFilter === "CHECKED" && !isSubStoreChecked(row)) return false;
+    if (subStoreSummaryFilter === "PENDING" && isSubStoreChecked(row)) return false;
+    if (!["ALL", "CHECKED", "PENDING"].includes(subStoreSummaryFilter) && subStoreSummaryStatus(row) !== subStoreSummaryFilter) return false;
+    return selectedValues.every(([key, values]) => values.has(getSubStoreCellValue(row, key)));
+  });
+}
+
+function refreshSubStoreSearchTable() {
+  renderSubStoreSearchTable(getSubStoreRowsForDisplay(), subStoreSearchRows.length);
+}
+
+const SUBSTORE_D365_COLUMNS = [
+  { key:"code", label:"D365 Code" }, { key:"locations", label:"Locations" },
+  { key:"actual", label:"Act Qty Total" }, { key:"balance", label:"D365 Total" },
+  { key:"diff", label:"Q'ty Diff D365" }, { key:"countStatus", label:"Count Status" }, { key:"comparisonStatus", label:"D365 Comparison" }
+];
+
+function renderSubStoreD365Summary(rows) {
+  const groups = new Map();
+  rows.forEach(row => {
+    const code = String(row.d365Code ?? "").trim().toUpperCase();
+    if (!code) return;
+    if (!groups.has(code)) groups.set(code, []);
+    groups.get(code).push(row);
+  });
+  const entries = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  subStoreD365Rows = entries.map(([code, records]) => {
+    let total = 0, checked = 0, pending = 0;
+    const locations = new Set();
+    records.forEach(row => {
+      const location = String(row.storageArea ?? "").trim().toUpperCase();
+      if (location) locations.add(location);
+      const raw = String(row.actQty ?? "").trim();
+      const qty = raw ? Number(raw.replace(/,/g, "")) : NaN;
+      if (!Number.isFinite(qty)) pending++;
+      else { total += qty; checked++; }
+    });
+    const balance = records[0].d365Balance;
+    const hasBalance = balance !== null && balance !== undefined && Number.isFinite(Number(balance));
+    const countStatus = pending ? `Not checked (${pending})` : "Checked";
+    const comparisonStatus = !hasBalance ? "No D365 Data" : pending ? "Pending" : Math.abs(total - Number(balance)) < 1e-9 ? "Match" : "Diff";
+    const actualText = checked ? formatSubStoreQuantity(total) : "-";
+    const diffText = !pending && hasBalance ? formatSubStoreQuantity(total - Number(balance)) : "-";
+    return { code, locations:String(locations.size), actual:actualText, balance:hasBalance ? formatSubStoreQuantity(balance) : "-", diff:diffText, countStatus, comparisonStatus, pending, hasBalance, records };
+  });
+  refreshSubStoreD365Summary();
+}
+
+function subStoreD365CardMatches(row, status) {
+  return status === "all" || (status === "checked" && !row.pending) || (status === "pending" && row.pending > 0) || (status === "missing" && !row.hasBalance);
+}
+
+function getSubStoreD365RowsForDisplay() {
+  return subStoreD365Rows.filter(row => subStoreD365CardMatches(row, subStoreD365CardFilter) && Object.entries(subStoreD365Filters).every(([key, values]) => !values.length || values.includes(row[key])));
+}
+
+function refreshSubStoreD365Summary() {
+  document.getElementById("d365CardTotal").textContent = subStoreD365Rows.length.toLocaleString();
+  [["checked", "d365CardChecked"], ["pending", "d365CardPending"], ["missing", "d365CardMissing"]].forEach(([status, id]) => {
+    document.getElementById(id).textContent = subStoreD365Rows.filter(row => subStoreD365CardMatches(row, status)).length.toLocaleString();
+  });
+  document.querySelectorAll(".d365-summary-card").forEach(card => {
+    const active = card.dataset.summaryStatus === subStoreD365CardFilter;
+    card.classList.toggle("active", active);
+    card.setAttribute("aria-pressed", String(active));
+  });
+  const head = document.getElementById("subStoreD365SummaryHead");
+  head.innerHTML = SUBSTORE_D365_COLUMNS.map(column => `<th class="d365-summary-filter ${["actual","balance","diff"].includes(column.key) ? "text-end" : "text-center"} ${subStoreD365Filters[column.key]?.length ? "active-filter" : ""}" data-filter-key="${column.key}" tabindex="0" role="button" aria-label="Filter ${escapeHtml(column.label)}">${escapeHtml(column.label)}</th>`).join("");
+  head.querySelectorAll(".d365-summary-filter").forEach(cell => {
+    const open = () => { const column = SUBSTORE_D365_COLUMNS.find(item => item.key === cell.dataset.filterKey); if (column) openSubStoreHeaderFilter(column.key, column.label, true); };
+    cell.addEventListener("click", open);
+    cell.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+  });
+  const filtered = getSubStoreD365RowsForDisplay();
+  const body = document.getElementById("subStoreD365SummaryBody");
+  body.innerHTML = filtered.length ? filtered.map(row => {
+    const countClass = row.pending ? "pending" : "checked";
+    const comparisonClass = row.comparisonStatus === "Match" ? "checked" : row.comparisonStatus === "Diff" ? "different" : row.comparisonStatus === "Pending" ? "pending" : "missing";
+    return `<tr><td class="text-center"><button type="button" class="btn btn-sm btn-outline-primary substore-d365-detail" data-code="${escapeHtml(row.code)}">${escapeHtml(row.code)}</button></td><td class="text-center">${escapeHtml(row.locations)}</td><td class="text-end">${escapeHtml(row.actual)}</td><td class="text-end">${escapeHtml(row.balance)}</td><td class="text-end">${escapeHtml(row.diff)}</td><td class="text-center"><span class="summary-status ${countClass}">${escapeHtml(row.countStatus)}</span></td><td class="text-center"><span class="summary-status ${comparisonClass}">${escapeHtml(row.comparisonStatus)}</span></td></tr>`;
+  }).join("") : `<tr><td colspan="7" class="text-center text-muted">${subStoreD365Rows.length ? "No matching records." : "No inventory records found."}</td></tr>`;
+  body.querySelectorAll(".substore-d365-detail").forEach(button => button.addEventListener("click", () => {
+    const code = button.dataset.code;
+    const row = subStoreD365Rows.find(item => item.code === code);
+    openSubStoreRecordModal(`D365 Code: ${code}`, row ? row.records : []);
+  }));
+}
+
+function renderInventoryDashboard(rows) {
+  const checked = rows.filter(isSubStoreChecked).length;
+  const comparisonCounts = { Match:0, Mismatch:0, Incomplete:0 };
+  rows.filter(isSubStoreChecked).forEach(row => { const status = getSubStoreWmsCheck(row); if (Object.hasOwn(comparisonCounts, status)) comparisonCounts[status]++; });
+  document.getElementById("overviewMatch").textContent = comparisonCounts.Match.toLocaleString();
+  document.getElementById("overviewMismatch").textContent = comparisonCounts.Mismatch.toLocaleString();
+  document.getElementById("overviewIncomplete").textContent = comparisonCounts.Incomplete.toLocaleString();
+  document.getElementById("overviewIncompleteCard").hidden = comparisonCounts.Incomplete === 0;
+  document.getElementById("overviewTotal").textContent = rows.length.toLocaleString();
+  document.getElementById("overviewChecked").textContent = checked.toLocaleString();
+  document.getElementById("overviewPending").textContent = (rows.length - checked).toLocaleString();
+  document.getElementById("overviewProgress").textContent = rows.length ? `${(checked / rows.length * 100).toFixed(1)}%` : "-";
+
+  const racks = new Map(Object.keys(SUBSTORE_LOCATION_LAYOUT).map(name => [name, []]));
+  const locationToRack = new Map();
+  Object.entries(SUBSTORE_LOCATION_LAYOUT).forEach(([rack, layout]) => layout.rows.flat().forEach(location => locationToRack.set(location, rack)));
+  rows.forEach(row => {
+    const location = subStoreLocationKey(row.storageArea);
+    const named = /^(AAA|BBB|CCC|DDD|EEE)(?:-|$)/.exec(location);
+    const rack = locationToRack.get(location) || (named ? named[1][0] : "Other");
+    if (!racks.has(rack)) racks.set(rack, []);
+    racks.get(rack).push(row);
+  });
+  const rackEl = document.getElementById("overviewRackProgress");
+  rackEl.innerHTML = [...racks].map(([rack, records]) => {
+    const count = records.filter(isSubStoreChecked).length, total = records.length;
+    const percent = total ? count / total * 100 : 0;
+    const name = rack === "Other" ? "Other" : `Rack ${rack}`;
+    return `<button class="rack-progress-row" type="button" data-rack="${escapeHtml(rack)}" ${total ? "" : "disabled"} aria-label="${escapeHtml(name)}: ${count} checked, ${total - count} not checked"><b>${escapeHtml(rack)}</b><span class="rack-progress-track" aria-hidden="true"><span class="rack-progress-checked" style="width:${percent}%"></span><span class="rack-progress-pending" style="width:${total ? 100 - percent : 0}%"></span></span><span class="rack-progress-count">${count} / ${total}</span></button>`;
+  }).join("");
+  rackEl.querySelectorAll("[data-rack]").forEach(button => button.addEventListener("click", () => openSubStoreRecordModal(button.dataset.rack === "Other" ? "Other Locations" : `Rack ${button.dataset.rack}`, racks.get(button.dataset.rack) || [])));
+
+  const comparisonCategory = row => row.pending ? "Pending" : row.comparisonStatus;
+  const categories = [{ name:"Match", color:"#15803d" }, { name:"Diff", color:"#b91c1c" }, { name:"No D365 Data", color:"#475569" }, { name:"Pending", color:"#b45309" }];
+  const statusEl = document.getElementById("overviewD365Status");
+  statusEl.innerHTML = categories.map(item => `<button type="button" class="overview-status" data-status="${escapeHtml(item.name)}" style="--status-color:${item.color}"><span>${escapeHtml(item.name)}</span><strong>${subStoreD365Rows.filter(row => comparisonCategory(row) === item.name).length.toLocaleString()}</strong></button>`).join("");
+  statusEl.querySelectorAll("[data-status]").forEach(button => button.addEventListener("click", async () => {
+    const status = button.dataset.status;
+    await showSubStoreResultView("d365");
+    subStoreD365CardFilter = "all";
+    subStoreD365Filters = {};
+    if (status === "Pending") subStoreD365CardFilter = "pending";
+    else { subStoreD365Filters.comparisonStatus = [status]; subStoreD365CardFilter = "checked"; }
+    refreshSubStoreD365Summary();
+  }));
+
+  const attention = subStoreD365Rows.filter(row => !row.pending && (row.comparisonStatus === "Diff" || row.comparisonStatus === "No D365 Data"));
+  const attentionEl = document.getElementById("overviewAttention");
+  attentionEl.innerHTML = attention.length ? attention.slice(0, 8).map(row => `<button type="button" data-code="${escapeHtml(row.code)}"><b>${escapeHtml(row.code)}</b><span>${escapeHtml(row.comparisonStatus === "Diff" ? `Diff: ${row.diff}` : "No D365 Data")}</span></button>`).join("") + (attention.length > 8 ? `<div class="overview-empty">Showing 8 of ${attention.length.toLocaleString()} codes. Open D365 Comparison for all results.</div>` : "") : '<div class="overview-empty">No checked codes need attention.</div>';
+  attentionEl.querySelectorAll("[data-code]").forEach(button => button.addEventListener("click", () => {
+    const row = subStoreD365Rows.find(item => item.code === button.dataset.code);
+    if (row) openSubStoreRecordModal(`D365 Code: ${row.code}`, row.records);
+  }));
+}
+
+function renderSubStoreSearchTable(rows, sourceRowCount) {
+  document.getElementById("searchTableHead").innerHTML = SUBSTORE_SEARCH_COLUMNS
+    .map(column => `<th class="substore-filter-head" data-filter-key="${column.key}">${column.label}</th>`).join("");
+  bindSubStoreHeaderFilters();
+  updateSubStoreHeaderFilterState();
+  const body = document.getElementById("searchTableBody");
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="${SUBSTORE_SEARCH_COLUMNS.length}" class="text-center text-muted">No data found</td></tr>`;
+    document.getElementById("subStoreSearchMeta").textContent = `No matching records from ${Number(sourceRowCount).toLocaleString()} imported rows.`;
+    return;
+  }
+  const sorted = [...rows].sort((a, b) => `${a.fileNo}|${a.lotNumber}|${a.storageArea}`.localeCompare(`${b.fileNo}|${b.lotNumber}|${b.storageArea}`));
+  body.innerHTML = sorted.map(row => `
+    <tr class="${String(row.verificationAnswer || '').toUpperCase() === 'YES' ? 'inventory-answer-yes' : String(row.verificationAnswer || '').toUpperCase() === 'NO' ? 'inventory-answer-no' : ''}">
+      <td>${escapeHtml(row.fileNo || "-")}</td>
+      <td>${escapeHtml(row.subcon || "-")}</td>
+      <td>${escapeHtml(row.storageArea || "-")}</td>
+      <td>${escapeHtml(row.lotNumber || "-")}</td>
+      <td class="text-end">${formatSubStoreQuantity(row.quantity)}</td>
+      <td>${escapeHtml(row.d365Code || "-")}</td>
+      <td>${escapeHtml(row.actFileNo || "-")}</td>
+      <td>${escapeHtml(row.actSubcon || "-")}</td>
+      <td>${escapeHtml(row.actRack || "-")}</td>
+      <td>${escapeHtml(row.actLot || "-")}</td>
+      <td class="text-end">${formatSubStoreQuantity(row.actQty)}</td>
+      <td>${escapeHtml(row.actPackage || "-")}</td>
+      <td class="text-end">${formatSubStoreQuantity(row.delta)}</td>
+      <td><span class="summary-status ${getSubStoreWmsCheck(row) === "Match" ? "checked" : getSubStoreWmsCheck(row) === "Mismatch" ? "different" : "missing"}" title="Compared with current WMS values; older records may have overwritten original values">${escapeHtml(getSubStoreWmsCheck(row))}</span></td>
+      <td>${escapeHtml(row.recordedBy || "-")}</td>
+      <td>${escapeHtml(formatSubStoreDateTime(row.recordedAt))}</td>
+    </tr>`).join("");
+  document.getElementById("subStoreSearchMeta").textContent = `Showing ${rows.length.toLocaleString()} of ${Number(sourceRowCount).toLocaleString()} imported rows.`;
+}
+
+function formatSubStoreQuantity(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "-";
+  const number = Number(text.replace(/,/g, ""));
+  return Number.isFinite(number) ? number.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "-";
+}
+
+let styledExcelPromise = null;
+function getStyledExcelLibrary() {
+  if (styledExcelPromise) return styledExcelPromise;
+  styledExcelPromise = new Promise((resolve, reject) => {
+    const original = window.XLSX;
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
+    script.onload = () => {
+      const styled = window.XLSX;
+      window.XLSX = original;
+      if (!styled || styled === original) { reject(new Error("The Excel formatting library could not be loaded.")); return; }
+      resolve(styled);
+    };
+    script.onerror = () => { window.XLSX = original; reject(new Error("The Excel formatting library could not be loaded. Check your connection and try again.")); };
+    document.head.appendChild(script);
+  }).catch(error => { styledExcelPromise = null; throw error; });
+  return styledExcelPromise;
+}
+
+async function exportSubStoreTable(type) {
+  const isInventory = type === "inventory";
+  const columns = isInventory ? SUBSTORE_SEARCH_COLUMNS : [
+    { key:"code", label:"D365 Code" }, { key:"rowType", label:"Row Type" },
+    { key:"location", label:"Location" }, { key:"lot", label:"Lot Number" },
+    { key:"locationActual", label:"Location Act Qty" },
+    ...SUBSTORE_D365_COLUMNS.filter(column => column.key !== "code")
+  ];
+  const rows = isInventory
+    ? [...getSubStoreRowsForDisplay()].sort((a, b) => `${a.fileNo}|${a.lotNumber}|${a.storageArea}`.localeCompare(`${b.fileNo}|${b.lotNumber}|${b.storageArea}`))
+    : getSubStoreD365RowsForDisplay();
+  if (!rows.length) return Swal.fire({ icon:"info", title:"No data to export", text:"There are no rows matching the current filters." });
+  if (typeof XLSX === "undefined") return Swal.fire({ icon:"error", title:"Export unavailable", text:"The Excel library could not be loaded. Check your connection and try again." });
+  try {
+    const excel = isInventory ? XLSX : await getStyledExcelLibrary();
+    const numericKeys = new Set(isInventory ? ["quantity", "actQty", "delta"] : ["locations", "actual", "balance", "diff", "locationActual"]);
+    const exportRows = isInventory ? rows : rows.flatMap(row => [
+      { ...row, rowType:"Summary" },
+      ...row.records.map(record => {
+        const actual = String(record.actQty ?? "").trim();
+        return { rowType:"Location", location:record.storageArea, lot:record.lotNumber,
+          locationActual:record.actQty, countStatus:actual && Number.isFinite(Number(actual.replace(/,/g, ""))) ? "Checked" : "Not checked" };
+      })
+    ]);
+    const values = [columns.map(column => column.label), ...exportRows.map(row => columns.map(column => {
+      const value = isInventory ? getSubStoreCellValue(row, column.key) : row[column.key];
+      if (!numericKeys.has(column.key)) return String(value ?? (isInventory ? "-" : ""));
+      const raw = String(value ?? "").trim().replace(/,/g, "");
+      if (!raw || raw === "-") return isInventory || value === "-" ? "-" : "";
+      const number = Number(raw);
+      return Number.isFinite(number) ? number : "-";
+    }))];
+    const worksheet = excel.utils.aoa_to_sheet(values);
+    worksheet['!cols'] = columns.map((column, index) => ({ wch: Math.min(36, values.slice(1).reduce((width, row) => Math.max(width, String(row[index] ?? "").length + 2), Math.max(12, column.label.length + 2))) }));
+    if (!isInventory) {
+      worksheet['!autofilter'] = { ref:excel.utils.encode_range({ s:{ r:0, c:0 }, e:{ r:values.length - 1, c:columns.length - 1 } }) };
+      values.forEach((row, rowIndex) => {
+        if (rowIndex !== 0 && exportRows[rowIndex - 1].rowType !== "Summary") return;
+        columns.forEach((column, colIndex) => {
+          const address = excel.utils.encode_cell({ r:rowIndex, c:colIndex });
+          const cell = worksheet[address] || (worksheet[address] = { t:"s", v:"" });
+          cell.s = rowIndex === 0
+            ? { fill:{ patternType:"solid", fgColor:{ rgb:"9A3412" } }, font:{ bold:true, color:{ rgb:"FFFFFF" } }, alignment:{ vertical:"center" } }
+            : { fill:{ patternType:"solid", fgColor:{ rgb:"FFF1E2" } }, font:{ bold:true, color:{ rgb:"7C2D12" } }, border:{ top:{ style:"thin", color:{ rgb:"F4C59D" } } } };
+        });
+      });
+    }
+    const workbook = excel.utils.book_new();
+    excel.utils.book_append_sheet(workbook, worksheet, isInventory ? "Inventory Records" : "D365 Comparison");
+    const now = new Date(), pad = value => String(value).padStart(2, "0");
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    excel.writeFile(workbook, `${isInventory ? "SubStore_Inventory_Records" : "SubStore_D365_Comparison"}_${timestamp}.xlsx`);
+  } catch (error) {
+    Swal.fire({ icon:"error", title:"Export failed", text:error.message || String(error) });
+  }
+}
+
+function updateSubStoreHeaderFilterState() {
+  document.querySelectorAll(".substore-filter-head").forEach(head => {
+    const key = head.dataset.filterKey;
+    head.classList.toggle("active-filter", Array.isArray(subStoreColumnFilters[key]) && subStoreColumnFilters[key].length > 0);
+  });
+}
+
+function getSubStoreDistinctValues(key) {
+  return [...new Set(subStoreSearchRows.map(row => getSubStoreCellValue(row, key)))].sort((a, b) =>
+    String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" })
+  );
+}
+
+function bindSubStoreHeaderFilters() {
+  document.querySelectorAll(".substore-filter-head").forEach(head => {
+    head.addEventListener("click", () => {
+      const key = head.dataset.filterKey;
+      const column = SUBSTORE_SEARCH_COLUMNS.find(item => item.key === key);
+      if (column) openSubStoreHeaderFilter(key, column.label);
+    });
+  });
+}
+
+async function openSubStoreHeaderFilter(key, label, isD365Summary = false) {
+  const filters = isD365Summary ? subStoreD365Filters : subStoreColumnFilters;
+  const values = isD365Summary ? [...new Set(subStoreD365Rows.map(row => row[key]))].sort((a,b) => String(a).localeCompare(String(b), undefined, { numeric:true, sensitivity:"base" })) : getSubStoreDistinctValues(key);
+  const selected = new Set(filters[key] || []);
+  const choices = values.map(value => `
+    <label class="substore-filter-option">
+      <input type="checkbox" class="substore-filter-choice" value="${escapeHtml(value)}" ${selected.has(value) ? "checked" : ""}>
+      <span>${escapeHtml(value)}</span>
+    </label>`).join("");
+  const result = await Swal.fire({
+    title: `Filter: ${label}`,
+    html: `
+      <div class="substore-filter-dialog">
+        <input id="subStoreHeaderFilterSearch" class="swal2-input" placeholder="Search values..." aria-label="Search filter values">
+        <p class="substore-filter-hint">Select values to filter. Clear all selections to show every value.</p>
+        <div class="substore-filter-actions">
+          <span id="subStoreHeaderFilterCount">0 selected</span>
+          <div><button type="button" id="subStoreHeaderFilterAll">Select All</button><button type="button" id="subStoreHeaderFilterClear">Clear</button></div>
+        </div>
+        <div id="subStoreHeaderFilterList" class="substore-filter-list">${choices}<div id="subStoreHeaderFilterEmpty" class="substore-filter-empty" ${values.length ? "hidden" : ""}>No values found</div></div>
+      </div>`,
+    showCancelButton: true,
+    confirmButtonText: "Apply Filter",
+    cancelButtonText: "Cancel",
+    didOpen: () => {
+      const search = document.getElementById("subStoreHeaderFilterSearch");
+      const list = document.getElementById("subStoreHeaderFilterList");
+      const empty = document.getElementById("subStoreHeaderFilterEmpty");
+      const count = document.getElementById("subStoreHeaderFilterCount");
+      const syncCount = () => { count.textContent = `${list.querySelectorAll(".substore-filter-choice:checked").length} selected`; };
+      search.addEventListener("input", () => {
+        const keyword = search.value.trim().toLowerCase();
+        let visible = 0;
+        list.querySelectorAll(".substore-filter-option").forEach(option => {
+          const matches = !keyword || option.textContent.toLowerCase().includes(keyword);
+          option.style.display = matches ? "flex" : "none";
+          if (matches) visible++;
+        });
+        empty.hidden = visible > 0;
+      });
+      document.getElementById("subStoreHeaderFilterAll").addEventListener("click", () => {
+        list.querySelectorAll(".substore-filter-option").forEach(option => {
+          if (option.style.display !== "none") option.querySelector("input").checked = true;
+        });
+        syncCount();
+      });
+      document.getElementById("subStoreHeaderFilterClear").addEventListener("click", () => {
+        list.querySelectorAll(".substore-filter-choice").forEach(choice => { choice.checked = false; });
+        syncCount();
+      });
+      list.addEventListener("change", syncCount);
+      syncCount();
+    },
+    preConfirm: () => [...document.querySelectorAll(".substore-filter-choice:checked")].map(choice => choice.value)
+  });
+  if (!result.isConfirmed) return;
+  filters[key] = Array.isArray(result.value) ? result.value : [];
+  if (isD365Summary) refreshSubStoreD365Summary();
+  else refreshSubStoreSearchTable();
+}
+
+function subStoreDeltaValue(row) {
+  const text = String(row.delta ?? "").trim().replace(/,/g, "");
+  if (!text) return null;
+  const value = Number(text);
+  return Number.isFinite(value) ? value : null;
+}
+
+function isSubStoreChecked(row) {
+  return [row.actRack, row.actLot, row.actQty, row.actPackage]
+    .some(value => String(value ?? "").trim() !== "");
+}
+
+function subStoreSummaryStatus(row) {
+  if (!isSubStoreChecked(row)) return "PENDING";
+  const delta = subStoreDeltaValue(row);
+  if (delta === 0) return "MATCH";
+  if (delta > 0) return "OVER";
+  if (delta < 0) return "UNDER";
+  return "PENDING";
+}
+
+function updateSubStoreSummary(rows) {
+  const summaryBox = document.getElementById("subStoreSummaryBox");
+  if (!rows.length) {
+    summaryBox.style.display = "none";
+    return;
+  }
+  const count = status => rows.filter(row => subStoreSummaryStatus(row) === status).length;
+  document.getElementById("subStoreSumTotal").textContent = rows.length.toLocaleString();
+  document.getElementById("subStoreSumMatch").textContent = rows.filter(isSubStoreChecked).length.toLocaleString();
+  document.getElementById("subStoreSumOver").textContent = count("OVER").toLocaleString();
+  document.getElementById("subStoreSumUnder").textContent = count("UNDER").toLocaleString();
+  document.getElementById("subStoreSumPending").textContent = rows.filter(row => !isSubStoreChecked(row)).length.toLocaleString();
+  document.querySelectorAll("#subStoreSummaryBox .summary-card").forEach(card => card.classList.remove("active"));
+  document.getElementById("subStoreCardTotal").classList.add("active");
+  summaryBox.style.display = "block";
+}
+
+function filterSubStoreSummary(status, card) {
+  if (!subStoreSearchRows.length) return;
+  subStoreSummaryFilter = status;
+  document.querySelectorAll("#subStoreSummaryBox .summary-card").forEach(item => item.classList.remove("active"));
+  card.classList.add("active");
+  refreshSubStoreSearchTable();
+}
+
+function updateD365CompareFileSelection() {
+  const chpFile = document.getElementById("compareChpFile").files[0];
+  const g1pFile = document.getElementById("compareG1pFile").files[0];
+  document.getElementById("compareChpFileName").textContent = chpFile ? chpFile.name : "No file selected";
+  document.getElementById("compareG1pFileName").textContent = g1pFile ? g1pFile.name : "No file selected";
+  document.getElementById("compareImportBtn").disabled = !(chpFile && g1pFile);
+}
+
+function parseD365CompareWorkbook(file, source) {
+  return file.arrayBuffer().then(buffer => {
+    const workbook = XLSX.read(buffer, { type:"array" });
+    if (!workbook.SheetNames.length) throw new Error(`${source} workbook has no worksheets.`);
+    const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header:1, blankrows:false, defval:"" });
+    const headerIndex = rawRows.findIndex(row => ["ITEM NUMBER", "PROCESS NAME", "BALANCE"].every(name => row.some(value => String(value ?? "").trim().toUpperCase() === name)));
+    if (headerIndex < 0) throw new Error(`${source}: required columns Item Number, Process Name and Balance were not found.`);
+    const header = rawRows[headerIndex].map(value => String(value ?? "").trim().toUpperCase());
+    const itemIndex = header.indexOf("ITEM NUMBER"), processIndex = header.indexOf("PROCESS NAME"), balanceIndex = header.indexOf("BALANCE");
+    const totals = new Map();
+    rawRows.slice(headerIndex + 1).forEach((row, index) => {
+      if (String(row[processIndex] ?? "").trim().toUpperCase() !== "RECS") return;
+      const item = String(row[itemIndex] ?? "").trim().toUpperCase();
+      const rawBalance = String(row[balanceIndex] ?? "").trim().replace(/,/g, "");
+      const balance = Number(rawBalance);
+      if (!item || !rawBalance || !Number.isFinite(balance)) throw new Error(`${source}: invalid Item Number or Balance in RECS data (row ${headerIndex + index + 2}).`);
+      totals.set(item, (totals.get(item) || 0) + balance);
+    });
+    if (!totals.size) throw new Error(`${source} file has no RECS records.`);
+    return { headers:["Item Number", "Balance"], rows:[...totals].map(([item, balance]) => [item, balance]) };
+  });
+}
+
+function renderD365Comparison(chp, g1p, inventory) {
+  const actual = new Map();
+  inventory.forEach(row => {
+    const code = String(row.d365Code ?? "").trim().toUpperCase();
+    if (!code) return;
+    const entry = actual.get(code) || { total:0, pending:0, checked:0 };
+    const raw = String(row.actQty ?? "").trim();
+    const qty = Number(raw.replace(/,/g, ""));
+    if (!raw || !Number.isFinite(qty)) entry.pending++;
+    else { entry.total += qty; entry.checked++; }
+    actual.set(code, entry);
+  });
+  const rows = [["CHP", chp], ["G1P", g1p]].flatMap(([site, data]) => data.rows.map(([code, balance]) => ({ site, code, balance, actual:actual.get(code) })));
+  rows.sort((a,b) => a.code.localeCompare(b.code) || a.site.localeCompare(b.site));
+  document.getElementById("d365CompareBody").innerHTML = rows.map(row => {
+    const entry = row.actual;
+    const status = !entry ? "No Sub-Store record" : entry.pending ? `Not checked (${entry.pending})` : "Checked";
+    const qty = entry && entry.checked ? formatSubStoreQuantity(entry.total) : "-";
+    const diff = entry && !entry.pending ? formatSubStoreQuantity(entry.total - row.balance) : "-";
+    return `<tr><td>${escapeHtml(row.site)}</td><td>${escapeHtml(row.code)}</td><td class="text-end">${formatSubStoreQuantity(row.balance)}</td><td class="text-end">${qty}</td><td class="text-end">${diff}</td><td>${escapeHtml(status)}</td></tr>`;
+  }).join("") || '<tr><td colspan="6" class="text-center text-muted">No RECS data found.</td></tr>';
+}
+
+async function importD365CompareFiles() {
+  const chpFile = document.getElementById("compareChpFile").files[0];
+  const g1pFile = document.getElementById("compareG1pFile").files[0];
+  if (!chpFile || !g1pFile) return Swal.fire({ icon:"warning", title:"Select both files", text:"CHP and G1P files are required." });
+
+  const confirm = await Swal.fire({
+    icon:"warning",
+    title:"Import Compare D365 files?",
+    html:`This will replace the current CHP and G1P comparison data.<br><br><b>CHP:</b> ${escapeHtml(chpFile.name)}<br><b>G1P:</b> ${escapeHtml(g1pFile.name)}`,
+    showCancelButton:true,
+    confirmButtonText:"Import both files",
+    cancelButtonText:"Cancel"
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title:"Reading Compare D365 files...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+  try {
+    const chp = await parseD365CompareWorkbook(chpFile, "CHP");
+    const g1p = await parseD365CompareWorkbook(g1pFile, "G1P");
+    Swal.update({ title:"Loading current Sub-Store inventory..." });
+    const inventory = await loadSubStoreSnapshot(true);
+    Swal.update({ title:"Importing CHP and G1P data..." });
+    const result = await subStoreApi("importD365Compare", {
+      chp: JSON.stringify(chp),
+      g1p: JSON.stringify(g1p),
+      chpFileName: chpFile.name,
+      g1pFileName: g1pFile.name,
+      importedBy: "WEB"
+    });
+    invalidateSubStoreSnapshot();
+    refreshDatabaseStatus();
+    document.getElementById("compareChpFile").value = "";
+    document.getElementById("compareG1pFile").value = "";
+    updateD365CompareFileSelection();
+    renderD365Comparison(chp, g1p, inventory);
+    setSubStoreContentView("compare");
+    Swal.close();
+    await Swal.fire({ icon:"success", title:"Compare D365 imported", html:`CHP: <b>${Number(result.sources.CHP.rowCount).toLocaleString()}</b> rows<br>G1P: <b>${Number(result.sources.G1P.rowCount).toLocaleString()}</b> rows` });
+  } catch (error) {
+    refreshDatabaseStatus();
+    Swal.close();
+    await Swal.fire({ icon:"error", title:"Compare D365 import failed", text:error.message || String(error) });
+  }
+}
+
+function setSubStoreContentView(view) {
+  document.getElementById("contentSearch").style.display = view === "search" ? "block" : "none";
+  document.getElementById("contentUpload").style.display = view === "upload" ? "block" : "none";
+  document.getElementById("contentCompare").style.display = view === "compare" ? "block" : "none";
+  document.getElementById("contentSettings").style.display = view === "settings" ? "block" : "none";
+}
+
+function setSubStoreMenuActive(id) {
+  document.querySelectorAll(".sidebar .nav-link").forEach(button => button.classList.toggle("active", button.id === id));
+}
+
+async function subStoreApi(action, payload = {}) {
+  const readActions = new Set(["getSnapshot", "getDataVersion", "getDatasetPresence", "listUsers", "listFileSubMap"]);
+  const controller = readActions.has(action) ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), 30000) : null;
+  try {
+    const response = await fetch(scriptURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: new URLSearchParams({ action, ...payload }),
+      ...(controller ? { signal: controller.signal } : {})
+    });
+    let result;
+    try { result = await response.json(); }
+    catch (_) { throw new Error("The server did not return valid data. Check the Apps Script deployment and access permissions."); }
+    if (!response.ok || !result.ok) throw new Error(result.message || "Request failed");
+    return result;
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("The server did not respond within 30 seconds. Check the Apps Script deployment, permissions, and network, then try again.");
+    throw error;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+function renderDatabaseStatus(id, label, data, failed = false) {
+  const element = document.getElementById(id);
+  const error = failed || typeof data?.hasData !== "boolean";
+  const available = !error && data.hasData;
+  const status = error ? "Status unavailable" : available ? "Data available" : "No data";
+  element.innerHTML = `<div class="database-status-heading"><span>${escapeHtml(label)}</span><span class="database-status-badge ${error ? "error" : available ? "available" : ""}">${status}</span></div>${error ? '<div class="database-status-meta">Unable to check database status.</div>' : ""}`;
+}
+
+async function refreshDatabaseStatus() {
+  const requestId = ++databaseStatusRequestId;
+  [["databaseStatusWms", "WMS"], ["databaseStatusChp", "CHP"], ["databaseStatusG1p", "G1P"]].forEach(([id, label]) => {
+    document.getElementById(id).innerHTML = `<div class="database-status-heading"><span>${label}</span><span class="database-status-badge">Checking...</span></div>`;
+  });
+  let sources;
+  try { sources = (await subStoreApi("getDatasetPresence")).sources; } catch (_) { sources = null; }
+  if (requestId !== databaseStatusRequestId) return;
+  for (const [id, source] of [["databaseStatusWms", "WMS"], ["databaseStatusChp", "CHP"], ["databaseStatusG1p", "G1P"]]) {
+    const data = sources?.[source];
+    renderDatabaseStatus(id, source, data, !data);
+  }
+}
+
+async function openSubStoreSettings() {
+  setSubStoreContentView("settings");
+  setSubStoreMenuActive("settings-tab");
+  Swal.fire({
+    title: "Loading settings...",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    didOpen: () => Swal.showLoading()
+  });
+  try {
+    const [users, mappings] = await Promise.all([
+      subStoreApi("listUsers"),
+      subStoreApi("listFileSubMap")
+    ]);
+    renderSubStoreUsers(users.rows || []);
+    renderSubStoreFileSubMaps(mappings.rows || []);
+    Swal.close();
+  } catch (error) {
+    Swal.close();
+    await Swal.fire({ icon: "error", title: "Could not load settings", text: error.message || String(error) });
+  }
+}
+
+const SETTINGS_EDIT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>';
+const SETTINGS_DELETE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6"></path></svg>';
+
+function renderSubStoreUsers(rows) {
+  const body = document.getElementById("subStoreUsersBody");
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No users found</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(row => `
+    <tr>
+      <td>${escapeHtml(row.username)}</td>
+      <td>${String(row.isActive).toUpperCase() === "FALSE" ? "Inactive" : "Active"}</td>
+      <td>${escapeHtml(formatSubStoreDateTime(row.updatedAt))}</td>
+      <td><div class="settings-table-actions"><button type="button" class="btn btn-sm btn-outline-primary substore-user-edit" data-username="${escapeHtml(row.username)}" title="Edit user" aria-label="Edit user ${escapeHtml(row.username)}">${SETTINGS_EDIT_ICON}</button><button type="button" class="btn btn-sm btn-outline-danger substore-user-delete" data-username="${escapeHtml(row.username)}" title="Delete user" aria-label="Delete user ${escapeHtml(row.username)}">${SETTINGS_DELETE_ICON}</button></div></td>
+    </tr>`).join("");
+  body.querySelectorAll(".substore-user-edit").forEach(button => button.addEventListener("click", () => {
+    openSubStoreUserSwal({ username: button.dataset.username });
+  }));
+  body.querySelectorAll(".substore-user-delete").forEach(button => button.addEventListener("click", () => deleteSubStoreUser(button.dataset.username)));
+}
+
+function renderSubStoreFileSubMaps(rows) {
+  const body = document.getElementById("subStoreFileSubBody");
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No mappings found</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(row => `
+    <tr>
+      <td>${escapeHtml(row.fileNo)}</td><td>${escapeHtml(row.subcon)}</td><td>${escapeHtml(formatSubStoreDateTime(row.updatedAt))}</td>
+      <td><div class="settings-table-actions"><button type="button" class="btn btn-sm btn-outline-primary substore-map-edit" data-file-no="${escapeHtml(row.fileNo)}" data-subcon="${escapeHtml(row.subcon)}" title="Edit file mapping" aria-label="Edit file mapping ${escapeHtml(row.fileNo)}">${SETTINGS_EDIT_ICON}</button><button type="button" class="btn btn-sm btn-outline-danger substore-map-delete" data-file-no="${escapeHtml(row.fileNo)}" title="Delete file mapping" aria-label="Delete file mapping ${escapeHtml(row.fileNo)}">${SETTINGS_DELETE_ICON}</button></div></td>
+    </tr>`).join("");
+  body.querySelectorAll(".substore-map-edit").forEach(button => button.addEventListener("click", () => {
+    openSubStoreFileSubSwal({ fileNo: button.dataset.fileNo, subcon: button.dataset.subcon });
+  }));
+  body.querySelectorAll(".substore-map-delete").forEach(button => button.addEventListener("click", () => deleteSubStoreFileSubMap(button.dataset.fileNo)));
+}
+
+function formatSubStoreDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("en-GB", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).replace(",", "");
+}
+
+async function openSubStoreUserSwal(user = {}) {
+  const isEdit = Boolean(user.username);
+  const result = await Swal.fire({
+    title: isEdit ? "Edit User" : "Add User",
+    html: `
+      <div style="display:grid;gap:12px;text-align:left;">
+        <label>Username<input id="swalSubStoreUsername" class="swal2-input" value="${escapeHtml(user.username || "")}" ${isEdit ? "readonly" : ""} autocomplete="username"></label>
+        <label>Password<input id="swalSubStorePassword" type="password" class="swal2-input" placeholder="${isEdit ? "Leave blank to keep current password" : "Required"}" autocomplete="new-password"></label>
+      </div>`,
+    focusConfirm: false,
+    showCloseButton: true,
+    showCancelButton: true,
+    confirmButtonText: "Save",
+    cancelButtonText: "Cancel",
+    preConfirm: () => {
+      const username = document.getElementById("swalSubStoreUsername").value.trim();
+      const password = document.getElementById("swalSubStorePassword").value;
+      if (!username || (!isEdit && !password)) {
+        Swal.showValidationMessage("Username and Password are required for a new user.");
+        return false;
+      }
+      return { username, password };
+    }
+  });
+  if (!result.isConfirmed) return;
+  Swal.fire({ title: "Saving user...", allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+  try {
+    await subStoreApi("upsertUser", result.value);
+    Swal.close();
+    await openSubStoreSettings();
+    await Swal.fire({ icon: "success", title: "User saved" });
+  } catch (error) {
+    Swal.close();
+    await Swal.fire({ icon: "error", title: "Could not save user", text: error.message || String(error) });
+  }
+}
+
+async function deleteSubStoreUser(username) {
+  const confirm = await Swal.fire({ icon: "warning", title: "Delete user?", text: username, showCancelButton: true, confirmButtonText: "Delete", cancelButtonText: "Cancel" });
+  if (!confirm.isConfirmed) return;
+  Swal.fire({ title: "Deleting user...", allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+  try {
+    await subStoreApi("deleteUser", { username });
+    Swal.close();
+    await openSubStoreSettings();
+    await Swal.fire({ icon: "success", title: "User deleted" });
+  } catch (error) {
+    Swal.close();
+    await Swal.fire({ icon: "error", title: "Could not delete user", text: error.message || String(error) });
+  }
+}
+
+async function openSubStoreFileSubSwal(mapping = {}) {
+  const isEdit = Boolean(mapping.fileNo);
+  const result = await Swal.fire({
+    title: isEdit ? "Edit File + Sub" : "Add File + Sub",
+    html: `
+      <div style="display:grid;gap:12px;text-align:left;">
+        <label>File No.<input id="swalSubStoreFileNo" class="swal2-input" value="${escapeHtml(mapping.fileNo || "")}" placeholder="Example: F0194" ${isEdit ? "readonly" : ""}></label>
+        <label>Subcon<input id="swalSubStoreMapSubcon" class="swal2-input" value="${escapeHtml(mapping.subcon || "")}" placeholder="Example: KDT"></label>
+      </div>`,
+    focusConfirm: false,
+    showCloseButton: true,
+    showCancelButton: true,
+    confirmButtonText: "Save",
+    cancelButtonText: "Cancel",
+    preConfirm: () => {
+      const fileNo = document.getElementById("swalSubStoreFileNo").value.trim();
+      const subcon = document.getElementById("swalSubStoreMapSubcon").value.trim();
+      if (!fileNo || !subcon) {
+        Swal.showValidationMessage("File No. and Subcon are required.");
+        return false;
+      }
+      return { fileNo, subcon };
+    }
+  });
+  if (!result.isConfirmed) return;
+  Swal.fire({ title: "Saving mapping...", allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+  try {
+    await subStoreApi("upsertFileSubMap", result.value);
+    Swal.close();
+    await openSubStoreSettings();
+    await Swal.fire({ icon: "success", title: "Mapping saved" });
+  } catch (error) {
+    Swal.close();
+    await Swal.fire({ icon: "error", title: "Could not save mapping", text: error.message || String(error) });
+  }
+}
+
+async function deleteSubStoreFileSubMap(fileNo) {
+  const confirm = await Swal.fire({ icon: "warning", title: "Delete File + Sub mapping?", text: fileNo, showCancelButton: true, confirmButtonText: "Delete", cancelButtonText: "Cancel" });
+  if (!confirm.isConfirmed) return;
+  Swal.fire({ title: "Deleting mapping...", allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+  try {
+    await subStoreApi("deleteFileSubMap", { fileNo });
+    Swal.close();
+    await openSubStoreSettings();
+    await Swal.fire({ icon: "success", title: "Mapping deleted" });
+  } catch (error) {
+    Swal.close();
+    await Swal.fire({ icon: "error", title: "Could not delete mapping", text: error.message || String(error) });
+  }
+}
+
+document.getElementById("search-tab").addEventListener("click", () => {
+  setSubStoreContentView("search");
+  setSubStoreMenuActive("search-tab");
+  document.getElementById("searchTab").hidden = false;
+  showSubStoreResultView("dashboard");
+});
+
+document.getElementById("upload-tab").addEventListener("click", () => {
+  setSubStoreContentView("upload");
+  setSubStoreMenuActive("upload-tab");
+  document.getElementById("searchTab").hidden = true;
+  refreshDatabaseStatus();
+});
+
+document.getElementById("settings-tab").addEventListener("click", openSubStoreSettings);
+document.querySelectorAll(".d365-summary-card").forEach(card => card.addEventListener("click", () => {
+  subStoreD365CardFilter = card.dataset.summaryStatus;
+  subStoreD365Filters = {};
+  refreshSubStoreD365Summary();
+}));
+document.getElementById("deleteDataset").addEventListener("change", event => { document.getElementById("deleteDatasetBtn").disabled = !event.target.value; });
+document.getElementById("compareChpFile").addEventListener("change", updateD365CompareFileSelection);
+document.getElementById("compareG1pFile").addEventListener("change", updateD365CompareFileSelection);
+
+showSubStoreResultView("dashboard");
+setInterval(syncSubStoreOverview, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) syncSubStoreOverview(); });
+
+    
+const fileInput = document.getElementById("fileInput");
+const uploadBtn = document.getElementById("uploadBtn");
+
+fileInput.addEventListener("change", () => {
+  document.getElementById("importFileName").textContent = fileInput.files[0]?.name || "No file selected";
+  if (fileInput.files.length === 0) {
+    uploadBtn.disabled = true;
+    uploadBtn.style.opacity = "0.5";
+    uploadBtn.style.cursor = "not-allowed";
+    return;
+  }
+
+  const name = fileInput.files[0].name.toLowerCase();
+  if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+    Swal.fire("⚠️", "กรุณาเลือกไฟล์ Excel (.xlsx / .xls)", "warning");
+    fileInput.value = "";
+    document.getElementById("importFileName").textContent = "No file selected";
+    uploadBtn.disabled = true;
+    uploadBtn.style.opacity = "0.5";
+    uploadBtn.style.cursor = "not-allowed";
+    return;
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.style.opacity = "1";
+  uploadBtn.style.cursor = "pointer";
+});
+
+  </script>
+</body>
+</html>
