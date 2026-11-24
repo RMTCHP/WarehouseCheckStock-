@@ -346,7 +346,7 @@
   .sidebar #uploadTab .compare-d365-file { color:#fff; text-align:left; margin-bottom:12px; }
   .compare-sidebar .compare-d365-file { color:#fff; text-align:left; }
   .database-group .btn { min-height:44px; }
-  .database-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:20px; align-items:stretch; }
+  .database-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-top:20px; align-items:stretch; }
   .database-grid .database-group { display:flex; flex-direction:column; margin:0; padding:22px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 8px 20px rgba(15,23,42,.05); }
   .database-grid .database-group h3 { color:#0d223b; font-size:18px; }
   .database-grid .database-group p { color:#64748b; font-size:13px; }
@@ -355,7 +355,8 @@
   .database-grid .compare-d365-file { color:#64748b; text-align:left; margin-bottom:12px; }
   .database-grid .btn:disabled { opacity:.5; cursor:not-allowed; }
   .database-grid .database-group > button:last-child { margin-top:auto !important; }
-  @media (max-width:1100px) { .database-grid { grid-template-columns:1fr; } }
+  @media (max-width:1300px) { .database-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:700px) { .database-grid { grid-template-columns:1fr; } }
   .sidebar .database-group .btn:disabled { opacity:.5; cursor:not-allowed; }
   .compare-d365-file { display:block; min-height:20px; margin-top:10px; overflow:hidden; color:#475569; font-size:12px; font-weight:600; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
   .compare-d365-status { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:22px; }
@@ -598,16 +599,16 @@
   }
 
   .substore-record-modal { width:min(980px,calc(100vw - 32px)) !important; padding:28px !important; }
-  .substore-record-modal .swal2-html-container { margin:12px 0 0 !important; max-height:65vh; }
+  .substore-record-modal .swal2-html-container { margin:12px 0 0 !important; max-height:none; overflow:visible !important; }
   .record-modal-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 16px; }
   .record-modal-stat { padding:11px 12px; border:1px solid #e2e8f0; border-radius:11px; background:#f8fafc; text-align:left; }
   .record-modal-stat span { display:block; color:#64748b; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
   .record-modal-stat b { display:block; margin-top:3px; color:#0f172a; font-size:21px; }
   .record-modal-stat.checked { border-color:#86efac; background:#f0fdf4; }
   .record-modal-stat.pending { border-color:#fdba74; background:#fff7ed; }
-  .record-modal-table-wrap { overflow:auto; border:1px solid #e2e8f0; border-radius:11px; }
+  .record-modal-table-wrap { max-height:min(50vh, 480px); overflow:auto; border:1px solid #e2e8f0; border-radius:11px; }
   .record-modal-table { width:100%; min-width:760px; border-collapse:collapse; font-size:12px; }
-  .record-modal-table th { position:sticky; top:0; padding:10px; color:#ffffff; background:#9a3412; font-size:10px; letter-spacing:.04em; text-align:left; text-transform:uppercase; }
+  .record-modal-table th { position:sticky; top:0; z-index:1; padding:10px; color:#ffffff; background:#9a3412; font-size:10px; letter-spacing:.04em; text-align:left; text-transform:uppercase; }
   .record-modal-table td { padding:10px; border-bottom:1px solid #eef2f7; color:#334155; white-space:nowrap; }
   .record-modal-table tr:last-child td { border-bottom:0; }
   .record-modal-table tbody tr:hover { background:#fff7ed; }
@@ -637,7 +638,7 @@
   .d365-summary-filter.active-filter { background:#0f766e !important; color:#fff; }
   .d365-summary-filter:focus-visible { outline:3px solid #fb923c; outline-offset:-3px; }
   .record-modal-empty { padding:30px 12px; color:#64748b; text-align:center; }
-  @media (max-width:600px) { .record-modal-summary { grid-template-columns:1fr; } .substore-record-modal { padding:20px !important; } }
+  @media (max-width:600px) { .record-modal-summary { gap:6px; } .record-modal-stat { padding:8px; } .record-modal-stat span { font-size:9px; } .record-modal-stat b { font-size:18px; } .record-modal-table-wrap { max-height:40vh; } .substore-record-modal { padding:20px !important; } }
 
   /* Sub-Store location board */
   .substore-result-tabs { display:flex; gap:8px; margin:0 0 18px; border-bottom:1px solid #e2e8f0; }
@@ -750,7 +751,14 @@
   .sidebar .nav-tabs .nav-link.active:hover { color:#7c2d12 !important; background:#ffedd5 !important; }
   .content h4 { color:var(--ss-ink); font-size:1.45rem; letter-spacing:-.02em; }
   .content-heading { align-items:center; margin-bottom:14px; }
+  .overview-period-controls { display:flex; align-items:center; flex-wrap:nowrap; gap:10px; }
+  .overview-period-controls label { font-size:13px; font-weight:700; color:#526579; }
+  .overview-period-controls select { width:210px; min-width:0; flex:0 1 210px; }
+  .overview-period-controls .substore-refresh { flex:0 0 44px; }
+  .history-notice { margin:0 0 14px; padding:10px 14px; border:1px solid #fdba74; border-radius:8px; color:#7c2d12; background:#fff7ed; font-size:13px; }
+  .history-notice[hidden] { display:none; }
   .content-heading h4 { margin:0; }
+  @media (max-width:700px) { .content-heading { flex-wrap:wrap; } .content-heading .overview-period-controls { width:100%; } .content-heading .overview-period-controls select { flex:1 1 auto; width:auto; } }
   .settings-card,.rack-location-group,.database-grid .database-group { border-color:var(--ss-border); box-shadow:0 3px 12px rgba(32,48,64,.05); }
   .database-status-list { display:grid; gap:8px; margin:12px 0 16px; }
   .database-status { padding:10px 12px; border:1px solid #dce4eb; border-radius:8px; background:#f8fafc; font-size:12px; }
@@ -835,7 +843,8 @@
 
 <!-- ===================== CONTENT: SEARCH ===================== -->
 <div id="contentSearch" class="content">
-  <div class="content-heading"><h4><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/></svg>Inventory Overview</h4><button class="substore-refresh" type="button" onclick="refreshSubStoreDashboard()" title="Refresh data" aria-label="Refresh data"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div>
+  <div class="content-heading"><h4><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/></svg>Inventory Overview</h4><div class="overview-period-controls"><label for="overviewPeriod">Period</label><select id="overviewPeriod" class="form-select" aria-label="Inventory report period"><option value="">Current</option><option value="history">Select month...</option></select><button class="substore-refresh" type="button" onclick="refreshSubStoreDashboard()" title="Refresh data" aria-label="Refresh data"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div></div>
+  <div class="history-notice" id="historyNotice" hidden role="status"></div>
   <div class="substore-result-tabs" role="tablist" aria-label="Sub-Store results">
     <button id="subStoreDashboardTab" class="active" type="button" role="tab" aria-selected="true" onclick="showSubStoreResultView('dashboard')">Dashboard</button>
     <button id="subStoreLocationTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('location')">Rack Locations</button>
@@ -930,8 +939,15 @@
       <span class="compare-d365-file" id="compareG1pFileName">No file selected</span>
       <button id="compareImportBtn" class="btn btn-success w-100 mt-2" type="button" onclick="importD365CompareFiles()" disabled>Import CHP + G1P</button>
     </section>
-    <section class="database-group" aria-label="Manage data deletion">
-      <h3>Manage Delete</h3><p>Choose which dataset to delete.</p>
+    <section class="database-group" aria-label="Save monthly snapshot">
+      <h3>Monthly Snapshot</h3><p>Save inventory, actual counts and D365 data for historical reports.</p>
+      <label for="snapshotMonth" class="form-label">Month</label>
+      <input id="snapshotMonth" class="form-control mb-3" type="month">
+      <div class="database-status mb-3" id="monthlySnapshotStatus" role="status" aria-live="polite">Select a month.</div>
+      <button type="button" class="btn btn-primary w-100" onclick="saveMonthlySnapshot()">Save Monthly Snapshot</button>
+    </section>
+    <section class="database-group" aria-label="Delete data">
+      <h3>Delete Data</h3><p>Choose which dataset to delete.</p>
       <label for="deleteDataset" class="form-label">Dataset</label>
       <select id="deleteDataset" class="form-select mb-3"><option value="">Select a dataset</option><option value="inventory">Inventory + Actual</option><option value="CHP">D365 CHP</option><option value="G1P">D365 G1P</option><option value="all">All datasets</option></select>
       <button id="deleteDatasetBtn" class="btn btn-danger w-100" type="button" onclick="confirmDeleteAll()" disabled>Delete Selected Data</button>
@@ -985,19 +1001,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbwKSlkhthhAVoNLUfbv6l4JWnau2xkBejeSYdu0h_mQ2vI0Z3lysxjsasl_HRCdWpE/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbwC39Y3UWMAlUkiMmAj1OhaYtU3ieQPVT9DLl_pDIRsQcrCZBZSuwkxDkSs11dDEmc/exec";
   let subStoreSearchRows = [];
   let subStoreLocationRows = [];
   let subStoreSnapshotCache = null;
   let subStoreSnapshotRequest = null;
   let subStoreSnapshotVersion = null;
   let subStoreAutoSyncBusy = false;
+  let subStoreSelectedMonth = "";
+  let subStoreSnapshotGeneration = 0;
   let subStoreSummaryFilter = "ALL";
   let subStoreColumnFilters = {};
   let subStoreD365Filters = {};
   let subStoreD365Rows = [];
   let subStoreD365CardFilter = "all";
   let databaseStatusRequestId = 0;
+  let monthlyStatusRequestId = 0;
 
   const subStoreLocationRow = (prefix, first, last = 1) => Array.from({ length:first - last + 1 }, (_, index) => `${prefix}-${first - index}`);
   const SUBSTORE_LOCATION_LAYOUT = {
@@ -1080,8 +1099,13 @@
   async function loadSubStoreSnapshot(force = false) {
     if (!force && subStoreSnapshotCache) return subStoreSnapshotCache;
     if (subStoreSnapshotRequest) return subStoreSnapshotRequest;
-    subStoreSnapshotRequest = subStoreApi("getSnapshot").then(result => applySubStoreSnapshot(result, false)).finally(() => { subStoreSnapshotRequest = null; });
-    return subStoreSnapshotRequest;
+    const month = subStoreSelectedMonth, generation = subStoreSnapshotGeneration;
+    const request = subStoreApi(month ? "getMonthlySnapshot" : "getSnapshot", month ? { month } : {}).then(result => {
+      if (generation !== subStoreSnapshotGeneration || month !== subStoreSelectedMonth) throw new Error("Report period changed. Please try again.");
+      return applySubStoreSnapshot(result, false);
+    }).finally(() => { if (subStoreSnapshotRequest === request) subStoreSnapshotRequest = null; });
+    subStoreSnapshotRequest = request;
+    return request;
   }
 
   function applySubStoreSnapshot(result, preserveFilters) {
@@ -1098,6 +1122,9 @@
       });
       subStoreSnapshotCache = rows;
       subStoreSnapshotVersion = result.version ?? null;
+      const historyNotice = document.getElementById("historyNotice");
+      historyNotice.hidden = !subStoreSelectedMonth;
+      historyNotice.textContent = subStoreSelectedMonth ? `Historical snapshot: ${subStoreSelectedMonth} | Saved: ${result.savedAt || "-"} | Read only` : "";
       subStoreLocationRows = rows;
       subStoreSearchRows = rows;
       if (!preserveFilters) { subStoreSummaryFilter = "ALL"; subStoreColumnFilters = {}; }
@@ -1115,20 +1142,21 @@
   }
 
   async function syncSubStoreOverview() {
-    if (document.hidden || document.getElementById("contentSearch").style.display === "none" || subStoreAutoSyncBusy || subStoreSnapshotRequest || subStoreSnapshotVersion == null || Swal.isVisible()) return;
+    if (subStoreSelectedMonth || document.hidden || document.getElementById("contentSearch").style.display === "none" || subStoreAutoSyncBusy || subStoreSnapshotRequest || subStoreSnapshotVersion == null || Swal.isVisible()) return;
     subStoreAutoSyncBusy = true;
     try {
       const startingVersion = subStoreSnapshotVersion;
       const latest = await subStoreApi("getDataVersion");
-      if (String(latest.version) === String(subStoreSnapshotVersion) || document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none") return;
+      if (subStoreSelectedMonth || String(latest.version) === String(subStoreSnapshotVersion) || document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none") return;
       const result = await subStoreApi("getSnapshot");
-      if (document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none" || subStoreSnapshotRequest || subStoreSnapshotVersion !== startingVersion) return;
+      if (subStoreSelectedMonth || document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none" || subStoreSnapshotRequest || subStoreSnapshotVersion !== startingVersion) return;
       applySubStoreSnapshot(result, true);
     } catch (error) { console.warn("Sub-Store automatic refresh failed", error); }
     finally { subStoreAutoSyncBusy = false; }
   }
 
   function invalidateSubStoreSnapshot() {
+    subStoreSnapshotGeneration++;
     subStoreSnapshotCache = null;
     subStoreSnapshotRequest = null;
   }
@@ -1363,9 +1391,17 @@ async function confirmDeleteAll() {
   const dataset = document.getElementById("deleteDataset").value;
   const labels = { inventory:"Inventory + Actual", CHP:"D365 CHP", G1P:"D365 G1P", all:"All datasets" };
   if (!Object.prototype.hasOwnProperty.call(labels, dataset)) return Swal.fire({ icon:"warning", title:"Select a dataset" });
+  Swal.fire({ title:"Checking snapshot status...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+  let warning = "";
+  try {
+    const readiness = await subStoreApi("getMonthlySnapshotReadiness");
+    if ((readiness.rowCount || readiness.hasAnyD365) && !readiness.savedCurrent) warning += " The current data has not been saved as a monthly snapshot.";
+    if (readiness.pending) warning += ` ${readiness.pending} inventory records have not been checked.`;
+  } catch (_) { warning = " Could not verify snapshot status. Check your backup before deleting."; }
+  Swal.close();
   const confirm = await Swal.fire({
     title: `Delete ${labels[dataset]}?`,
-    text: dataset === "all" ? "This permanently deletes all Inventory, Actual, D365 CHP and D365 G1P data. Users, mappings and import logs are retained. If deletion fails, some datasets may already be deleted." : dataset === "inventory" ? "This permanently deletes all inventory records and their Actual entries. D365 data and import logs are retained." : "This deletes the selected D365 dataset. Inventory, Actual entries and import logs are retained. Combined D365 totals will be unavailable until both files are imported again.",
+    text: (dataset === "all" ? "This permanently deletes all Inventory, Actual, D365 CHP and D365 G1P data. Users, mappings and import logs are retained. If deletion fails, some datasets may already be deleted." : dataset === "inventory" ? "This permanently deletes all inventory records and their Actual entries. D365 data and import logs are retained." : "This deletes the selected D365 dataset. Inventory, Actual entries and import logs are retained. Combined D365 totals will be unavailable until both files are imported again.") + warning,
     icon: "warning",
     showCancelButton: true,
     confirmButtonText: "ใช่, ลบทั้งหมด",
@@ -1693,7 +1729,7 @@ async function exportSubStoreTable(type) {
     excel.utils.book_append_sheet(workbook, worksheet, isInventory ? "Inventory Records" : "D365 Comparison");
     const now = new Date(), pad = value => String(value).padStart(2, "0");
     const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    excel.writeFile(workbook, `${isInventory ? "SubStore_Inventory_Records" : "SubStore_D365_Comparison"}_${timestamp}.xlsx`);
+    excel.writeFile(workbook, `${isInventory ? "SubStore_Inventory_Records" : "SubStore_D365_Comparison"}${subStoreSelectedMonth ? `_${subStoreSelectedMonth}` : ""}_${timestamp}.xlsx`);
   } catch (error) {
     Swal.fire({ icon:"error", title:"Export failed", text:error.message || String(error) });
   }
@@ -1842,10 +1878,10 @@ function parseD365CompareWorkbook(file, source) {
     const workbook = XLSX.read(buffer, { type:"array" });
     if (!workbook.SheetNames.length) throw new Error(`${source} workbook has no worksheets.`);
     const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header:1, blankrows:false, defval:"" });
-    const headerIndex = rawRows.findIndex(row => ["ITEM NUMBER", "PROCESS NAME", "BALANCE"].every(name => row.some(value => String(value ?? "").trim().toUpperCase() === name)));
-    if (headerIndex < 0) throw new Error(`${source}: required columns Item Number, Process Name and Balance were not found.`);
+    const headerIndex = rawRows.findIndex(row => ["ITEM NUMBER", "PROCESS NAME", "BALANCE", "PROD ID", "QUANTITY"].every(name => row.some(value => String(value ?? "").trim().toUpperCase() === name)));
+    if (headerIndex < 0) throw new Error(`${source}: required columns Item Number, Process Name, Balance, Prod Id and Quantity were not found.`);
     const header = rawRows[headerIndex].map(value => String(value ?? "").trim().toUpperCase());
-    const itemIndex = header.indexOf("ITEM NUMBER"), processIndex = header.indexOf("PROCESS NAME"), balanceIndex = header.indexOf("BALANCE");
+    const itemIndex = header.indexOf("ITEM NUMBER"), processIndex = header.indexOf("PROCESS NAME"), balanceIndex = header.indexOf("BALANCE"), prodIndex = header.indexOf("PROD ID"), quantityIndex = header.indexOf("QUANTITY");
     const totals = new Map();
     rawRows.slice(headerIndex + 1).forEach((row, index) => {
       if (String(row[processIndex] ?? "").trim().toUpperCase() !== "RECS") return;
@@ -1853,10 +1889,18 @@ function parseD365CompareWorkbook(file, source) {
       const rawBalance = String(row[balanceIndex] ?? "").trim().replace(/,/g, "");
       const balance = Number(rawBalance);
       if (!item || !rawBalance || !Number.isFinite(balance)) throw new Error(`${source}: invalid Item Number or Balance in RECS data (row ${headerIndex + index + 2}).`);
-      totals.set(item, (totals.get(item) || 0) + balance);
+      const prodId = String(row[prodIndex] ?? "").trim();
+      const rawQuantity = String(row[quantityIndex] ?? "").trim().replace(/,/g, "");
+      const quantity = rawQuantity ? Number(rawQuantity) : null;
+      if (rawQuantity && !Number.isFinite(quantity)) throw new Error(`${source}: invalid Quantity in RECS data (row ${headerIndex + index + 2}).`);
+      const key = JSON.stringify([item, prodId.toUpperCase()]);
+      const entry = totals.get(key) || { item, prodId, balance:0, quantity:0, missingQuantity:false };
+      entry.balance += balance;
+      if (quantity === null) entry.missingQuantity = true; else entry.quantity += quantity;
+      totals.set(key, entry);
     });
     if (!totals.size) throw new Error(`${source} file has no RECS records.`);
-    return { headers:["Item Number", "Balance"], rows:[...totals].map(([item, balance]) => [item, balance]) };
+    return { headers:["Item Number", "Balance", "Prod Id", "Quantity"], rows:[...totals.values()].map(entry => [entry.item, entry.balance, entry.prodId, entry.missingQuantity ? "" : entry.quantity]) };
   });
 }
 
@@ -1872,7 +1916,12 @@ function renderD365Comparison(chp, g1p, inventory) {
     else { entry.total += qty; entry.checked++; }
     actual.set(code, entry);
   });
-  const rows = [["CHP", chp], ["G1P", g1p]].flatMap(([site, data]) => data.rows.map(([code, balance]) => ({ site, code, balance, actual:actual.get(code) })));
+  const balances = new Map();
+  [["CHP", chp], ["G1P", g1p]].forEach(([site, data]) => data.rows.forEach(([code, balance]) => {
+    const key = JSON.stringify([site, code]), previous = balances.get(key) || { site, code, balance:0, actual:actual.get(code) };
+    previous.balance += Number(balance); balances.set(key, previous);
+  }));
+  const rows = [...balances.values()];
   rows.sort((a,b) => a.code.localeCompare(b.code) || a.site.localeCompare(b.site));
   document.getElementById("d365CompareBody").innerHTML = rows.map(row => {
     const entry = row.actual;
@@ -1903,7 +1952,7 @@ async function importD365CompareFiles() {
     const chp = await parseD365CompareWorkbook(chpFile, "CHP");
     const g1p = await parseD365CompareWorkbook(g1pFile, "G1P");
     Swal.update({ title:"Loading current Sub-Store inventory..." });
-    const inventory = await loadSubStoreSnapshot(true);
+    const inventory = (await subStoreApi("getSnapshot")).rows || [];
     Swal.update({ title:"Importing CHP and G1P data..." });
     const result = await subStoreApi("importD365Compare", {
       chp: JSON.stringify(chp),
@@ -1940,7 +1989,7 @@ function setSubStoreMenuActive(id) {
 }
 
 async function subStoreApi(action, payload = {}) {
-  const readActions = new Set(["getSnapshot", "getDataVersion", "getDatasetPresence", "listUsers", "listFileSubMap"]);
+  const readActions = new Set(["getSnapshot", "getMonthlySnapshot", "listMonthlySnapshots", "getMonthlySnapshotReadiness", "getDataVersion", "getDatasetPresence", "listUsers", "listFileSubMap"]);
   const controller = readActions.has(action) ? new AbortController() : null;
   const timeout = controller ? setTimeout(() => controller.abort(), 30000) : null;
   try {
@@ -1961,6 +2010,87 @@ async function subStoreApi(action, payload = {}) {
   } finally {
     if (timeout) clearTimeout(timeout);
   }
+}
+
+function updateOverviewPeriodOptions() {
+  const select = document.getElementById("overviewPeriod");
+  select.replaceChildren(new Option("Current", ""));
+  if (subStoreSelectedMonth) select.add(new Option(subStoreSelectedMonth, subStoreSelectedMonth));
+  select.add(new Option("Select month...", "history"));
+  select.value = subStoreSelectedMonth;
+}
+
+async function refreshMonthlySnapshotStatus() {
+  const month = document.getElementById("snapshotMonth").value;
+  const element = document.getElementById("monthlySnapshotStatus");
+  const requestId = ++monthlyStatusRequestId;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) { element.textContent = "Select a month."; return; }
+  element.innerHTML = '<div class="database-status-heading"><span>Snapshot</span><span class="database-status-badge">Checking...</span></div>';
+  try {
+    const result = await subStoreApi("listMonthlySnapshots");
+    if (requestId !== monthlyStatusRequestId || document.getElementById("snapshotMonth").value !== month) return;
+    if (!Array.isArray(result.snapshots)) throw new Error("Invalid snapshot status");
+    const snapshot = result.snapshots.find(item => item.month === month);
+    element.innerHTML = snapshot
+      ? `<div class="database-status-heading"><span>Snapshot</span><span class="database-status-badge available">Saved</span></div><div class="database-status-meta">Saved: ${escapeHtml(snapshot.savedAt || "Unknown")} (Bangkok)</div>`
+      : '<div class="database-status-heading"><span>Snapshot</span><span class="database-status-badge">No snapshot</span></div>';
+  } catch (_) {
+    if (requestId !== monthlyStatusRequestId || document.getElementById("snapshotMonth").value !== month) return;
+    element.innerHTML = '<div class="database-status-heading"><span>Snapshot</span><span class="database-status-badge error">Status unavailable</span></div><div class="database-status-meta">Could not check the selected month. Try again.</div>';
+  }
+}
+
+async function saveMonthlySnapshot() {
+  const month = document.getElementById("snapshotMonth").value;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return Swal.fire({ icon:"warning", title:"Select a month" });
+  Swal.fire({ title:"Checking current data...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+  let readiness;
+  try { readiness = await subStoreApi("getMonthlySnapshotReadiness"); }
+  catch (error) { Swal.close(); return Swal.fire({ icon:"error", title:"Could not check current data", text:error.message || String(error) }); }
+  Swal.close();
+  if (!readiness.rowCount) return Swal.fire({ icon:"warning", title:"No inventory data", text:"Import inventory before saving a snapshot." });
+  const exists = (readiness.snapshots || []).some(item => item.month === month);
+  const incomplete = readiness.pending > 0 || !readiness.hasD365Balances;
+  const details = [`Month: ${month}`, `Inventory records: ${Number(readiness.rowCount).toLocaleString()}`, `Not checked: ${Number(readiness.pending).toLocaleString()}`, `D365: ${readiness.hasD365Balances ? "CHP and G1P available" : "incomplete or unavailable"}`];
+  if (exists) details.push("A snapshot already exists. After the new snapshot is saved and verified, old snapshots for this month will be deleted.");
+  if (incomplete) details.push("Warning: this snapshot will preserve incomplete data.");
+  const confirm = await Swal.fire({ icon:exists || incomplete ? "warning" : "question", title:"Save monthly snapshot?", text:details.join("\n"), showCancelButton:true, confirmButtonText:"Save snapshot", cancelButtonText:"Cancel" });
+  if (!confirm.isConfirmed) return;
+  Swal.fire({ title:"Saving monthly snapshot...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+  try {
+    const result = await subStoreApi("saveMonthlySnapshot", { month, expectedVersion:String(readiness.version), confirmOverwrite:String(exists), confirmIncomplete:String(incomplete) });
+    Swal.close();
+    refreshMonthlySnapshotStatus();
+    await Swal.fire({ icon:result.cleanupErrors ? "warning" : "success", title:result.cleanupErrors ? "Snapshot saved; cleanup incomplete" : "Snapshot saved", text:`${result.month}: ${Number(result.rowCount).toLocaleString()} records.${result.cleanupErrors ? ` ${Number(result.cleanupErrors)} old snapshot(s) could not be deleted.` : ""}` });
+  } catch (error) { Swal.close(); await Swal.fire({ icon:"error", title:"Snapshot not saved", text:error.message || String(error) }); }
+}
+
+async function changeOverviewPeriod() {
+  const select = document.getElementById("overviewPeriod"), previous = subStoreSelectedMonth;
+  let selected = select.value;
+  if (selected === "history") {
+    select.value = previous;
+    Swal.fire({ title:"Loading saved months...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, showCloseButton:false, didOpen:() => Swal.showLoading() });
+    let snapshots;
+    try { snapshots = (await subStoreApi("listMonthlySnapshots")).snapshots || []; }
+    catch (error) { Swal.close(); return Swal.fire({ icon:"error", title:"Could not load saved months", text:error.message || String(error), showCloseButton:true }); }
+    Swal.close();
+    if (!snapshots.length) return Swal.fire({ icon:"info", title:"No saved months", text:"Save a monthly snapshot in Manage Database first.", showCloseButton:true });
+    const options = Object.fromEntries(snapshots.map(item => [item.month, item.month]));
+    const choice = await Swal.fire({ title:"Select saved month", input:"select", inputOptions:options, inputPlaceholder:"Select month", inputValue:previous, showCancelButton:true, showCloseButton:true, confirmButtonText:"View report", inputValidator:value => value ? undefined : "Please select a month." });
+    if (!choice.isConfirmed) return;
+    selected = choice.value;
+  }
+  if (selected === previous) return;
+  subStoreSelectedMonth = selected;
+  invalidateSubStoreSnapshot();
+  select.disabled = true;
+  Swal.fire({ title:subStoreSelectedMonth ? "Loading monthly snapshot..." : "Loading current data...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+  try { await loadSubStoreSnapshot(true); updateOverviewPeriodOptions(); Swal.close(); }
+  catch (error) {
+    subStoreSelectedMonth = previous; updateOverviewPeriodOptions(); invalidateSubStoreSnapshot(); Swal.close();
+    await Swal.fire({ icon:"error", title:"Could not load report", text:error.message || String(error) });
+  } finally { select.disabled = false; }
 }
 
 function renderDatabaseStatus(id, label, data, failed = false) {
@@ -2180,6 +2310,7 @@ document.getElementById("upload-tab").addEventListener("click", () => {
   setSubStoreMenuActive("upload-tab");
   document.getElementById("searchTab").hidden = true;
   refreshDatabaseStatus();
+  refreshMonthlySnapshotStatus();
 });
 
 document.getElementById("settings-tab").addEventListener("click", openSubStoreSettings);
@@ -2191,6 +2322,12 @@ document.querySelectorAll(".d365-summary-card").forEach(card => card.addEventLis
 document.getElementById("deleteDataset").addEventListener("change", event => { document.getElementById("deleteDatasetBtn").disabled = !event.target.value; });
 document.getElementById("compareChpFile").addEventListener("change", updateD365CompareFileSelection);
 document.getElementById("compareG1pFile").addEventListener("change", updateD365CompareFileSelection);
+document.getElementById("overviewPeriod").addEventListener("change", changeOverviewPeriod);
+document.getElementById("snapshotMonth").addEventListener("change", refreshMonthlySnapshotStatus);
+{
+  const now = new Date();
+  document.getElementById("snapshotMonth").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
 showSubStoreResultView("dashboard");
 setInterval(syncSubStoreOverview, 30000);
