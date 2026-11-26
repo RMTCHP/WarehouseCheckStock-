@@ -645,6 +645,17 @@
   .substore-result-tabs button { border:0; border-bottom:3px solid transparent; background:transparent; color:#64748b; font-weight:700; padding:9px 14px; transition:.2s ease; }
   .substore-result-tabs button:hover { color:#9a3412; background:#fff7ed; }
   .substore-result-tabs button.active { color:#9a3412; border-bottom-color:#ea580c; }
+  .comparison-view-switch { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px; }
+  .comparison-view-switch[hidden] { display:none; }
+  .comparison-view-switch button { min-height:42px; padding:8px 18px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; color:#334155; font-weight:700; cursor:pointer; }
+  .comparison-view-switch button:hover { border-color:#c2410c; color:#9a3412; background:#fff7ed; }
+  .comparison-view-switch button[aria-selected="true"] { border-color:#9a3412; background:#9a3412; color:#fff; }
+  .comparison-view-switch button:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+  .prd-expand { display:inline-flex; align-items:center; gap:8px; min-height:38px; padding:6px 10px; border:1px solid #d9e1ea; border-radius:8px; background:#fff; color:#7c2d12; font-weight:700; cursor:pointer; }
+  .prd-expand:hover { border-color:#c2410c; background:#fff7ed; }
+  .prd-expand:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+  .prd-detail-cell { padding:12px 18px !important; background:#fffaf5 !important; }
+  .prd-detail-table { margin:0; min-width:610px; font-size:13px; }
   .overview-dashboard { display:grid; gap:16px; }
   .overview-dashboard[hidden] { display:none; }
   .overview-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
@@ -724,6 +735,9 @@
   .verification-legend .no::before { background:#fca5a5; }
   .verification-legend .pending::before { background:#fdba74; }
   .export-toolbar { display:flex; justify-content:flex-end; margin:12px 0; }
+  .prd-toolbar { align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 12px; }
+  .prd-toolbar [role="status"] { flex:1 1 240px; color:#92400e; font-size:13px; }
+  .prd-toolbar [role="status"]:empty { display:none; }
   .export-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:8px 14px; border:1px solid #b8561d; border-radius:8px; background:#fff; color:#8b3511; font-size:13px; font-weight:700; }
   .export-button:hover { background:#fff7ed; border-color:#8b3511; }
   .export-button:active { background:#ffedd5; }
@@ -849,7 +863,7 @@
     <button id="subStoreDashboardTab" class="active" type="button" role="tab" aria-selected="true" onclick="showSubStoreResultView('dashboard')">Dashboard</button>
     <button id="subStoreLocationTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('location')">Rack Locations</button>
     <button id="subStoreSearchResultTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('search')">Inventory Records</button>
-    <button id="subStoreD365SummaryTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('d365')">D365 Comparison</button>
+    <button id="subStoreD365SummaryTab" type="button" role="tab" aria-selected="false" onclick="showSubStoreResultView('d365')">D365 Compare</button>
   </div>
   <section id="subStoreDashboardPane" class="overview-dashboard">
     <div class="overview-metrics" aria-label="Inventory record summary">
@@ -860,7 +874,7 @@
     </div>
     <div class="overview-panels">
       <section class="overview-panel"><h5>Rack Progress</h5><p>Checked and not checked records by rack. Select a rack to view details.</p><div class="overview-legend"><span>Checked</span><span>Not Checked</span></div><div id="overviewRackProgress" class="rack-progress-list"></div></section>
-      <div><section class="overview-panel"><h5>D365 Comparison</h5><p>Number of D365 Codes. Select a status to view details.</p><div id="overviewD365Status" class="overview-status-grid"></div></section>
+      <div><section class="overview-panel"><h5>D365 Compare</h5><p>Number of D365 Codes. Select a status to view details.</p><div id="overviewD365Status" class="overview-status-grid"></div></section>
       <section class="overview-panel overview-attention"><h5>Needs Attention</h5><p>Checked codes with a difference or missing D365 data.</p><div id="overviewAttention" class="overview-attention-list"></div></section></div>
     </div>
   </section>
@@ -904,16 +918,32 @@
     <div class="verification-legend"><span class="yes">All Yes</span><span class="no">Contains No</span><span class="pending">Pending</span><span>Answer unavailable / No data</span></div>
     <div id="subStoreLocationBoard" class="location-board"></div>
   </section>
-  <section id="subStoreD365SummaryPane" hidden>
+  <div id="comparisonViewSwitch" class="comparison-view-switch" role="tablist" aria-label="D365 comparison views" hidden>
+    <button id="comparisonItemTab" type="button" role="tab" aria-controls="subStoreD365SummaryPane" aria-selected="true" onclick="showComparisonView('item')">By D365 Code</button>
+    <button id="comparisonPrdTab" type="button" role="tab" aria-controls="subStorePrdPane" aria-selected="false" onclick="showComparisonView('prd')">By PRD ID</button>
+  </div>
+  <section id="subStoreD365SummaryPane" role="tabpanel" aria-labelledby="comparisonItemTab" hidden>
     <div class="d365-summary-cards" aria-label="D365 summary filters">
       <button type="button" class="d365-summary-card active" data-summary-status="all" aria-pressed="true"><span>Total Items</span><strong id="d365CardTotal">0</strong></button>
       <button type="button" class="d365-summary-card checked" data-summary-status="checked" aria-pressed="false"><span>Checked</span><strong id="d365CardChecked">0</strong></button>
       <button type="button" class="d365-summary-card pending" data-summary-status="pending" aria-pressed="false"><span>Not Checked</span><strong id="d365CardPending">0</strong></button>
       <button type="button" class="d365-summary-card missing" data-summary-status="missing" aria-pressed="false"><span>No D365 Data</span><strong id="d365CardMissing">0</strong></button>
     </div>
-    <div class="settings-card"><h5>D365 Comparison</h5>
-      <div class="export-toolbar"><button class="export-button" type="button" onclick="exportSubStoreTable('d365')"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg>Export Excel</button></div>
+    <div class="settings-card">
+      <div class="export-toolbar prd-toolbar"><button class="export-button" type="button" onclick="exportSubStoreTable('d365')"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg>Export Excel</button></div>
       <div class="table-responsive"><table class="table table-striped"><thead class="table-dark"><tr id="subStoreD365SummaryHead"></tr></thead><tbody id="subStoreD365SummaryBody"></tbody></table></div>
+    </div>
+  </section>
+  <section id="subStorePrdPane" role="tabpanel" aria-labelledby="comparisonPrdTab" hidden>
+    <div class="d365-summary-cards" aria-label="PRD summary filters">
+      <button type="button" class="d365-summary-card active" data-prd-status="all" aria-pressed="true"><span>Total PRDs</span><strong id="prdCardTotal">0</strong></button>
+      <button type="button" class="d365-summary-card checked" data-prd-status="recorded" aria-pressed="false"><span>Recorded</span><strong id="prdCardRecorded">0</strong></button>
+      <button type="button" class="d365-summary-card pending" data-prd-status="unrecorded" aria-pressed="false"><span>Not Recorded</span><strong id="prdCardUnrecorded">0</strong></button>
+      <button type="button" class="d365-summary-card missing" data-prd-status="missing" aria-pressed="false"><span>No D365 Quantity</span><strong id="prdCardMissing">0</strong></button>
+    </div>
+    <div class="settings-card">
+      <div class="export-toolbar prd-toolbar"><div id="subStorePrdNotice" role="status"></div><button class="export-button" type="button" onclick="exportSubStorePrdComparison()"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg>Export Excel</button></div>
+      <div class="table-responsive"><table class="table table-striped"><thead class="table-dark"><tr><th>PRD ID</th><th>D365 Code</th><th class="text-end">D365 Quantity</th><th class="text-end">PRD Act Qty Total</th><th class="text-end">Diff +/-</th><th class="text-center">Racks</th><th>Status</th></tr></thead><tbody id="subStorePrdBody"><tr><td colspan="7" class="text-center">Loading...</td></tr></tbody></table></div>
     </div>
   </section>
 </div>   <!-- ✅ ต้องมี -->
@@ -931,7 +961,7 @@
       <div class="progress"><div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div></div>
     </section>
     <section class="database-group" aria-label="D365 balance import">
-      <h3>D365 Balance</h3><p>Import both sites for D365 Comparison.</p>
+      <h3>D365 Balance</h3><p>Import both sites for D365 Compare.</p>
       <div class="database-status-list" aria-live="polite"><div class="database-status" id="databaseStatusChp"></div><div class="database-status" id="databaseStatusG1p"></div></div>
       <label class="compare-d365-picker">Choose CHP file<input id="compareChpFile" type="file" accept=".xlsx,.xls,.csv"></label>
       <span class="compare-d365-file" id="compareChpFileName">No file selected</span>
@@ -967,7 +997,7 @@
 <div id="contentCompare" class="content" style="display:none;">
   <h4><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M5 7h14M7 7l-4 7h8L7 7Zm10 0-4 7h8l-4-7ZM8 21h8"/></svg>Compare D365</h4>
   <section class="settings-card mt-3" aria-label="D365 comparison results">
-    <h5>D365 Comparison</h5>
+    <h5>D365 Compare</h5>
     <div class="table-responsive"><table class="table table-striped"><thead class="table-dark"><tr><th>Site</th><th>D365 Code</th><th class="text-end">D365 Balance</th><th class="text-end">Act Qty (all sites)</th><th class="text-end">Q'ty Diff D365</th><th>Status</th></tr></thead><tbody id="d365CompareBody"><tr><td colspan="6" class="text-center text-muted">Import CHP and G1P files to view comparison.</td></tr></tbody></table></div>
   </section>
 </div>
@@ -1001,7 +1031,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbwC39Y3UWMAlUkiMmAj1OhaYtU3ieQPVT9DLl_pDIRsQcrCZBZSuwkxDkSs11dDEmc/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxvi81e49bSE7SAmTcD-m7a9__CIJra6MAzpgIjnnJqXyMBzKpI1fUIR2mK8qfggro/exec";
   let subStoreSearchRows = [];
   let subStoreLocationRows = [];
   let subStoreSnapshotCache = null;
@@ -1015,6 +1045,9 @@
   let subStoreD365Filters = {};
   let subStoreD365Rows = [];
   let subStoreD365CardFilter = "all";
+  let subStorePrdRequestId = 0;
+  let subStorePrdRows = [];
+  let subStorePrdCardFilter = "all";
   let databaseStatusRequestId = 0;
   let monthlyStatusRequestId = 0;
 
@@ -1080,7 +1113,11 @@
     searchPane.hidden = view !== "search";
     locationPane.hidden = view !== "location";
     document.getElementById("subStoreDashboardPane").hidden = view !== "dashboard";
+    document.getElementById("comparisonViewSwitch").hidden = view !== "d365";
     document.getElementById("subStoreD365SummaryPane").hidden = view !== "d365";
+    document.getElementById("subStorePrdPane").hidden = true;
+    document.getElementById("comparisonItemTab").setAttribute("aria-selected", "true");
+    document.getElementById("comparisonPrdTab").setAttribute("aria-selected", "false");
     [["subStoreDashboardTab", "dashboard"], ["subStoreSearchResultTab", "search"], ["subStoreLocationTab", "location"], ["subStoreD365SummaryTab", "d365"]].forEach(([id, value]) => {
       document.getElementById(id).classList.toggle("active", view === value);
       document.getElementById(id).setAttribute("aria-selected", String(view === value));
@@ -1094,6 +1131,22 @@
       if (shouldShowLoading) Swal.close();
       await Swal.fire({ icon:"error", title:"Could not load Sub-Store data", text:error.message || String(error) });
     }
+  }
+
+  async function showComparisonView(view) {
+    const isPrd = view === "prd";
+    document.getElementById("subStoreD365SummaryPane").hidden = isPrd;
+    document.getElementById("subStorePrdPane").hidden = !isPrd;
+    document.getElementById("comparisonItemTab").setAttribute("aria-selected", String(!isPrd));
+    document.getElementById("comparisonPrdTab").setAttribute("aria-selected", String(isPrd));
+    if (!isPrd) return;
+    Swal.fire({ title:"Loading PRD data...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
+    const loadingPopup = Swal.getPopup();
+    try { await loadSubStorePrdComparison(); }
+    catch (error) {
+      if (loadingPopup && Swal.getPopup() === loadingPopup) Swal.close();
+      if (!document.getElementById("subStorePrdPane").hidden) await Swal.fire({ icon:"error", title:"Could not load PRD data", text:error.message || String(error) });
+    } finally { if (loadingPopup && Swal.getPopup() === loadingPopup) Swal.close(); }
   }
 
   async function loadSubStoreSnapshot(force = false) {
@@ -1151,6 +1204,7 @@
       const result = await subStoreApi("getSnapshot");
       if (subStoreSelectedMonth || document.hidden || Swal.isVisible() || document.getElementById("contentSearch").style.display === "none" || subStoreSnapshotRequest || subStoreSnapshotVersion !== startingVersion) return;
       applySubStoreSnapshot(result, true);
+      if (!document.getElementById("subStorePrdPane").hidden) await loadSubStorePrdComparison();
     } catch (error) { console.warn("Sub-Store automatic refresh failed", error); }
     finally { subStoreAutoSyncBusy = false; }
   }
@@ -1166,6 +1220,7 @@
     try {
       invalidateSubStoreSnapshot();
       await loadSubStoreSnapshot(true);
+      if (!document.getElementById("subStorePrdPane").hidden) await loadSubStorePrdComparison();
       Swal.close();
       await Swal.fire({ icon:"success", title:"Data refreshed", timer:1100, showConfirmButton:false });
     } catch (error) {
@@ -1493,6 +1548,108 @@ const SUBSTORE_D365_COLUMNS = [
   { key:"diff", label:"Q'ty Diff D365" }, { key:"countStatus", label:"Count Status" }, { key:"comparisonStatus", label:"D365 Comparison" }
 ];
 
+async function loadSubStorePrdComparison() {
+  const requestId = ++subStorePrdRequestId, month = subStoreSelectedMonth;
+  const body = document.getElementById("subStorePrdBody"), notice = document.getElementById("subStorePrdNotice");
+  subStorePrdRows = []; refreshSubStorePrdSummary();
+  body.innerHTML = '<tr><td colspan="7" class="text-center">Loading PRD data...</td></tr>';
+  notice.textContent = "";
+  let result;
+  try { result = await subStoreApi("getPrdComparisonSources", month ? { month } : {}); }
+  catch (error) {
+    if (requestId === subStorePrdRequestId) { body.innerHTML = '<tr><td colspan="7" class="text-center">PRD data unavailable.</td></tr>'; notice.textContent = error.message; }
+    throw error;
+  }
+  if (requestId !== subStorePrdRequestId || month !== subStoreSelectedMonth) return;
+  if (!Array.isArray(result.options) || !Array.isArray(result.unavailableSites)) throw new Error("Invalid PRD comparison response. Deploy the latest Apps Script.");
+  const norm = value => String(value ?? "").trim().toUpperCase();
+  const key = (code, prod) => JSON.stringify([norm(code), norm(prod)]);
+  const codes = new Set(subStoreSearchRows.map(row => norm(row.d365Code)).filter(Boolean));
+  const groups = new Map();
+  result.options.forEach(item => {
+    if (!codes.has(norm(item.code))) return;
+    const id = key(item.code, item.prodId);
+    const group = groups.get(id) || { code:item.code, prodId:item.prodId, d365:0, hasD365:result.unavailableSites.length === 0, actual:0, hasActual:false, locations:new Set(), details:[] };
+    if (item.quantity === null || item.quantity === "" || !Number.isFinite(Number(item.quantity))) group.hasD365 = false;
+    else group.d365 += Number(item.quantity);
+    groups.set(id, group);
+  });
+  let invalid = 0;
+  subStoreSearchRows.forEach(row => {
+    if (!row.actPrd) return;
+    let selections;
+    try { selections = typeof row.actPrd === "string" ? JSON.parse(row.actPrd) : row.actPrd; if (!Array.isArray(selections)) throw new Error(); }
+    catch (_) { invalid++; return; }
+    const quantities = selections.map(item => item && item.actQuantity !== null && item.actQuantity !== "" && item.actQuantity !== undefined ? Number(item.actQuantity) : NaN);
+    const prdTotal = quantities.every(value => Number.isFinite(value) && value >= 0) ? quantities.reduce((sum, value) => sum + value, 0) : null;
+    const rawRackActual = String(row.actQty ?? "").trim().replace(/,/g, "");
+    const rackActual = rawRackActual && Number.isFinite(Number(rawRackActual)) ? Number(rawRackActual) : null;
+    selections.forEach(item => {
+      const value = item.actQuantity === null || item.actQuantity === "" || item.actQuantity === undefined ? NaN : Number(item.actQuantity);
+      if (!item.site || !item.prodId || !Number.isFinite(value)) { invalid++; return; }
+      const id = key(row.d365Code, item.prodId);
+      const group = groups.get(id) || { code:row.d365Code, prodId:item.prodId, d365:0, hasD365:false, actual:0, hasActual:false, locations:new Set(), details:[] };
+      const location = row.actRack || row.storageArea || "-";
+      group.actual += value; group.hasActual = true; group.locations.add(location);
+      group.details.push({ location, lot:row.actLot || row.lotNumber || "-", quantity:value, prdTotal, rackActual, recordedBy:row.recordedBy || "-", recordedAt:row.recordedAt });
+      groups.set(id, group);
+    });
+  });
+  const messages = [];
+  if (result.unavailableSites.length) messages.push(`D365 PRD data unavailable: ${result.unavailableSites.join(", ")}.`);
+  if (invalid) messages.push(`${invalid} invalid PRD record(s) could not be included.`);
+  notice.textContent = messages.join(" ");
+  subStorePrdRows = [...groups.values()].sort((a,b) => `${a.prodId}|${a.code}`.localeCompare(`${b.prodId}|${b.code}`, undefined, { numeric:true, sensitivity:"base" }));
+  refreshSubStorePrdSummary();
+}
+
+function subStorePrdCardMatches(row, filter) {
+  return filter === "all" || (filter === "recorded" && row.hasActual) || (filter === "unrecorded" && !row.hasActual) || (filter === "missing" && !row.hasD365);
+}
+
+function getSubStorePrdStatus(row) {
+  if (!row.hasD365) return "No D365 Quantity";
+  if (!row.hasActual) return "Not recorded";
+  const diff = row.actual - row.d365;
+  return Math.abs(diff) < 1e-9 ? "Match" : diff > 0 ? "Over" : "Under";
+}
+
+function getRackPrdDifference(item) {
+  if (item.prdTotal === null || item.rackActual === null) return null;
+  return item.prdTotal - item.rackActual;
+}
+
+function getRackPrdStatus(item) {
+  const diff = getRackPrdDifference(item);
+  return diff === null ? "Unavailable" : Math.abs(diff) < 1e-9 ? "Match" : diff > 0 ? "Over" : "Under";
+}
+
+function refreshSubStorePrdSummary() {
+  [["all", "prdCardTotal"], ["recorded", "prdCardRecorded"], ["unrecorded", "prdCardUnrecorded"], ["missing", "prdCardMissing"]].forEach(([filter, id]) => {
+    document.getElementById(id).textContent = subStorePrdRows.filter(row => subStorePrdCardMatches(row, filter)).length.toLocaleString();
+  });
+  document.querySelectorAll("[data-prd-status]").forEach(card => {
+    const active = card.dataset.prdStatus === subStorePrdCardFilter;
+    card.classList.toggle("active", active); card.setAttribute("aria-pressed", String(active));
+  });
+  const entries = subStorePrdRows.filter(row => subStorePrdCardMatches(row, subStorePrdCardFilter));
+  const body = document.getElementById("subStorePrdBody");
+  body.innerHTML = entries.map((row, index) => {
+    const diff = row.hasD365 && row.hasActual ? row.actual - row.d365 : null;
+    const status = getSubStorePrdStatus(row);
+    const style = status === "Match" ? "checked" : status === "Over" ? "different" : status === "Under" || status === "Not recorded" ? "pending" : "missing";
+    const prod = row.details.length ? `<button type="button" class="prd-expand" data-prd-index="${index}" aria-expanded="false" aria-label="Show locations for ${escapeHtml(row.prodId)}"><span aria-hidden="true">+</span>${escapeHtml(row.prodId)}</button>` : escapeHtml(row.prodId);
+    return `<tr><td>${prod}</td><td>${escapeHtml(row.code || "-")}</td><td class="text-end">${row.hasD365 ? formatSubStoreQuantity(row.d365) : "-"}</td><td class="text-end">${row.hasActual ? formatSubStoreQuantity(row.actual) : "-"}</td><td class="text-end">${diff === null ? "-" : formatSubStoreQuantity(diff)}</td><td class="text-center">${row.hasActual ? row.locations.size : "-"}</td><td><span class="summary-status ${style}" title="Based on recorded PRD quantities; unchecked racks may contain additional stock.">${status}</span></td></tr>`;
+  }).join("") || '<tr><td colspan="7" class="text-center text-muted">No matching PRD data.</td></tr>';
+  body.querySelectorAll("[data-prd-index]").forEach(button => button.addEventListener("click", () => {
+    const summary = button.closest("tr"), expanded = button.getAttribute("aria-expanded") === "true";
+    if (expanded) { summary.nextElementSibling.remove(); button.setAttribute("aria-expanded", "false"); button.firstElementChild.textContent = "+"; button.setAttribute("aria-label", `Show locations for ${entries[Number(button.dataset.prdIndex)].prodId}`); return; }
+    const row = entries[Number(button.dataset.prdIndex)], detail = document.createElement("tr");
+    detail.innerHTML = `<td colspan="7" class="prd-detail-cell"><div class="table-responsive"><table class="table prd-detail-table"><thead><tr><th>Rack / Location</th><th>Act Lot</th><th class="text-end">PRD Act Qty</th><th class="text-end">All PRDs in Record</th><th class="text-end">Record Act Qty</th><th class="text-end">PRDs - Act Qty</th><th>Record Status</th><th>Recorded By</th><th>Updated At</th></tr></thead><tbody>${row.details.map(item => { const difference = getRackPrdDifference(item), status = getRackPrdStatus(item); const style = status === "Match" ? "checked" : status === "Over" ? "different" : status === "Under" ? "pending" : "missing"; return `<tr><td>${escapeHtml(item.location)}</td><td>${escapeHtml(item.lot)}</td><td class="text-end">${formatSubStoreQuantity(item.quantity)}</td><td class="text-end">${item.prdTotal === null ? "-" : formatSubStoreQuantity(item.prdTotal)}</td><td class="text-end">${item.rackActual === null ? "-" : formatSubStoreQuantity(item.rackActual)}</td><td class="text-end">${difference === null ? "-" : formatSubStoreQuantity(difference)}</td><td><span class="summary-status ${style}">${status}</span></td><td>${escapeHtml(item.recordedBy)}</td><td>${escapeHtml(formatSubStoreDateTime(item.recordedAt))}</td></tr>`; }).join("")}<tr><th colspan="2">PRD Total</th><th class="text-end">${formatSubStoreQuantity(row.actual)}</th><td colspan="6"></td></tr></tbody></table></div></td>`;
+    summary.after(detail); button.setAttribute("aria-expanded", "true"); button.firstElementChild.textContent = "-"; button.setAttribute("aria-label", `Hide locations for ${row.prodId}`);
+  }));
+}
+
 function renderSubStoreD365Summary(rows) {
   const groups = new Map();
   rows.forEach(row => {
@@ -1537,7 +1694,7 @@ function refreshSubStoreD365Summary() {
   [["checked", "d365CardChecked"], ["pending", "d365CardPending"], ["missing", "d365CardMissing"]].forEach(([status, id]) => {
     document.getElementById(id).textContent = subStoreD365Rows.filter(row => subStoreD365CardMatches(row, status)).length.toLocaleString();
   });
-  document.querySelectorAll(".d365-summary-card").forEach(card => {
+  document.querySelectorAll("#subStoreD365SummaryPane .d365-summary-card").forEach(card => {
     const active = card.dataset.summaryStatus === subStoreD365CardFilter;
     card.classList.toggle("active", active);
     card.setAttribute("aria-pressed", String(active));
@@ -1611,7 +1768,7 @@ function renderInventoryDashboard(rows) {
 
   const attention = subStoreD365Rows.filter(row => !row.pending && (row.comparisonStatus === "Diff" || row.comparisonStatus === "No D365 Data"));
   const attentionEl = document.getElementById("overviewAttention");
-  attentionEl.innerHTML = attention.length ? attention.slice(0, 8).map(row => `<button type="button" data-code="${escapeHtml(row.code)}"><b>${escapeHtml(row.code)}</b><span>${escapeHtml(row.comparisonStatus === "Diff" ? `Diff: ${row.diff}` : "No D365 Data")}</span></button>`).join("") + (attention.length > 8 ? `<div class="overview-empty">Showing 8 of ${attention.length.toLocaleString()} codes. Open D365 Comparison for all results.</div>` : "") : '<div class="overview-empty">No checked codes need attention.</div>';
+  attentionEl.innerHTML = attention.length ? attention.slice(0, 8).map(row => `<button type="button" data-code="${escapeHtml(row.code)}"><b>${escapeHtml(row.code)}</b><span>${escapeHtml(row.comparisonStatus === "Diff" ? `Diff: ${row.diff}` : "No D365 Data")}</span></button>`).join("") + (attention.length > 8 ? `<div class="overview-empty">Showing 8 of ${attention.length.toLocaleString()} codes. Open D365 Compare for all results.</div>` : "") : '<div class="overview-empty">No checked codes need attention.</div>';
   attentionEl.querySelectorAll("[data-code]").forEach(button => button.addEventListener("click", () => {
     const row = subStoreD365Rows.find(item => item.code === button.dataset.code);
     if (row) openSubStoreRecordModal(`D365 Code: ${row.code}`, row.records);
@@ -1657,6 +1814,27 @@ function formatSubStoreQuantity(value) {
   if (!text) return "-";
   const number = Number(text.replace(/,/g, ""));
   return Number.isFinite(number) ? number.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "-";
+}
+
+function exportSubStorePrdComparison() {
+  const rows = subStorePrdRows.filter(row => subStorePrdCardMatches(row, subStorePrdCardFilter));
+  if (!rows.length) return Swal.fire({ icon:"info", title:"No data to export", text:"There are no rows matching the selected summary card." });
+  if (typeof XLSX === "undefined") return Swal.fire({ icon:"error", title:"Export unavailable", text:"The Excel library could not be loaded. Check your connection and try again." });
+  try {
+    const values = [["PRD ID", "D365 Code", "Row Type", "Rack / Location", "Act Lot", "PRD Act Qty", "All PRDs in Record", "Record Act Qty", "PRDs - Act Qty", "Record Status", "Recorded By", "Updated At", "D365 Quantity", "PRD Act Qty Total", "Diff +/-", "Status"], ...rows.flatMap(row => {
+      const diff = row.hasD365 && row.hasActual ? row.actual - row.d365 : null;
+      const status = getSubStorePrdStatus(row);
+      return [[row.prodId, row.code || "-", "Summary", null, null, null, null, null, null, null, null, null, row.hasD365 ? row.d365 : null, row.hasActual ? row.actual : null, diff, status],
+        ...row.details.map(item => [null, null, "Location", item.location, item.lot, item.quantity, item.prdTotal, item.rackActual, getRackPrdDifference(item), getRackPrdStatus(item), item.recordedBy, formatSubStoreDateTime(item.recordedAt), null, null, null, null])];
+    })];
+    const sheet = XLSX.utils.aoa_to_sheet(values);
+    sheet['!cols'] = values[0].map((heading, index) => ({ wch:Math.min(45, values.slice(1).reduce((width, row) => Math.max(width, String(row[index] ?? "").length + 2), Math.max(12, heading.length + 2))) }));
+    sheet['!autofilter'] = { ref:XLSX.utils.encode_range({ s:{ r:0, c:0 }, e:{ r:values.length - 1, c:values[0].length - 1 } }) };
+    const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, sheet, "PRD Comparison");
+    const now = new Date(), pad = value => String(value).padStart(2, "0");
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    XLSX.writeFile(workbook, `SubStore_PRD_Comparison${subStoreSelectedMonth ? `_${subStoreSelectedMonth}` : ""}_${timestamp}.xlsx`);
+  } catch (error) { Swal.fire({ icon:"error", title:"Export failed", text:error.message || String(error) }); }
 }
 
 let styledExcelPromise = null;
@@ -1989,7 +2167,7 @@ function setSubStoreMenuActive(id) {
 }
 
 async function subStoreApi(action, payload = {}) {
-  const readActions = new Set(["getSnapshot", "getMonthlySnapshot", "listMonthlySnapshots", "getMonthlySnapshotReadiness", "getDataVersion", "getDatasetPresence", "listUsers", "listFileSubMap"]);
+  const readActions = new Set(["getSnapshot", "getMonthlySnapshot", "getPrdComparisonSources", "listMonthlySnapshots", "getMonthlySnapshotReadiness", "getDataVersion", "getDatasetPresence", "listUsers", "listFileSubMap"]);
   const controller = readActions.has(action) ? new AbortController() : null;
   const timeout = controller ? setTimeout(() => controller.abort(), 30000) : null;
   try {
@@ -2086,7 +2264,7 @@ async function changeOverviewPeriod() {
   invalidateSubStoreSnapshot();
   select.disabled = true;
   Swal.fire({ title:subStoreSelectedMonth ? "Loading monthly snapshot..." : "Loading current data...", allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() });
-  try { await loadSubStoreSnapshot(true); updateOverviewPeriodOptions(); Swal.close(); }
+  try { await loadSubStoreSnapshot(true); if (!document.getElementById("subStorePrdPane").hidden) await loadSubStorePrdComparison(); updateOverviewPeriodOptions(); Swal.close(); }
   catch (error) {
     subStoreSelectedMonth = previous; updateOverviewPeriodOptions(); invalidateSubStoreSnapshot(); Swal.close();
     await Swal.fire({ icon:"error", title:"Could not load report", text:error.message || String(error) });
@@ -2314,10 +2492,14 @@ document.getElementById("upload-tab").addEventListener("click", () => {
 });
 
 document.getElementById("settings-tab").addEventListener("click", openSubStoreSettings);
-document.querySelectorAll(".d365-summary-card").forEach(card => card.addEventListener("click", () => {
+document.querySelectorAll("#subStoreD365SummaryPane .d365-summary-card").forEach(card => card.addEventListener("click", () => {
   subStoreD365CardFilter = card.dataset.summaryStatus;
   subStoreD365Filters = {};
   refreshSubStoreD365Summary();
+}));
+document.querySelectorAll("[data-prd-status]").forEach(card => card.addEventListener("click", () => {
+  subStorePrdCardFilter = card.dataset.prdStatus;
+  refreshSubStorePrdSummary();
 }));
 document.getElementById("deleteDataset").addEventListener("change", event => { document.getElementById("deleteDatasetBtn").disabled = !event.target.value; });
 document.getElementById("compareChpFile").addEventListener("change", updateD365CompareFileSelection);

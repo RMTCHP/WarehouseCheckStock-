@@ -114,16 +114,46 @@
     .verify-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .btn-yes { color:#166534; border:1px solid #86efac; background:#f0fdf4; }
     .btn-no { color:#9a3412; border:1px solid #fdba74; background:#fff7ed; }
-    .actual-card { padding:15px; border:1px solid #fed7aa; border-radius:15px; background:#fffaf5; }
-    .actual-card h3 { margin:0 0 14px; color:var(--brand-dark); font:800 14px "Plus Jakarta Sans",sans-serif; }
+    .actual-card { padding:16px; border:1px solid #fed7aa; border-radius:15px; background:#fffaf5; }
+    .actual-card h3 { margin:0 0 5px; color:#7c2d12; font:800 16px "Plus Jakarta Sans",sans-serif; }
+    .actual-intro { margin:0 0 15px; color:#596a7b; font-size:12px; line-height:1.5; }
+    .count-steps { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 17px; }
+    .count-step { display:flex; align-items:center; gap:8px; min-width:0; padding:9px; border:1px solid #e2e8f0; border-radius:9px; background:#fff; color:#64748b; font-size:11px; font-weight:700; }
+    .count-step-number { display:grid; place-items:center; flex:none; width:23px; height:23px; border-radius:50%; background:#e9eef4; color:#475569; font-size:11px; }
+    .count-step.current { border-color:#fb923c; color:#9a3412; background:#fff7ed; }
+    .count-step.current .count-step-number { background:#c2410c; color:#fff; }
+    .count-step.complete { border-color:#86efac; color:#166534; background:#f0fdf4; }
+    .count-step.complete .count-step-number { background:#166534; color:#fff; }
+    .package-heading { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 0 8px; }
+    .package-heading strong { color:#334155; font-size:12px; font-weight:700; }
+    .package-heading span { color:#64748b; font-size:10px; }
     .two-cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .package-grid { display:grid; grid-template-columns:1fr 20px 1fr 20px 1fr; gap:4px; align-items:center; }
-    .package-grid input { min-width:0; text-align:center; padding:0 5px; }
-    .package-grid span { color:var(--muted); font-weight:700; text-align:center; }
+    .package-grid { display:grid; grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr); gap:4px; align-items:end; }
+    .package-field { display:grid; gap:5px; min-width:0; color:#475569; font-size:12px; font-weight:700; }
+    .package-grid input { width:100%; min-width:0; min-height:50px; text-align:center; padding:0 5px; background:#fff; }
+    .package-grid input:disabled { background:#f1f5f9; color:#475569; opacity:1; }
+    .package-grid > span { display:grid; place-items:center; min-height:50px; color:var(--muted); font-weight:700; }
+    .package-confirmed { margin:14px 0 8px; padding:10px 12px; border-left:3px solid #16a34a; border-radius:6px; background:#f0fdf4; color:#166534; font-size:12px; font-weight:700; }
     .result { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:15px 0; }
     .result div { padding:12px; border-radius:12px; background:#fff; border:1px solid #e4e7ec; }
     .result span { display:block; color:var(--muted); font-size:11px; font-weight:600; }
     .result strong { display:block; margin-top:4px; font:800 20px "Plus Jakarta Sans",sans-serif; }
+    .prd-section { margin:16px 0; padding:14px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; }
+    .prd-section { scroll-margin-top:150px; }
+    .prd-title-row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .prd-section h4 { margin:0 0 5px; color:#172033; font-size:14px; }
+    .prd-count { color:#166534; font-size:11px; font-weight:700; white-space:nowrap; }
+    .prd-help { margin:0 0 10px; color:#526579; font-size:12px; line-height:1.45; }
+    .prd-list { display:grid; gap:8px; }
+    .prd-option { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-width:0; min-height:54px; padding:12px 14px; border:1px solid #dbe3ec; border-radius:12px; background:#fff; color:#172033; text-align:left; overflow-wrap:anywhere; font:700 13px "Plus Jakarta Sans",sans-serif; cursor:pointer; transition:background .15s,border-color .15s,transform .15s; }
+    .prd-option:active:not(:disabled) { transform:scale(.99); }
+    .prd-option-indicator { position:relative; flex:none; width:24px; height:24px; border:1.5px solid #cbd5e1; border-radius:50%; background:#fff; }
+    .prd-option:hover:not(:disabled) { border-color:#fb923c; background:#fff7ed; }
+    .prd-option.selected { border-color:#86efac; background:#f0fdf4; color:#166534; }
+    .prd-option.selected .prd-option-indicator { border-color:#15803d; background:#15803d; }
+    .prd-option.selected .prd-option-indicator::after { content:""; position:absolute; left:7px; top:3px; width:6px; height:11px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+    .prd-option:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+    .prd-option:disabled { opacity:.55; cursor:wait; }
     #deltaPreview.positive { color:var(--good); } #deltaPreview.negative { color:var(--danger); }
     .footer { display:none; }
     .mobile-nav { position:fixed; z-index:10; bottom:0; left:50%; display:grid; grid-template-columns:1fr 1fr; width:min(520px,100%); padding:7px 12px max(7px,env(safe-area-inset-bottom)); border:0; border-top:1px solid rgba(194,65,12,.18); border-radius:16px 16px 0 0; background:rgba(255,255,255,.96); box-shadow:0 -8px 24px rgba(124,45,18,.1); transform:translateX(-50%); backdrop-filter:blur(12px); }
@@ -135,6 +165,12 @@
     .swal2-popup { border:1px solid #fed7aa; border-radius:18px; font-family:Kanit,sans-serif; }
     .swal2-title { color:var(--brand-dark); }
     .swal2-confirm { background:var(--brand) !important; } .swal2-cancel { background:#64748b !important; }
+    .confirm-prd { margin:14px 0 0; border:1px solid #e2e8f0; border-radius:10px; text-align:left; overflow:hidden; }
+    .confirm-prd-title { padding:9px 12px; background:#f8fafc; color:#475569; font-size:13px; font-weight:700; }
+    .confirm-prd-list { max-height:180px; overflow-y:auto; }
+    .confirm-prd-row { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-top:1px solid #e2e8f0; color:#172033; font-size:14px; }
+    .confirm-prd-row span { overflow-wrap:anywhere; }
+    .confirm-prd-row strong { flex:none; font-variant-numeric:tabular-nums; }
     .login-screen { background:#182235; }
     .login-screen .app-card { position:relative; background:linear-gradient(180deg,#f7f9fd 0%,#fff 56%,#f2f6fb 100%); }
     .login-screen .app-card::before { position:absolute; z-index:0; right:0; bottom:70px; left:0; height:220px; opacity:.48; background:repeating-linear-gradient(90deg,transparent 0 44px,rgba(190,205,222,.22) 45px 47px),repeating-linear-gradient(0deg,transparent 0 34px,rgba(190,205,222,.2) 35px 37px); content:""; mask-image:linear-gradient(to bottom,transparent,black 38%,transparent); }
@@ -158,6 +194,12 @@
     .nav-action#navLogout:hover:not(:disabled) { background:linear-gradient(135deg,#c81e31,#a91626); }
     .sync-notice { margin:0 0 12px; padding:10px 12px; border:1px solid #fdba74; border-radius:10px; background:#fff7ed; color:#9a3412; font-size:12px; line-height:1.45; }
     .sync-notice.hidden { display:none; }
+    .sync-warning { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:12px 16px 0; padding:10px 12px; border:1px solid #fdba74; border-radius:10px; background:#fff7ed; color:#9a3412; font-size:12px; line-height:1.4; }
+    .sync-warning.hidden { display:none; }
+    .sync-warning button { flex:none; min-height:36px; padding:7px 10px; border:1px solid #c2410c; border-radius:8px; background:#fff; color:#9a3412; font:inherit; font-weight:700; cursor:pointer; }
+    .sync-warning button:hover:not(:disabled) { background:#ffedd5; }
+    .sync-warning button:focus-visible { outline:3px solid #fb923c; outline-offset:2px; }
+    .sync-warning button:disabled { opacity:.55; cursor:wait; }
     @media (max-width:390px) { .panel { padding:16px; } .two-cols { grid-template-columns:1fr; } .record-list { max-height:calc(100vh - 280px); } }
   </style>
 </head>
@@ -165,6 +207,7 @@
   <main class="shell">
     <section class="app-card">
       <header class="brand"><div class="brand-mark"><i class="fa-solid fa-box-open"></i><i class="fa-solid fa-circle-check"></i></div><div class="brand-copy"><h1>Sub-Store<br>Inventory Check</h1><p>Mobile actual inventory recording</p></div></header>
+      <div id="syncWarning" class="sync-warning hidden" role="status" aria-live="polite"><span>Sync failed. Rack status may be out of date. Check your connection.</span><button type="button" id="syncRetry">Retry</button></div>
 
       <section class="panel login-panel" id="loginView">
         <div class="login-card"><h2>Sign In</h2><p class="login-subtitle">Enter your account to use the system</p><div class="field"><label for="loginUsername"><i class="fa-regular fa-user"></i> Username</label><input id="loginUsername" autocomplete="username" autocapitalize="characters" placeholder="Enter username"></div><div class="field"><label for="loginPassword"><i class="fa-solid fa-lock"></i> Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password"></div><p class="login-note"><i class="fa-solid fa-circle-info"></i><span>Use the account created in Sub-Store Setting.<br>Contact the administrator if you do not have an account.</span></p></div>
@@ -196,10 +239,15 @@
         </div>
         <div class="verify-card" id="verifyCard"><p>Is this record correct?</p><div class="verify-actions"><button class="btn btn-yes" type="button" id="verifyYes">Yes</button><button class="btn btn-no" type="button" id="verifyNo">No</button></div></div>
         <div class="actual-card hidden" id="actualCard">
-          <h3 id="actualCardTitle">Actual Package</h3>
-          <div class="field"><label>Act Package</label><div class="package-grid"><input id="packageA" inputmode="decimal" placeholder="A"><span>x</span><input id="packageB" inputmode="decimal" placeholder="B"><span>+</span><input id="packageC" inputmode="decimal" placeholder="C"></div></div>
+          <h3 id="actualCardTitle">Actual Package</h3><p class="actual-intro">Enter the counted packages, then select PRD records if needed.</p>
+          <div class="count-steps" aria-label="Counting steps"><div id="packageStep" class="count-step current" aria-current="step"><span class="count-step-number">1</span><span>Package count</span></div><div id="prdStep" class="count-step"><span class="count-step-number">2</span><span>PRD &amp; save</span></div></div>
+          <div id="packageInputs"><div class="field"><div class="package-heading"><strong>Act Package</strong><span>Enter 0 if no remainder</span></div><div class="package-grid"><label class="package-field" for="packageA">A<input id="packageA" type="number" min="0" step="any" inputmode="decimal" aria-label="Package A" required></label><span aria-hidden="true">x</span><label class="package-field" for="packageB">B<input id="packageB" type="number" min="0" step="any" inputmode="decimal" aria-label="Package B" required></label><span aria-hidden="true">+</span><label class="package-field" for="packageC">C<input id="packageC" type="number" min="0" step="any" inputmode="decimal" aria-label="Package C" required></label></div></div>
           <div class="result"><div><span>Act Qty</span><strong id="actQtyPreview">-</strong></div><div><span>Delta +/-</span><strong id="deltaPreview">-</strong></div></div>
-          <button class="btn btn-primary" id="saveButton" type="button"><i class="fa-solid fa-floppy-disk"></i> <span id="saveButtonText">Save Actual</span></button>
+          <button class="btn btn-primary" id="confirmPackage" type="button">Confirm Package</button></div>
+          <div id="packageConfirmedNotice" class="package-confirmed hidden" role="status">Package confirmed. Not saved yet.</div>
+          <button class="btn btn-no hidden" id="editPackage" type="button">Edit Package</button>
+          <div id="prdSection" class="prd-section hidden"><div class="prd-title-row"><h4>Act PRD Sheet</h4><span id="prdSelectedCount" class="prd-count" aria-live="polite">0 selected</span></div><p id="prdStatus" class="prd-help" role="status">PRD selection is optional.</p><button type="button" id="prdRetry" class="btn btn-no hidden">Retry PRD lookup</button><div id="prdList" class="prd-list"></div></div>
+          <button class="btn btn-primary hidden" id="saveButton" type="button"><i class="fa-solid fa-floppy-disk"></i> <span id="saveButtonText">Save Actual</span></button>
         </div>
       </section>
     </section>
@@ -208,8 +256,8 @@
   </main>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwKSlkhthhAVoNLUfbv6l4JWnau2xkBejeSYdu0h_mQ2vI0Z3lysxjsasl_HRCdWpE/exec";
-    const state = { username:"", password:"", rows:[], selected:null, rackGroup:"", rackLocation:"", detailMode:"", detailReturnView:"listView" };
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxvi81e49bSE7SAmTcD-m7a9__CIJra6MAzpgIjnnJqXyMBzKpI1fUIR2mK8qfggro/exec";
+    const state = { username:"", password:"", rows:[], selected:null, rackGroup:"", rackLocation:"", detailMode:"", detailReturnView:"listView", prdOptions:[], prdSelected:[], prdLoading:false, prdInvalid:false, prdRequestId:0, prdLoaded:false, packageConfirmed:false };
     let rowsByRackLocation = new Map();
     let dataVersion = null, syncInProgress = false, syncPending = false, sessionId = 0, detailEpoch = 0;
     const $ = id => document.getElementById(id);
@@ -233,7 +281,7 @@
 
     function showLoading(title) { Swal.fire({ title, allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:() => Swal.showLoading() }); }
     async function api(action, data = {}) {
-      const controller = ["getMobileSnapshot", "getDataVersion"].includes(action) ? new AbortController() : null;
+      const controller = ["getMobileSnapshot", "getDataVersion", "getPrdOptions"].includes(action) ? new AbortController() : null;
       const timeout = controller ? setTimeout(() => controller.abort(), 30000) : null;
       try {
         const response = await fetch(scriptURL, { method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"}, body:new URLSearchParams({ action, ...data }), ...(controller ? { signal:controller.signal } : {}) });
@@ -259,24 +307,26 @@
     async function syncInventory() {
       if (!state.username || document.hidden || syncInProgress) return;
       syncInProgress = true;
+      $('syncRetry').disabled = true;
       const currentSession = sessionId;
       try {
         const version = await api("getDataVersion");
         if (currentSession !== sessionId) return;
-        if (String(version.version) === String(dataVersion) && !syncPending) return;
-        if (!$('detailView').classList.contains('hidden')) { syncPending = true; $('syncNotice').classList.remove('hidden'); return; }
+        if (version.version == null) throw new Error('Invalid version response');
+        if (String(version.version) === String(dataVersion) && !syncPending) { $('syncWarning').classList.add('hidden'); return; }
+        if (!$('detailView').classList.contains('hidden')) { $('syncWarning').classList.add('hidden'); syncPending = true; $('syncNotice').classList.remove('hidden'); return; }
         const snapshotEpoch = detailEpoch;
         const snapshot = await api("getMobileSnapshot", { username:state.username, password:state.password });
         if (currentSession !== sessionId) return;
         if (snapshotEpoch !== detailEpoch) { syncPending = true; return; }
         if (!$('detailView').classList.contains('hidden')) { syncPending = true; $('syncNotice').classList.remove('hidden'); return; }
         if (!Array.isArray(snapshot.rows) || snapshot.version == null) throw new Error('Invalid inventory response');
-        state.rows = snapshot.rows; dataVersion = snapshot.version; syncPending = false; $('syncNotice').classList.add('hidden'); indexRackLocations();
+        state.rows = snapshot.rows; dataVersion = snapshot.version; syncPending = false; $('syncNotice').classList.add('hidden'); $('syncWarning').classList.add('hidden'); indexRackLocations();
         if (!$('rackLocationView').classList.contains('hidden') && RACK_MAP[state.rackGroup]?.some(location => getRowsForRackLocation(location).length)) selectRackGroup(state.rackGroup);
         else if (!$('listView').classList.contains('hidden')) { renderList(); }
         else { renderRackGroups(); showView('rackGroupView'); }
-      } catch (_) { syncPending = true; }
-      finally { syncInProgress = false; }
+      } catch (_) { if (currentSession === sessionId && state.username) $('syncWarning').classList.remove('hidden'); }
+      finally { syncInProgress = false; $('syncRetry').disabled = false; }
     }
     function indexRackLocations() {
       rowsByRackLocation = new Map();
@@ -361,10 +411,11 @@
       document.querySelectorAll(".record[data-key]").forEach(button => button.addEventListener("click", () => openRecord(button.dataset.key)));
     }
 
-    function parsePackage(value) { const match = text(value).replace(/\u00d7/g,"x").match(/^\s*([\d.]+)\s*x\s*([\d.]+)\s*\+\s*([\d.]+)\s*$/i); return match ? [match[1],match[2],match[3]] : ["","",""]; }
+    function parsePackage(value) { const match = text(value).replace(/\u00d7/g,"x").match(/^\s*((?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*x\s*((?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*\+\s*((?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*$/i); return match ? [match[1],match[2],match[3]] : ["","",""]; }
     function updateActualPreview() {
-      const a = number($("packageA").value), b = number($("packageB").value), c = number($("packageC").value) ?? 0;
-      const actQty = a === null || b === null ? null : (a * b) + c;
+      const a = number($("packageA").value), b = number($("packageB").value), c = number($("packageC").value);
+      const computed = a === null || b === null || c === null || a < 0 || b < 0 || c < 0 ? null : (a * b) + c;
+      const actQty = Number.isFinite(computed) ? computed : null;
       $("actQtyPreview").textContent = actQty === null ? "-" : quantity(actQty);
       const delta = actQty === null ? null : actQty - (number($("detailQuantity").value) ?? 0);
       const deltaEl = $("deltaPreview");
@@ -382,7 +433,115 @@
     function syncSubconWithFileNo() {
       const fileNo = text($("detailFile").value).toUpperCase();
       const match = state.rows.find(row => text(row.fileNo).toUpperCase() === fileNo && text(row.subcon));
-      if (match) $("detailSubcon").value = text(match.subcon);
+      $("detailSubcon").value = match ? text(match.subcon) : "";
+    }
+
+    function renderPrdOptions() {
+      $("prdSelectedCount").textContent = `${state.prdSelected.length} selected`;
+      const key = item => `${text(item.site).toUpperCase()}|${text(item.prodId).toUpperCase()}`;
+      const options = state.prdOptions.map(item => ({ ...item, savedOnly:false }));
+      const known = new Set(options.map(key));
+      state.prdSelected.forEach(item => { if (!known.has(key(item))) options.push({ ...item, savedOnly:true }); });
+      const idCounts = new Map();
+      options.forEach(item => { const id = text(item.prodId).toUpperCase(); idCounts.set(id, (idCounts.get(id) || 0) + 1); });
+      $("prdList").innerHTML = options.map((item, index) => {
+        const saved = state.prdSelected.find(entry => key(entry) === key(item));
+        const duplicate = idCounts.get(text(item.prodId).toUpperCase()) > 1;
+        const label = `${item.prodId}${duplicate ? ` (${item.site})` : ""}`;
+        return `<button type="button" class="prd-option ${saved ? "selected" : ""}" data-index="${index}" aria-pressed="${saved ? "true" : "false"}" aria-label="${escapeHtml(label)}${saved ? ", selected" : ""}" ${state.prdLoading ? "disabled" : ""}><span>${escapeHtml(label)}</span><span class="prd-option-indicator" aria-hidden="true"></span></button>`;
+      }).join("");
+      state.prdDisplay = options;
+      $("prdList").querySelectorAll('.prd-option').forEach(button => button.addEventListener('click', () => openPrdQuantity(Number(button.dataset.index))));
+    }
+
+    async function openPrdQuantity(index) {
+      const item = state.prdDisplay[index], currentRecord = state.selected;
+      if (!item || !currentRecord || state.prdLoading) return;
+      const key = entry => `${text(entry.site).toUpperCase()}|${text(entry.prodId).toUpperCase()}`;
+      const saved = state.prdSelected.find(entry => key(entry) === key(item));
+      const initial = saved ? saved.actQuantity : item.quantity;
+      const result = await Swal.fire({
+        title: text(item.prodId), input:"number", inputLabel:"Act Quantity",
+        inputValue:initial === null || initial === undefined || initial === "" ? "" : String(initial),
+        inputAttributes:{ min:"0", step:"any", inputmode:"decimal" },
+        showCancelButton:true, showCloseButton:true, showDenyButton:!!saved,
+        confirmButtonText:"Save", cancelButtonText:"Cancel", denyButtonText:"Remove",
+        inputValidator:value => { const actual = number(value); return actual === null || actual < 0 ? "Enter a non-negative Act Quantity." : undefined; }
+      });
+      if (state.selected !== currentRecord || !state.username) return;
+      if (result.isDenied) state.prdSelected = state.prdSelected.filter(entry => key(entry) !== key(item));
+      else if (result.isConfirmed) {
+        const actual = number(result.value);
+        if (actual === null || actual < 0) return;
+        state.prdSelected = state.prdSelected.filter(entry => key(entry) !== key(item));
+        state.prdSelected.push({ site:item.site, prodId:item.prodId, quantity:item.quantity ?? null, actQuantity:actual });
+      } else return;
+      renderPrdOptions();
+    }
+
+    async function loadPrdOptions() {
+      const selected = state.selected, requestId = ++state.prdRequestId;
+      if (!selected) return;
+      state.prdLoading = true; state.prdOptions = []; $("prdRetry").classList.add("hidden");
+      $("prdStatus").textContent = `Loading RECS PRD for ${selected.d365Code || "-"}...`;
+      renderPrdOptions();
+      showLoading("Loading PRD data...");
+      const loadingPopup = Swal.getPopup();
+      try {
+        const result = await api("getPrdOptions", { username:state.username, password:state.password, itemNumber:selected.d365Code });
+        if (requestId !== state.prdRequestId || state.selected !== selected || !state.username) return;
+        if (!Array.isArray(result.options) || !Array.isArray(result.unavailableSites)) throw new Error("Invalid PRD response");
+        state.prdOptions = result.options;
+        state.prdLoading = false;
+        const missing = result.unavailableSites.length ? ` ${result.unavailableSites.join(", ")} PRD data unavailable; ask admin to import the latest files.` : "";
+        $("prdStatus").textContent = result.options.length ? `Tap a PRD to enter Act Quantity. Selection is optional.${missing}` : `No PRD found for ${selected.d365Code || "-"}. Selection is optional.${missing}`;
+        renderPrdOptions();
+      } catch (_) {
+        if (requestId !== state.prdRequestId || state.selected !== selected || !state.username) return;
+        state.prdLoading = false;
+        $("prdStatus").textContent = "PRD lookup unavailable. Previously saved selections remain available; you may retry or save without adding PRD.";
+        $("prdRetry").classList.remove("hidden"); renderPrdOptions();
+      } finally {
+        if (requestId === state.prdRequestId) state.prdLoading = false;
+        if (loadingPopup && Swal.getPopup() === loadingPopup) Swal.close();
+      }
+    }
+
+    function collectPrdSelections() {
+      return state.prdSelected.map(item => {
+        const actual = number(item.actQuantity);
+        if (actual === null || actual < 0) throw new Error("Enter a non-negative Prod Act Quantity for each selected PRD.");
+        return { site:item.site, prodId:item.prodId, quantity:item.quantity ?? null, actQuantity:actual };
+      });
+    }
+
+    function setPackageConfirmed(confirmed) {
+      state.packageConfirmed = confirmed;
+      $("packageStep").classList.toggle("current", !confirmed);
+      $("packageStep").classList.toggle("complete", confirmed);
+      $("prdStep").classList.toggle("current", confirmed);
+      $("packageInputs").classList.toggle("hidden", confirmed);
+      if (confirmed) $("packageConfirmedNotice").textContent = `Package confirmed | Act Qty: ${$("actQtyPreview").textContent} | Not saved yet`;
+      $("packageStep").toggleAttribute("aria-current", !confirmed);
+      $("prdStep").toggleAttribute("aria-current", confirmed);
+      (confirmed ? $("prdStep") : $("packageStep")).setAttribute("aria-current", "step");
+      ["packageA", "packageB", "packageC"].forEach(id => { $(id).disabled = confirmed; });
+      $("confirmPackage").classList.toggle("hidden", confirmed);
+      $("editPackage").classList.toggle("hidden", !confirmed);
+      $("packageConfirmedNotice").classList.toggle("hidden", !confirmed);
+      $("prdSection").classList.toggle("hidden", !confirmed);
+      $("saveButton").classList.toggle("hidden", !confirmed);
+    }
+
+    async function confirmPackage() {
+      const values = ["packageA", "packageB", "packageC"].map(id => number($(id).value));
+      if (values.some(value => value === null) || !Number.isFinite(values[0] * values[1] + values[2])) return Swal.fire({ icon:"warning", title:"Complete Actual Count", text:"Enter valid numbers for Act Package A, B and C. Enter 0 when applicable." });
+      if (values.some(value => value < 0)) return Swal.fire({ icon:"warning", title:"Invalid Actual Count", text:"Act Package values cannot be negative." });
+      setPackageConfirmed(true);
+      if (!state.prdLoaded) { state.prdLoaded = true; await loadPrdOptions(); }
+      if (state.packageConfirmed && !$('detailView').classList.contains('hidden')) {
+        $('prdSection').scrollIntoView({ behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' });
+      }
     }
 
     function setDetailMode(mode) {
@@ -408,12 +567,16 @@
       $("actualCardTitle").textContent = editable ? "Correct Record and Actual Package" : "Actual Package";
       $("saveButtonText").textContent = editable ? "Update Record" : "Save Actual";
       updateActualPreview();
+      setPackageConfirmed(false);
     }
 
     function openRecord(recordKey) {
       const row = state.rows.find(item => item.recordKey === recordKey);
       if (!row) return;
       state.selected = row;
+      state.prdRequestId++; state.prdOptions = []; state.prdLoading = false; state.prdInvalid = false; state.prdLoaded = false; setPackageConfirmed(false);
+      try { state.prdSelected = row.actPrd ? JSON.parse(row.actPrd) : []; if (!Array.isArray(state.prdSelected)) throw new Error("Invalid PRD"); }
+      catch (_) { state.prdSelected = []; state.prdInvalid = true; }
       populateFileNoOptions(row.fileNo || ""); $("detailSubcon").value = row.subcon || "";
       $("detailStorage").value = row.storageArea || ""; $("detailQuantity").value = row.quantity ?? ""; $("detailLot").value = row.lotNumber || "";
       $("detailFile").disabled = true; $("detailFile").classList.remove("editable");
@@ -426,26 +589,38 @@
       const username = text($("loginUsername").value).toUpperCase(), password = $("loginPassword").value;
       if (!username || !password) return Swal.fire({ icon:"warning", title:"Enter username and password" });
       showLoading("Signing in...");
-      try { const result = await api("getMobileSnapshot", { username,password }); if (!Array.isArray(result.rows) || result.version == null) throw new Error("Please deploy the latest Sub-Store API before signing in."); sessionId++; state.username = result.username; state.password = password; state.rows = result.rows; dataVersion = result.version; syncPending = false; $('syncNotice').classList.add('hidden'); indexRackLocations(); renderRackGroups(); showView("rackGroupView"); Swal.close(); }
+      try { const result = await api("getMobileSnapshot", { username,password }); if (!Array.isArray(result.rows) || result.version == null) throw new Error("Please deploy the latest Sub-Store API before signing in."); sessionId++; state.username = result.username; state.password = password; state.rows = result.rows; dataVersion = result.version; syncPending = false; $('syncNotice').classList.add('hidden'); $('syncWarning').classList.add('hidden'); indexRackLocations(); renderRackGroups(); showView("rackGroupView"); Swal.close(); }
       catch (error) { Swal.close(); await Swal.fire({ icon:"error", title:"Sign in failed", text:error.message }); }
     }
 
     async function saveActual() {
       if (!state.selected) return;
+      if (!state.packageConfirmed) return Swal.fire({ icon:"warning", title:"Confirm Package first", text:"Confirm the package quantities before saving." });
+      if (state.prdLoading) return Swal.fire({ icon:"info", title:"Loading PRD data", text:"Please wait until PRD lookup finishes." });
+      if (state.prdInvalid) return Swal.fire({ icon:"error", title:"Saved PRD data is invalid", text:"Contact the administrator before updating this record." });
+      let selectedPrd;
+      try { selectedPrd = collectPrdSelections(); } catch (error) { return Swal.fire({ icon:"warning", title:"Check PRD quantities", text:error.message }); }
       const editRecord = state.detailMode === "edit";
       const fileNo = text($("detailFile").value), subcon = text($("detailSubcon").value), storageArea = text($("detailStorage").value), lotNumber = text($("detailLot").value), systemQty = number($("detailQuantity").value);
-      const actRack = state.rackLocation, actLot = lotNumber, a = number($("packageA").value), b = number($("packageB").value), c = number($("packageC").value) ?? 0;
+      const actRack = state.rackLocation, actLot = lotNumber, a = number($("packageA").value), b = number($("packageB").value), c = number($("packageC").value);
       const actQty = a === null || b === null ? null : (a * b) + c;
-      if (!actRack || !actLot || a === null || b === null || actQty === null) return Swal.fire({ icon:"warning", title:"Complete Actual Count", text:"Act Package A x B is required." });
+      if (!actRack || !actLot || a === null || b === null || c === null || !Number.isFinite(actQty)) return Swal.fire({ icon:"warning", title:"Complete Actual Count", text:"Enter valid numbers for Act Package A, B and C. Enter 0 when applicable." });
+      if (a < 0 || b < 0 || c < 0 || actQty < 0) return Swal.fire({ icon:"warning", title:"Invalid Actual Count", text:"Act Package values cannot be negative." });
       if (editRecord && (!fileNo || !subcon || !storageArea || !lotNumber || systemQty === null)) return Swal.fire({ icon:"warning", title:"Complete Record Details", text:"File No., Subcon, Storage Area, System Qty, and Lot Number are required." });
       const actPackage = `${a} x ${b} + ${c}`;
-      const confirm = await Swal.fire({ icon:"question", title:editRecord ? "Update Record?" : "Save Actual Inventory?", html:`Act Qty: <b>${quantity(actQty)}</b>`, showCancelButton:true, confirmButtonText:editRecord ? "Update" : "Save", cancelButtonText:"Cancel" });
+      const idCounts = new Map();
+      selectedPrd.forEach(item => { const id = text(item.prodId).toUpperCase(); idCounts.set(id, (idCounts.get(id) || 0) + 1); });
+      const prdRows = selectedPrd.length ? selectedPrd.map(item => {
+        const id = text(item.prodId), site = idCounts.get(id.toUpperCase()) > 1 ? ` (${text(item.site)})` : "";
+        return `<div class="confirm-prd-row"><span>${escapeHtml(id + site)}</span><strong>${escapeHtml(quantity(item.actQuantity))}</strong></div>`;
+      }).join("") : '<div class="confirm-prd-row"><span>No PRD selected</span></div>';
+      const confirm = await Swal.fire({ icon:"question", title:editRecord ? "Update Record?" : "Save Actual Inventory?", html:`Act Qty: <b>${quantity(actQty)}</b><div class="confirm-prd"><div class="confirm-prd-title">Selected PRD / Act Quantity</div><div class="confirm-prd-list">${prdRows}</div></div>`, showCancelButton:true, confirmButtonText:editRecord ? "Update" : "Save", cancelButtonText:"Cancel" });
       if (!confirm.isConfirmed) return;
       showLoading(editRecord ? "Updating record..." : "Saving actual inventory...");
       try {
-        const result = await api("saveActual", { username:state.username, password:state.password, recordKey:state.selected.recordKey, expectedRevision:state.selected.revision, actRack, actLot, actQty:String(actQty), actPackage, editRecord:String(editRecord), fileNo, subcon, storageArea, lotNumber, quantity:systemQty === null ? "" : String(systemQty) });
+        const result = await api("saveActual", { username:state.username, password:state.password, recordKey:state.selected.recordKey, expectedRevision:state.selected.revision, actRack, actLot, actQty:String(actQty), actPackage, actPrd:JSON.stringify(selectedPrd), editRecord:String(editRecord), fileNo, subcon, storageArea, lotNumber, quantity:systemQty === null ? "" : String(systemQty) });
         const previousStorageArea = text(state.selected.storageArea).toUpperCase();
-        Object.assign(state.selected, { recordKey:result.recordKey, fileNo:result.fileNo, subcon:result.subcon, actFileNo:result.actFileNo, actSubcon:result.actSubcon, storageArea:result.storageArea, lotNumber:result.lotNumber, quantity:result.quantity, actRack, actLot, actQty, actPackage, delta:result.delta, recordedBy:state.username, recordedAt:result.recordedAt, verificationAnswer:result.verificationAnswer, revision:result.revision });
+        Object.assign(state.selected, { recordKey:result.recordKey, fileNo:result.fileNo, subcon:result.subcon, actFileNo:result.actFileNo, actSubcon:result.actSubcon, storageArea:result.storageArea, lotNumber:result.lotNumber, quantity:result.quantity, actRack, actLot, actQty, actPackage, actPrd:result.actPrd, delta:result.delta, recordedBy:state.username, recordedAt:result.recordedAt, verificationAnswer:result.verificationAnswer, revision:result.revision });
         if (previousStorageArea !== text(state.selected.storageArea).toUpperCase()) indexRackLocations();
         Swal.close(); await Swal.fire({ icon:"success", title:editRecord ? "Record updated" : "Actual inventory saved" }); selectRackGroup(state.rackGroup);
       } catch (error) { if (error.code === 'RECORD_CHANGED') { syncPending = true; $('syncNotice').classList.remove('hidden'); } Swal.close(); await Swal.fire({ icon:"error", title:error.code === 'RECORD_CHANGED' ? "Record changed" : "Save failed", text:error.message }); }
@@ -460,9 +635,16 @@
     $("locationBack").addEventListener("click", () => selectRackGroup(state.rackGroup));
     $("verifyYes").addEventListener("click", () => setDetailMode("confirm")); $("verifyNo").addEventListener("click", () => setDetailMode("edit"));
     $("detailFile").addEventListener("change", () => { if (state.detailMode === "edit") syncSubconWithFileNo(); });
+    $("confirmPackage").addEventListener("click", confirmPackage);
+    $("editPackage").addEventListener("click", () => { setPackageConfirmed(false); $("packageA").focus(); });
     ["packageA","packageB","packageC","detailQuantity"].forEach(id => $(id).addEventListener("input", updateActualPreview)); $("saveButton").addEventListener("click", saveActual);
     $("navLogin").addEventListener("click", login);
-    $("navLogout").addEventListener("click", async () => { const result = await Swal.fire({ icon:"question", title:"Sign out?", showCancelButton:true, confirmButtonText:"Sign out", cancelButtonText:"Cancel" }); if (!result.isConfirmed) return; sessionId++; dataVersion=null; syncPending=false; state.username=""; state.password=""; state.rows=[]; rowsByRackLocation.clear(); state.selected=null; state.rackGroup=""; state.rackLocation=""; $("loginPassword").value=""; showView("loginView"); await Swal.fire({ icon:"success", title:"Signed out", timer:1100, showConfirmButton:false }); });
+    $("syncRetry").addEventListener("click", syncInventory);
+    $("prdRetry").addEventListener("click", () => {
+      try { state.prdSelected = collectPrdSelections(); loadPrdOptions(); }
+      catch (error) { Swal.fire({ icon:"warning", title:"Check PRD quantities", text:error.message }); }
+    });
+    $("navLogout").addEventListener("click", async () => { const result = await Swal.fire({ icon:"question", title:"Sign out?", showCancelButton:true, confirmButtonText:"Sign out", cancelButtonText:"Cancel" }); if (!result.isConfirmed) return; sessionId++; dataVersion=null; syncPending=false; state.username=""; state.password=""; state.rows=[]; rowsByRackLocation.clear(); state.selected=null; state.rackGroup=""; state.rackLocation=""; $('syncWarning').classList.add('hidden'); $("loginPassword").value=""; showView("loginView"); await Swal.fire({ icon:"success", title:"Signed out", timer:1100, showConfirmButton:false }); });
     setInterval(syncInventory, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) syncInventory(); });
   </script>
