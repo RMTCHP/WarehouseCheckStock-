@@ -682,7 +682,7 @@ function showDetail() {
       const pkgC = actPkg ? ((actPkg.split("+")[1] || "") || "") : "";
 
       htmlRack += `
-        <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}" data-loaded="true">
+        <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}" data-loaded="${index === 0 && !actRackRaw && !row.Act_Lot && !actPkg && (row.Act_Qty === "" || row.Act_Qty == null) ? "false" : "true"}">
 
           <div class="set-title">Act Set #${index + 1}</div>
 
@@ -815,6 +815,13 @@ function showDetail() {
       const sub = sel.closest(".rack-set").querySelector(".rackSub");
       if (sel.value && sub && !sub.value) updateRackSub(sel);
     });
+    const master = document.querySelector('#rackZone .rack-set[data-master="true"]');
+    if (master && master.dataset.loaded === "false") {
+      const original = String(getVal("Rack") || "").replace(/\[.*?\]/g, "").trim().toUpperCase();
+      if (!original || !prefillOriginalRack(master, original)) {
+        Swal.fire({ icon:"info", title:"กรุณาเลือก Act Rack", text:"ไม่พบ Rack จากระบบในรายการที่เลือกได้ กรุณาเลือก Act Rack ด้วยตนเอง" });
+      }
+    }
 
   } catch (err) {
     console.error("showDetail error:", err);
@@ -822,6 +829,19 @@ function showDetail() {
   }
 }
 
+
+function prefillOriginalRack(set, original) {
+  const groupSelect = set.querySelector(".rackGroup"), subSelect = set.querySelector(".rackSub");
+  const direct = ["PCCHPAREA", "PCSUBSTORE", "PCBKKAREA"];
+  const group = direct.includes(original) ? original : Object.keys(rackMap).find(key => rackMap[key].some(value => value.toUpperCase() === original));
+  if (!group || !Array.from(groupSelect.options).some(option => option.value === group)) return false;
+  groupSelect.value = group;
+  updateRackSub(groupSelect);
+  const match = Array.from(subSelect.options).find(option => option.value.toUpperCase() === original);
+  if (!match) { groupSelect.value = ""; subSelect.innerHTML = ""; return false; }
+  subSelect.value = match.value;
+  return true;
+}
 
 function updateRackSub(select) {
   const subSelect = select.closest(".rack-set").querySelector(".rackSub");
